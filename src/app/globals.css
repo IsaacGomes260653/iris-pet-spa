@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* tela mais larga que 4:5 (desktop, tablet deitado): fotos verticais ficam centralizadas */
+@custom-variant paisagem (@media (min-aspect-ratio: 4/5));
+
+@theme {
+  /* tinta e papel */
+  --color-tinta: #22252b; /* grafite: texto sobre fundo claro (≥12:1 no tema 2) */
+  --color-tinta-suave: #4f5560; /* secundário sobre claro (≥6:1 no tema 2) */
+  --color-papel: #fffdfb; /* off-white: texto sobre escuro, etiquetas, botões */
+  --color-papel-suave: #d7e6e3; /* secundário sobre verde-água (≥6,5:1 a partir do meio) */
+  --color-acao: #17494a; /* quadradinho do botão */
+
+  /* tema 1 — amanhecer no passeio */
+  --color-lavanda: #b9bed4;
+  --color-malva: #d3c4d3;
+  --color-pessego: #eccbbd;
+  --color-azul-cinza: #93a3b5;
+  --color-ardosia: #2c394a;
+
+  /* tema 2 — creme que desce para pêssego e menta */
+  --color-creme: #fbf6ee;
+  --color-pessego-claro: #fde7d2;
+  --color-menta: #dff1e4;
+
+  /* tema 3 — verde-água profundo */
+  --color-agua: #2e7a72;
+  --color-agua-funda: #1d5554;
+  --color-abismo: #0f2f31;
+
+  /* barra de progresso: sequência clara → escura, um tom por grupo de seções */
+  --color-seg-passeio: #ecc3b8;
+  --color-seg-banho: #b5b787;
+  --color-seg-lojas: #69a590;
+  --color-seg-pacotes: #478a7f;
+  --color-seg-rede: #2f6e68;
+  --color-seg-pessoas: #1e5250;
+  --color-seg-agendar: #0f3939;
+
+  --font-serifa: var(--font-literata), Georgia, serif;
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-mono: var(--font-martian), ui-monospace, monospace;
+
+  /* escala: 124 / 80 / 30 / 21 / 17 / 12 px no desktop de 1440 */
+  --text-display: clamp(3.5rem, 1.5rem + 6.1vw, 7.75rem);
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.02em;
+  --text-titulo: clamp(2.5rem, 1.25rem + 3.9vw, 5rem);
+  --text-titulo--line-height: 1;
+  --text-titulo--letter-spacing: -0.015em;
+  --text-frase: clamp(1.375rem, 1.1rem + 0.9vw, 1.875rem);
+  --text-frase--line-height: 1.15;
+  --text-lead: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem);
+  --text-lead--line-height: 1.45;
+  --text-corpo: 1.0625rem;
+  --text-corpo--line-height: 1.55;
+  --text-rotulo: 0.75rem;
+  --text-rotulo--line-height: 1;
+  --text-rotulo--letter-spacing: 0.02em;
+
+  --ease-saida: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* cor do texto acompanha o tema ativo (FundoTema), com a mesma transição do fundo */
+@property --cor-texto { syntax: "<color>"; inherits: true; initial-value: #22252b; }
+@property --cor-texto-suave { syntax: "<color>"; inherits: true; initial-value: #4f5560; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    --cor-texto: var(--color-tinta);
+    --cor-texto-suave: var(--color-tinta-suave);
+    background: var(--color-creme);
+    color: var(--cor-texto);
+    transition: --cor-texto 1.4s ease-in-out, --cor-texto-suave 1.4s ease-in-out;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  html[data-tema-ativo="agua"] {
+    --cor-texto: var(--color-papel);
+    --cor-texto-suave: var(--color-papel-suave);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { transition: none; }
+  }
+  h1, h2, h3 {
+    font-family: var(--font-serifa);
+    font-weight: 200;
+    text-wrap: balance;
+  }
+  ::selection {
+    background: var(--color-pessego);
+    color: var(--color-tinta);
+  }
+  /* foco em duas camadas: aparece sobre foto, claro e escuro */
+  :focus-visible {
+    outline: 2px solid var(--color-papel);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px var(--color-tinta);
+    border-radius: 6px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* fundos dos temas (camada fixa; ver FundoTema) */
+.grad-amanhecer {
+  background: linear-gradient(180deg, #b9bed4 0%, #d3c4d3 26%, #eccbbd 50%, #93a3b5 76%, #2c394a 100%);
+}
+.grad-creme {
+  background: linear-gradient(180deg, #fbf6ee 0%, #fbf6ee 50%, #fde7d2 80%, #dff1e4 96%, #f4faf6 100%);
+}
+.grad-agua {
+  background: linear-gradient(180deg, #2e7a72 0%, #1d5554 45%, #123b3d 75%, #0c2829 100%);
 }

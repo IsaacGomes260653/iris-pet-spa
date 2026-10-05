@@ -1,0 +1,30 @@
+# Créditos de mídia
+
+Todas as fotos abaixo são do [Unsplash](https://unsplash.com/?utm_source=iris_pet_spa&utm_medium=referral) sob a [Licença Unsplash](https://unsplash.com/license?utm_source=iris_pet_spa&utm_medium=referral) (uso livre, inclusive comercial, sem exigência de atribuição; atribuímos mesmo assim).
+Os downloads foram registrados pela API do Unsplash. Todas receberam a correção de cor de amanhecer de `scripts/gradear.py` (as originais ficam fora do Git, em `media-src/`).
+
+| Arquivo | Foto de | Página original |
+|---|---|---|
+| `src/assets/passeio/alt-cidade-calcada.jpg` | [Bianca Ackermann](https://unsplash.com/@biancablah?utm_source=iris_pet_spa&utm_medium=referral) | [3yjqMQC_vBI](https://unsplash.com/photos/brown-and-black-long-coated-small-dog-with-red-leash-walking-on-gray-concrete-pavement-3yjqMQC_vBI?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/alt-ponte-floresta.jpg` | [Sydney Moore](https://unsplash.com/@sydmoore6?utm_source=iris_pet_spa&utm_medium=referral) | [AqqiRFpbWPI](https://unsplash.com/photos/a-dog-on-a-bridge-AqqiRFpbWPI?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/alt-ponte-pier.jpg` | [Logan Gutierrez](https://unsplash.com/@photosoflogan?utm_source=iris_pet_spa&utm_medium=referral) | [ukWSI-5QaJQ](https://unsplash.com/photos/a-dog-looking-out-over-a-body-of-water-ukWSI-5QaJQ?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/alt-praia-duna.jpg` | [Valentin Lacoste](https://unsplash.com/@valentinlacoste?utm_source=iris_pet_spa&utm_medium=referral) | [I5eW6eMhi5U](https://unsplash.com/photos/a-dog-walks-on-a-sandy-dune-with-footprints-I5eW6eMhi5U?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/alt-trilha-floresta.jpg` | [Isaac Mehegan](https://unsplash.com/@isaacmehegan?utm_source=iris_pet_spa&utm_medium=referral) | [hiOy3Egv5xU](https://unsplash.com/photos/brown-short-coated-medium-sized-dog-standing-on-brown-dried-leaves-during-daytime-hiOy3Egv5xU?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-banho.jpg` | [Ottr Dan](https://unsplash.com/@ottrdan?utm_source=iris_pet_spa&utm_medium=referral) | [OT_GibNdE64](https://unsplash.com/photos/a-person-washing-a-dog-in-a-bath-tub-OT_GibNdE64?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-brinquedos.jpg` | [FLOUFFY](https://unsplash.com/@theflouffy?utm_source=iris_pet_spa&utm_medium=referral) | [g2FtlFrc164](https://unsplash.com/photos/dog-holding-plush-elephant-toy-g2FtlFrc164?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-camas.jpg` | [Tj Kolesnik](https://unsplash.com/@tjkolesnik?utm_source=iris_pet_spa&utm_medium=referral) | [nbkvjM05ogY](https://unsplash.com/photos/short-coated-brown-dog-on-gray-fabric-nbkvjM05ogY?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-coleiras.jpg` | [Sarah Janelle](https://unsplash.com/@sjanelle?utm_source=iris_pet_spa&utm_medium=referral) | [1lzF9glUeP0](https://unsplash.com/photos/a-dog-with-its-tongue-out-1lzF9glUeP0?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-petiscos.jpg` | [Mimicry Hu](https://unsplash.com/@hjx518756?utm_source=iris_pet_spa&utm_medium=referral) | [cjNaoIqbWCI](https://unsplash.com/photos/adult-golden-retriever-with-cookie-bone-on-nose-cjNaoIqbWCI?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-racao.jpg` | [Barking Royalty](https://unsplash.com/@barkingroyalty?utm_source=iris_pet_spa&utm_medium=referral) | [0yLGAgTkOBc](https://unsplash.com/photos/a-bowl-of-chocolate-chips-0yLGAgTkOBc?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-spa.jpg` | [Hayffield L](https://unsplash.com/@hayffield?utm_source=iris_pet_spa&utm_medium=referral) | [ZVdZw2p08y4](https://unsplash.com/photos/brown-pomeranian-wearing-pink-towel-ZVdZw2p08y4?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-taxi-dog.jpg` | [Florian Hahn](https://unsplash.com/@whoisflo?utm_source=iris_pet_spa&utm_medium=referral) | [241T7zK5J8o](https://unsplash.com/photos/dog-looking-out-of-a-car-window-241T7zK5J8o?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/cards/card-tosa.jpg` | [Buddy AN](https://unsplash.com/@stbuddyp?utm_source=iris_pet_spa&utm_medium=referral) | [LpK2xddrElI](https://unsplash.com/photos/a-small-white-dog-being-cut-with-a-pair-of-scissors-LpK2xddrElI?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/passeio-1-ponte.jpg` | [Cristian Tarzi](https://unsplash.com/@ctarzi?utm_source=iris_pet_spa&utm_medium=referral) | [QPY9mdaVkjQ](https://unsplash.com/photos/a-dog-standing-on-top-of-a-wooden-platform-QPY9mdaVkjQ?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/passeio-2-cidade.jpg` | [Jon Tyson](https://unsplash.com/@jontyson?utm_source=iris_pet_spa&utm_medium=referral) | [FPztlogFoi4](https://unsplash.com/photos/a-dog-on-a-leash-on-a-sidewalk-FPztlogFoi4?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/passeio-3-praia.jpg` | [william f. santos](https://unsplash.com/@youwwwill?utm_source=iris_pet_spa&utm_medium=referral) | [DpHIdVs_UKM](https://unsplash.com/photos/a-person-holding-a-lizard-on-a-rock-by-the-ocean-DpHIdVs_UKM?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/passeio-4-trilha.jpg` | [Janusz Walczak](https://unsplash.com/@jwvein?utm_source=iris_pet_spa&utm_medium=referral) | [4gFuXJCc6Xw](https://unsplash.com/photos/a-brown-and-white-dog-standing-on-top-of-a-grass-covered-field-4gFuXJCc6Xw?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/passeio-5-loja.jpg` | [CrowN](https://unsplash.com/@cosmicomicfox?utm_source=iris_pet_spa&utm_medium=referral) | [UDmd73yAROI](https://unsplash.com/photos/a-dog-that-is-standing-in-front-of-a-door-UDmd73yAROI?utm_source=iris_pet_spa&utm_medium=referral) |
+
+## Pendentes (download manual)
+
+Vídeos (banho, tosa, finalização), áudio do botão SOM e a foto POV da faixa de pedestres: ver `docs/assets.md`. A origem de cada um entra aqui quando o arquivo chegar.

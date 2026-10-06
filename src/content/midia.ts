@@ -22,13 +22,13 @@ export const cenas = [
 ];
 
 export const cards = [
-  { rotulo: "Banho — espuma de aveia", foto: banho, alt: "Mãos ensaboando um cachorro caramelo coberto de espuma." },
-  { rotulo: "Tosa — na tesoura", foto: tosa, alt: "Poodle branco tendo o pelo do rosto aparado com tesoura." },
-  { rotulo: "Spa — hidratação", foto: spa, alt: "Lulu da Pomerânia com toalha rosa na cabeça sendo penteado." },
-  { rotulo: "Loja — rações premium", foto: racao, alt: "Tigela azul cheia de ração sobre fundo creme." },
-  { rotulo: "Petiscos naturais", foto: petiscos, alt: "Golden retriever equilibrando um petisco no focinho." },
-  { rotulo: "Brinquedos", foto: brinquedos, alt: "Cachorro caramelo segurando um bichinho de pelúcia na boca." },
-  { rotulo: "Camas e casinhas", foto: camas, alt: "Cachorro caramelo dormindo numa cama acolchoada cinza." },
-  { rotulo: "Coleiras e guias", foto: coleiras, alt: "Filhote de golden com coleira e guia vermelhas." },
-  { rotulo: "Táxi Dog", foto: taxiDog, alt: "Golden retriever olhando pela janela de um carro escuro." },
+  { rotulo: "Banho — água morna", foto: banho, alt: "Cão preto de orelhas em pé tomando um jato de água de mangueira no gramado." },
+  { rotulo: "Tosa — na tesoura", foto: tosa, alt: "Tosador apara com tesoura o pelo de um cão marrom-escuro no salão." },
+  { rotulo: "Spa — hidratação", foto: spa, alt: "Cão escuro enrolado numa toalha clara depois do banho, olhando para a câmera." },
+  { rotulo: "Loja — rações premium", foto: racao, alt: "Tigela azul cheia de ração vista de cima, sobre fundo creme." },
+  { rotulo: "Petiscos naturais", foto: petiscos, alt: "Pastor-alemão de boca aberta pegando um petisco no ar, sobre fundo escuro." },
+  { rotulo: "Brinquedos", foto: brinquedos, alt: "Pastora-alemã preta deitada numa almofada com um brinquedo vermelho." },
+  { rotulo: "Camas e casinhas", foto: camas, alt: "Pastor-alemão preto deitado sobre uma manta macia." },
+  { rotulo: "Coleiras e guias", foto: coleiras, alt: "Pastor-alemão de coleira azul-petróleo e guia, sentado na calçada ao pôr do sol." },
+  { rotulo: "Táxi Dog", foto: taxiDog, alt: "Cão de orelhas em pé sorrindo pela janela aberta de um carro." },
 ];

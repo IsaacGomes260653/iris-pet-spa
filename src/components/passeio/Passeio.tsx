@@ -8,7 +8,7 @@ import posterDesktop from "@/assets/passeio/poster-desktop.jpg";
 import lojaCelular from "@/assets/passeio/poster-loja-celular.jpg";
 import lojaDesktop from "@/assets/passeio/poster-loja-desktop.jpg";
 import { Botao } from "@/components/ui";
-import { FIM, frases } from "./caminho";
+import { frases, metrosEm } from "./caminho";
 import { Seguro } from "./Seguro";
 
 const Cena = dynamic(() => import("./Cena"), { ssr: false });
@@ -79,10 +79,10 @@ export function Passeio() {
       const r = el.getBoundingClientRect();
       const p = Math.min(1, Math.max(0, -r.top / (r.height - innerHeight)));
       progresso.current = p;
-      const s = p * FIM;
+      const s = metrosEm(p);
       setAtiva(frases.reduce((i, f, k) => (s >= f.s ? k : i), 0));
-      setFase(p < 0.03 ? "hero" : p > 0.86 ? "chegada" : "passeio");
-      el.style.setProperty("--saida", String(Math.min(1, Math.max(0, (p - 0.93) / 0.055))));
+      setFase(p < 0.03 ? "hero" : p > 0.85 ? "chegada" : "passeio");
+      el.style.setProperty("--saida", String(Math.min(1, Math.max(0, (p - 0.965) / 0.03))));
     };
     const aoRolar = () => (raf ||= requestAnimationFrame(ler));
     ler();

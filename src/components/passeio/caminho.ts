@@ -22,6 +22,10 @@ export const PORTA_Z = -127; // fachada da loja
 export const DIANTEIRA = 1.8;
 export const FIM = COMPRIMENTO - 6.5 - DIANTEIRA;
 
+/** A câmera chega à porta em 92% da rolagem; o resto é a pausa na loja e a névoa da saída. */
+export const CHEGA = 0.92;
+export const metrosEm = (p: number) => Math.min(1, Math.max(0, p / CHEGA)) * FIM;
+
 export const pontoEm = (s: number, alvo = new THREE.Vector3()) =>
   caminho.getPointAt(THREE.MathUtils.clamp(s / COMPRIMENTO, 0, 1), alvo);
 export const tangenteEm = (s: number, alvo = new THREE.Vector3()) =>

@@ -7,7 +7,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Cachorra, type Marcha } from "./Cachorra";
 import { Cards } from "./Cards";
-import { DIANTEIRA, FIM, MAO_CELULAR, MAO_PADRAO, PORTA_Z, pontoEm, tangenteEm } from "./caminho";
+import { DIANTEIRA, FIM, MAO_CELULAR, MAO_PADRAO, PORTA_Z, metrosEm, pontoEm, tangenteEm } from "./caminho";
 import { COR_NEVOA, Ceu, SOL } from "./Ceu";
 import { Guia, type Ossos } from "./Guia";
 import { Ipes } from "./Ipes";
@@ -40,7 +40,7 @@ function Rig({
 
   useFrame((_, dtBruto) => {
     const dt = Math.min(dtBruto, 1 / 20);
-    const alvo = THREE.MathUtils.clamp(progresso.current ?? 0, 0, 1) * FIM;
+    const alvo = metrosEm(progresso.current ?? 0);
     if (s.current < 0) s.current = alvo;
     const antes = s.current;
     s.current = THREE.MathUtils.damp(s.current, alvo, 3.2, dt);

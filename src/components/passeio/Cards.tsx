@@ -45,8 +45,8 @@ export function Cards({ leve = false }: { leve?: boolean }) {
     () =>
       posicoesCards.map((p, i) => {
         // na ponte os cards ficam por dentro do corrimão; no celular, um card por trecho
-        const pos = aoLado(p.s, p.lado * (p.s < 34 ? 0.95 : 1.55 + (i % 2) * 0.2));
-        pos.y = p.y;
+        const pos = aoLado(p.s, p.lado * (p.s < 34 ? 1.15 : 1.55 + (i % 2) * 0.2));
+        pos.y = p.s < 34 ? p.y + 0.2 : p.y;
         return { pos, card: cards[i], fase: i * 1.7 };
       }).filter((_, i) => !leve || i % 2 === 0),
     [leve],

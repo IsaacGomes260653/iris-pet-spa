@@ -10,7 +10,7 @@ export default function Home() {
       </Link>
       <Passeio />
       {/* próxima seção (Fase 3): o passeio desemboca no creme */}
-      <section data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[75svh] flex min-h-[130svh] items-start justify-center bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.85)_16%,#fbf6ee_30%,#fbf6ee_70%,rgb(251_246_238/0))] px-5 pt-[42svh] text-center max-md:justify-start max-md:text-left">
+      <section data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[75svh] flex min-h-[105svh] items-start justify-center bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.85)_16%,#fbf6ee_30%)] px-5 pt-[42svh] text-center max-md:justify-start max-md:text-left">
         <h2 id="titulo-banho" className="text-display max-md:text-[2rem] max-md:leading-[1.05]">
           Banho em minutos.
           <br />

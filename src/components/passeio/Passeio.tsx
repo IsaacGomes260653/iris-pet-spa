@@ -57,8 +57,8 @@ export function Passeio() {
       const r = el.getBoundingClientRect();
       const p = limitar(-r.top / (r.height - innerHeight));
       const ultima = cenas.length - 1;
-      setCena(Math.min(ultima, Math.floor(p / TRECHO)));
-      setFase(p < 0.025 ? "hero" : p > 0.81 ? "chegada" : "passeio");
+      setCena(Math.min(frases.length - 1, Math.floor(p / (TRECHO * 4 / frases.length))));
+      setFase(p < 0.025 ? "hero" : p > 0.79 ? "chegada" : "passeio");
 
       // cenários: zoom lento enquanto anda; na troca, zoom forte, desfoque e crossfade
       camadas.current.forEach((c, i) => {
@@ -200,7 +200,7 @@ export function Passeio() {
         {/* chegada: a frase no céu, a porta é o botão */}
         <div
           inert={fase !== "chegada"}
-          className={`absolute inset-x-0 top-[9svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100" : "pointer-events-none translate-y-4 opacity-0"}`}
+          className={`absolute inset-x-0 top-[9svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-500" : "pointer-events-none translate-y-4 opacity-0"}`}
         >
           <p className="font-serifa text-titulo font-extralight [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
           <div className="mt-7">

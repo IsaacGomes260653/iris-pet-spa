@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, Literata, Martian_Mono } from "next/font/google";
 import { FundoTema } from "@/components/FundoTema";
+import { RolagemSuave } from "@/components/RolagemSuave";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 
 const literata = Literata({ variable: "--font-literata", subsets: ["latin"], axes: ["opsz"] });
@@ -20,6 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="pt-BR" className={`${literata.variable} ${hanken.variable} ${martian.variable}`}>
       <body>
         <FundoTema />
+        <RolagemSuave />
         {children}
       </body>
     </html>

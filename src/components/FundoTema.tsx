@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const temas = ["amanhecer", "creme", "agua"] as const;
 type Tema = (typeof temas)[number];
 
-/** Camada fixa atrás da página: o gradiente da seção que cruza o meio da tela aparece por crossfade. */
+/** Camada fixa atrás da página: o gradiente da seção que entra pela base da tela aparece por crossfade. */
 export function FundoTema() {
   const [ativo, setAtivo] = useState<Tema>("amanhecer");
 
@@ -14,7 +14,7 @@ export function FundoTema() {
       (entradas) => {
         for (const e of entradas) if (e.isIntersecting) setAtivo((e.target as HTMLElement).dataset.tema as Tema);
       },
-      { rootMargin: "-50% 0px -50% 0px" },
+      { rootMargin: "-99% 0px 0px 0px" },
     );
     document.querySelectorAll("[data-tema]").forEach((el) => io.observe(el));
     return () => io.disconnect();

@@ -12,7 +12,7 @@ const navegador = await chromium.launch({
 });
 const pagina = await navegador.newPage({ viewport: { width: 1440, height: 900 } });
 await pagina.goto(url, { waitUntil: "networkidle" });
-await pagina.waitForFunction(() => document.querySelector("canvas")?.closest("div.opacity-100"), null, { timeout: 60000 });
+await pagina.waitForFunction(() => document.querySelector("section[data-tema='amanhecer'] img")?.complete, null, { timeout: 60000 });
 const irPara = (p) =>
   pagina.evaluate((p) => {
     const s = document.querySelector("section[data-tema='amanhecer']");

@@ -1,8 +1,9 @@
 import ponte from "@/assets/passeio/passeio-1-ponte.jpg";
 import cidade from "@/assets/passeio/passeio-2-cidade.jpg";
-import praia from "@/assets/passeio/passeio-3-praia.jpg";
-import trilha from "@/assets/passeio/passeio-4-trilha.jpg";
-import loja from "@/assets/passeio/passeio-5-loja.jpg";
+import trilha from "@/assets/passeio/passeio-3-trilha.jpg";
+import gramado from "@/assets/passeio/passeio-4-gramado.jpg";
+import lojaCelular from "@/assets/passeio/cena-loja-celular.jpg";
+import lojaDesktop from "@/assets/passeio/cena-loja-desktop.jpg";
 import banho from "@/assets/cards/card-banho.jpg";
 import tosa from "@/assets/cards/card-tosa.jpg";
 import spa from "@/assets/cards/card-spa.jpg";
@@ -13,12 +14,13 @@ import camas from "@/assets/cards/card-camas.jpg";
 import coleiras from "@/assets/cards/card-coleiras.jpg";
 import taxiDog from "@/assets/cards/card-taxi-dog.jpg";
 
+/** Cenários do passeio, em ordem. `foco` é o object-position no desktop (fotos verticais recortadas). */
 export const cenas = [
-  { nome: "Ponte de madeira", foto: ponte, alt: "Cachorro caramelo de guia azul no alto de um deque de madeira, sob céu claro." },
-  { nome: "Cidade", foto: cidade, alt: "Cachorro caramelo de guia vermelha andando à frente numa calçada movimentada." },
-  { nome: "Praia", foto: praia, alt: "Cachorro caramelo de guia vermelha caminhando sobre pedras à beira-mar." },
-  { nome: "Trilha do parque", foto: trilha, alt: "Golden retriever de guia olhando para o lado num campo de grama seca." },
-  { nome: "Porta da loja", foto: loja, alt: "Golden retriever de guia parado na porta aberta de uma loja." },
+  { nome: "Ponte de madeira", foto: ponte, foco: "50% 34%", alt: "Em primeira pessoa, um cão de orelhas em pé anda de guia à frente numa ponte de madeira estreita." },
+  { nome: "Calçada", foto: cidade, foco: "50% 22%", alt: "Cão preto de orelhas em pé e guia vermelha, de costas, olhando a calçada à frente." },
+  { nome: "Trilha", foto: trilha, foco: "50% 60%", alt: "Cão preto de guia caminha numa trilha de folhas secas, entre árvores, com sombras longas da manhã." },
+  { nome: "Gramado", foto: gramado, foco: "50% 46%", alt: "Uma mão segura a guia de um cão preto que corre à frente num gramado aberto." },
+  { nome: "Porta da loja Íris", foto: lojaDesktop, fotoCelular: lojaCelular, foco: "50% 50%", alt: "Fachada creme da loja Íris Pet Spa ao amanhecer, com toldo listrado e vitrines acesas." },
 ];
 
 export const cards = [

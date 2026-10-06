@@ -17,7 +17,7 @@ for (const [nome, t] of Object.entries(telas)) {
   const pagina = await navegador.newPage({ viewport: { width: t.width, height: t.height }, deviceScaleFactor: t.dpr });
   await pagina.goto(url, { waitUntil: "networkidle" });
   await pagina.screenshot({ path: `${saida}/${nome}-00-poster.png` }); // o que aparece antes do 3D
-  await pagina.waitForFunction(() => document.querySelector("canvas")?.closest("div.opacity-100"), null, { timeout: 60000 });
+  await pagina.waitForFunction(() => document.querySelector("section[data-tema='amanhecer'] img")?.complete, null, { timeout: 60000 });
   await pagina.waitForTimeout(2500);
   for (const [i, p] of pontos.entries()) {
     await pagina.evaluate((p) => {

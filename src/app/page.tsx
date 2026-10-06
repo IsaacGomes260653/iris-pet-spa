@@ -5,13 +5,13 @@ import { Logo } from "@/components/ui";
 export default function Home() {
   return (
     <main>
-      <Link href="/" aria-label="Íris Pet Spa, início" className="fixed top-6 left-6 z-20 text-tinta [text-shadow:0_0_16px_rgb(240_230_234/0.9)] md:top-7 md:left-8">
+      <Link href="/" aria-label="Íris Pet Spa, início" className="logo-tema fixed top-6 left-6 z-20 md:top-7 md:left-8">
         <Logo />
       </Link>
       <Passeio />
       {/* próxima seção (Fase 3): o passeio desemboca no creme */}
-      <section data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[22svh] flex min-h-svh items-start justify-center bg-[linear-gradient(rgb(251_246_238/0),#fbf6ee_22%,#fbf6ee_50%,rgb(251_246_238/0))] px-5 pt-[30svh] text-center max-md:justify-start max-md:text-left">
-        <h2 id="titulo-banho" className="text-display max-md:text-[1.85rem] max-md:leading-[1.05]">
+      <section data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[75svh] flex min-h-[130svh] items-start justify-center bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.85)_16%,#fbf6ee_30%,#fbf6ee_70%,rgb(251_246_238/0))] px-5 pt-[42svh] text-center max-md:justify-start max-md:text-left">
+        <h2 id="titulo-banho" className="text-display max-md:text-[2rem] max-md:leading-[1.05]">
           Banho em minutos.
           <br />
           Tosa sob medida.

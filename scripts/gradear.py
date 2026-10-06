@@ -16,7 +16,7 @@ MAPA_POS = np.array([0.0, 0.32, 0.58, 0.80, 1.0])
 MAPA_COR = np.array([[0x26, 0x30, 0x42], [0x66, 0x6E, 0x91], [0xC0, 0xA4, 0xB0], [0xF2, 0xC2, 0xA0], [0xFF, 0xF1, 0xE4]]) / 255
 GRUPOS = {
     # prefixo: (pasta, lado maior, luminância média alvo, saturação, força do tom, piso dos pretos)
-    "passeio-": ("passeio", 2560, 0.50, 0.64, 0.40, 0.04),
+    "passeio-": ("passeio", 2560, 0.47, 0.86, 0.24, 0.02),
     "alt-": ("passeio", 2560, 0.50, 0.64, 0.40, 0.04),
     "card-": ("cards", 1400, 0.52, 0.92, 0.12, 0.015),  # leve: preserva o contraste da foto
 }

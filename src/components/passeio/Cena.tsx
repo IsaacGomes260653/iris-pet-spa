@@ -58,17 +58,17 @@ function Rig({
     // nos últimos metros o olhar sobe para mostrar a fachada e o letreiro
     const chegada = THREE.MathUtils.smoothstep(s.current, FIM - 16, FIM);
     pontoEm(s.current + 9, v.alvo);
-    // ~9° para baixo: horizonte no terço de cima, a cachorra inteira no terço de baixo
-    camera.lookAt(v.alvo.x, THREE.MathUtils.lerp(-0.27, 1.25, chegada), v.alvo.z);
+    // ~13° para baixo: a cachorra ocupa a metade de baixo do quadro, como a proa na referência
+    camera.lookAt(v.alvo.x, THREE.MathUtils.lerp(-0.93, 1.9, chegada), v.alvo.z);
     // na chegada o quadro abre para caber a fachada inteira e a Ellie
     const cam = camera as THREE.PerspectiveCamera;
-    const fov = THREE.MathUtils.lerp(fovBase.current, fovBase.current + 11, chegada);
+    const fov = THREE.MathUtils.lerp(fovBase.current, fovBase.current + 14, chegada);
     if (Math.abs(cam.fov - fov) > 0.01) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
     // a névoa abre na chegada: a fachada aparece nítida
-    if (scene.fog instanceof THREE.FogExp2) scene.fog.density = THREE.MathUtils.lerp(0.02, 0.008, chegada);
+    if (scene.fog instanceof THREE.FogExp2) scene.fog.density = THREE.MathUtils.lerp(0.033, 0.009, chegada);
 
     // a cachorra
     const sc = s.current + DIANTEIRA;
@@ -124,7 +124,7 @@ function Efeitos({ foco, leve }: { foco: THREE.Vector3; leve: boolean }) {
   if (leve)
     return (
       <EffectComposer multisampling={0}>
-        <ToneMapping mode={ToneMappingMode.AGX} />
+        <ToneMapping mode={ToneMappingMode.NEUTRAL} />
         <primitive object={gradacao} />
         <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.12} />
         <Vignette offset={0.25} darkness={0.6} />
@@ -132,9 +132,9 @@ function Efeitos({ foco, leve }: { foco: THREE.Vector3; leve: boolean }) {
     );
   return (
     <EffectComposer multisampling={0}>
-      <DepthOfField ref={dof} target={[0, 0.5, 0]} worldFocusRange={9} bokehScale={2.4} />
+      <DepthOfField ref={dof} target={[0, 0.5, 0]} worldFocusRange={6} bokehScale={4} />
       <Bloom mipmapBlur intensity={0.35} luminanceThreshold={0.8} luminanceSmoothing={0.25} />
-      <ToneMapping mode={ToneMappingMode.AGX} />
+      <ToneMapping mode={ToneMappingMode.NEUTRAL} />
       <primitive object={gradacao} />
       <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.12} />
       <Vignette offset={0.22} darkness={0.62} />
@@ -180,7 +180,7 @@ export default function Cena({
         gl.domElement.addEventListener("webglcontextlost", () => aoPerder?.());
       }}
     >
-      <fogExp2 attach="fog" args={[COR_NEVOA, 0.021]} />
+      <fogExp2 attach="fog" args={[COR_NEVOA, 0.033]} />
       <hemisphereLight args={["#b9bbe2", "#5c5045", 1.15]} />
       <directionalLight
         ref={sol}
@@ -210,7 +210,7 @@ export default function Cena({
         <Grama quantidade={leve ? 14000 : 52000} />
         <NevoaRasteira camadas={leve ? 6 : 9} />
         <Loja />
-        <Cards />
+        <Cards leve={leve} />
         {/* ordem importa: câmera → animação da cachorra → mão → guia, tudo no mesmo quadro */}
         <Rig progresso={progresso} marcha={marcha} cachorra={cachorra} foco={foco} sol={sol} />
         <Cachorra ref={cachorra} marcha={marcha} ossos={ossos} />

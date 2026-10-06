@@ -18,8 +18,8 @@ export const caminho = new THREE.CatmullRomCurve3(
 export const COMPRIMENTO = caminho.getLength();
 export const PORTA_Z = -127; // fachada da loja
 
-// a câmera para ~10 m antes da porta (a fachada inteira no quadro); a cachorra anda 2,2 m à frente dela
-export const DIANTEIRA = 2.2;
+// a câmera para ~10 m antes da porta (a fachada inteira no quadro); a cachorra anda 1,8 m à frente dela
+export const DIANTEIRA = 1.8;
 export const FIM = COMPRIMENTO - 6.5 - DIANTEIRA;
 
 export const pontoEm = (s: number, alvo = new THREE.Vector3()) =>
@@ -40,8 +40,8 @@ export const frases = [
 
 /** Cards de serviços e produtos pelo caminho: posição em metros, lado e altura. */
 export const posicoesCards = [
-  { s: 12, lado: 1, y: 1.25 }, // banho
-  { s: 22, lado: -1, y: 1.15 }, // tosa
+  { s: 20, lado: 1, y: 1.25 }, // banho
+  { s: 29, lado: -1, y: 1.15 }, // tosa
   { s: 38, lado: 1, y: 1.3 }, // spa
   { s: 48, lado: -1, y: 1.2 }, // rações
   { s: 58, lado: 1, y: 1.25 }, // petiscos
@@ -61,4 +61,4 @@ export type AjusteMao = {
   sinal?: number;
 };
 export const MAO_PADRAO: AjusteMao = { alvo: [0.14, -0.2, -0.5], inclina: 1.3, giro: -1.0, rola: 0, eixo: "z", sinal: 1 }; // dorso da mão para a câmera, dedos fechados na guia
-export const MAO_CELULAR: AjusteMao = { ...MAO_PADRAO, alvo: [0.05, -0.3, -0.66] };
+export const MAO_CELULAR: AjusteMao = { ...MAO_PADRAO, alvo: [0.12, -0.32, -0.62] }; // entra pela direita, não pelo meio

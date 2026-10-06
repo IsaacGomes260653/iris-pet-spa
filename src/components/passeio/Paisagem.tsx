@@ -236,7 +236,7 @@ function InstanciasArvore({ geo, material, itens }: { geo: THREE.BufferGeometry;
 export function Grama({ quantidade = 52000 }: { quantidade?: number }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const material = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: "#7d8f5c", roughness: 0.85, side: THREE.DoubleSide });
+    const m = new THREE.MeshStandardMaterial({ color: "#93a46b", roughness: 0.85, side: THREE.DoubleSide, emissive: "#3a4a2a", emissiveIntensity: 0.35 });
     m.onBeforeCompile = (sh) => {
       sh.uniforms.uTempo = tempoGrama;
       sh.vertexShader = sh.vertexShader
@@ -244,7 +244,7 @@ export function Grama({ quantidade = 52000 }: { quantidade?: number }) {
         .replace(
           "#include <begin_vertex>",
           `#include <begin_vertex>
-          vAlt = clamp(position.y / 0.22, 0.0, 1.0);
+          vAlt = clamp(position.y / 0.16, 0.0, 1.0);
           vec3 base = instanceMatrix[3].xyz;
           float vento = sin(uTempo * 1.4 + base.x * 0.35 + base.z * 0.22) + 0.4 * sin(uTempo * 2.7 + base.z * 0.9);
           transformed.x += vento * 0.035 * vAlt * vAlt;
@@ -252,14 +252,14 @@ export function Grama({ quantidade = 52000 }: { quantidade?: number }) {
         );
       sh.fragmentShader = sh.fragmentShader
         .replace("#include <common>", "#include <common>\nvarying float vAlt;")
-        .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb *= mix(0.35, 1.0, vAlt);");
+        .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb *= mix(0.62, 1.15, vAlt);");
     };
     return m;
   }, []);
   const geo = useMemo(() => {
-    const g = new THREE.PlaneGeometry(0.03, 0.22, 1, 3).translate(0, 0.11, 0);
+    const g = new THREE.PlaneGeometry(0.035, 0.16, 1, 3).translate(0, 0.08, 0);
     const p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) p.setX(i, p.getX(i) * (1 - p.getY(i) / 0.24));
+    for (let i = 0; i < p.count; i++) p.setX(i, p.getX(i) * (1 - p.getY(i) / 0.18));
     return g;
   }, []);
   useLayoutEffect(() => {
@@ -267,14 +267,14 @@ export function Grama({ quantidade = 52000 }: { quantidade?: number }) {
     let i = 0, tent = 0;
     while (i < quantidade && tent++ < quantidade * 6) {
       // concentra a grama no gramado (fim do passeio) e nas bordas do começo
-      const s = r() < 0.8 ? 72 + r() * 46 : r() * 34;
+      const s = r() < 0.8 ? 72 + r() * 40 : r() * 34; // nada de grama na praça da loja
       const lado = (r() < 0.5 ? -1 : 1) * (0.9 + Math.pow(r(), 2.2) * 10);
       const p = aoLado(s, lado);
       if (s < 34 && Math.abs(lado) < 3) continue; // nada de grama sobre a ponte
       const y = alturaTerreno(p.x, p.z);
       if (y < -0.25) continue;
       e.set((r() - 0.5) * 0.5, r() * 6.28, (r() - 0.5) * 0.5);
-      const tufo = r() < 0.1 ? 2.3 : 1; // grama baixa de parque, com alguns tufos mais altos
+      const tufo = r() < 0.06 ? 1.8 : 1; // tapete de grama baixa de parque, poucos tufos
       m.compose(new THREE.Vector3(p.x, y, p.z), q.setFromEuler(e), new THREE.Vector3(1.2, (0.6 + r() * 0.8) * tufo, 1.2));
       ref.current!.setMatrixAt(i, m);
       ref.current!.setColorAt(i, cor.setHSL(0.2 + r() * 0.07, 0.42 + r() * 0.16, 0.26 + r() * 0.1));

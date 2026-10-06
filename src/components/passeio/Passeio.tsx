@@ -82,7 +82,7 @@ export function Passeio() {
       const s = p * FIM;
       setAtiva(frases.reduce((i, f, k) => (s >= f.s ? k : i), 0));
       setFase(p < 0.03 ? "hero" : p > 0.86 ? "chegada" : "passeio");
-      el.style.setProperty("--saida", String(Math.min(1, Math.max(0, (p - 0.975) / 0.025))));
+      el.style.setProperty("--saida", String(Math.min(1, Math.max(0, (p - 0.93) / 0.055))));
     };
     const aoRolar = () => (raf ||= requestAnimationFrame(ler));
     ler();
@@ -144,7 +144,7 @@ export function Passeio() {
         {/* frases: só a do trecho atual em destaque */}
         <ol
           aria-label="O que a Íris faz pelo caminho"
-          className={`pointer-events-none absolute inset-x-0 top-[13svh] px-5 text-center font-serifa text-frase font-light transition-opacity duration-700 md:top-[7svh] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-frase font-light transition-opacity duration-700 max-md:text-[1.05rem] md:top-[7svh] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
         >
           {frases.map((f, i) => (
             <li key={f.texto} aria-current={i === ativa ? "step" : undefined} className={`transition-opacity duration-500 ${i === ativa ? "opacity-100" : "opacity-40"}`}>
@@ -164,8 +164,12 @@ export function Passeio() {
           </div>
         </div>
 
-        {/* a cena entra na névoa clara e vira o creme da próxima seção */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-creme opacity-(--saida)" />
+        {/* a névoa clara sobe do chão, engole a cena e vira o creme da próxima seção */}
+        <div
+          aria-hidden
+          style={{ background: "linear-gradient(to top, #fbf6ee calc(var(--saida, 0) * 100%), rgb(251 246 238 / 0) calc(var(--saida, 0) * 100% + 38%))" }}
+          className="pointer-events-none absolute inset-0 opacity-[min(1,calc(var(--saida,0)*5))]"
+        />
 
         <p className="sr-only">
           Pelo caminho aparecem os serviços e produtos da Íris: banho, tosa, spa, rações, petiscos, brinquedos, camas, coleiras e

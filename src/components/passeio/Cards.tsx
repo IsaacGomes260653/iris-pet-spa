@@ -40,15 +40,16 @@ function desenharCard(foto: HTMLImageElement, rotulo: string, mono: string) {
 }
 
 /** Cards das fotos dos serviços: sempre de frente para quem passeia, passando perto, um de cada lado. */
-export function Cards() {
+export function Cards({ leve = false }: { leve?: boolean }) {
   const itens = useMemo(
     () =>
       posicoesCards.map((p, i) => {
-        const pos = aoLado(p.s, p.lado * (1.55 + (i % 2) * 0.2));
+        // na ponte os cards ficam por dentro do corrimão; no celular, um card por trecho
+        const pos = aoLado(p.s, p.lado * (p.s < 34 ? 0.95 : 1.55 + (i % 2) * 0.2));
         pos.y = p.y;
         return { pos, card: cards[i], fase: i * 1.7 };
-      }),
-    [],
+      }).filter((_, i) => !leve || i % 2 === 0),
+    [leve],
   );
   const materiais = useMemo(
     () => itens.map(() => new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.02, toneMapped: false, fog: false })),
@@ -84,7 +85,7 @@ export function Cards() {
       c.rotation.y = Math.atan2(camera.position.x - c.position.x, camera.position.z - c.position.z);
       // longe, o card se dissolve na névoa (ele ignora a névoa da cena para ficar nítido quando perto)
       const d = camera.position.distanceTo(c.position);
-      materiais[i].opacity = 1 - THREE.MathUtils.smoothstep(d, 14, 34);
+      materiais[i].opacity = 1 - THREE.MathUtils.smoothstep(d, 10, 22);
     });
   });
 

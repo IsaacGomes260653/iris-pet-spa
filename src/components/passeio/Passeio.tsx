@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Botao, Etiqueta } from "@/components/ui";
-import { cards, cenas } from "@/content/midia";
+import { altCachorra, cachorra, cards, cenas } from "@/content/midia";
 
 function useMidia(consulta: string) {
   return useSyncExternalStore(
@@ -43,6 +43,7 @@ export function Passeio() {
   const secao = useRef<HTMLElement>(null);
   const camadas = useRef<(HTMLDivElement | null)[]>([]);
   const cartoes = useRef<(HTMLDivElement | null)[]>([]);
+  const passo = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
   const leve = useMidia("(max-width: 768px)");
@@ -50,6 +51,8 @@ export function Passeio() {
 
   useEffect(() => {
     let raf = 0;
+    let pAnterior = -1;
+    let ritmo = 0; // fase do passo da cachorra, avança com a rolagem
     const ler = () => {
       raf = 0;
       const el = secao.current;
@@ -59,6 +62,14 @@ export function Passeio() {
       const ultima = cenas.length - 1;
       setCena(Math.min(frases.length - 1, Math.floor(p / (TRECHO * 4 / frases.length))));
       setFase(p < 0.025 ? "hero" : p > 0.79 ? "chegada" : "passeio");
+
+      // a cachorra anda quando a rolagem anda: balanço de passo proporcional ao quanto se rolou
+      if (pAnterior >= 0 && !quieto && passo.current) {
+        ritmo += Math.min(Math.abs(p - pAnterior), 0.02) * 260;
+        const sobe = Math.abs(Math.sin(ritmo)) * (leve ? 5 : 8);
+        passo.current.style.transform = `translateY(${-sobe.toFixed(1)}px) rotate(${(Math.sin(ritmo) * 0.7).toFixed(2)}deg)`;
+      }
+      pAnterior = p;
 
       // cenários: zoom lento enquanto anda; na troca, zoom forte, desfoque e crossfade
       camadas.current.forEach((c, i) => {
@@ -86,8 +97,8 @@ export function Passeio() {
           return;
         }
         // nasce perto do horizonte, ao lado da cachorra (nunca por cima dela), e sai pela lateral
-        const x = lado * lerp(leve ? 14 : 10, leve ? 34 : 38, Math.pow(u, 1.5));
-        const y = lerp(-12, leve ? 0 : 6, u);
+        const x = lado * lerp(leve ? 16 : 13, leve ? 36 : 40, Math.pow(u, 1.5));
+        const y = lerp(-17, leve ? -4 : 2, u);
         const escala = lerp(0.16, leve ? 1.5 : 1.75, Math.pow(u, 2.2));
         const desfoque = u < 0.45 ? (1 - u / 0.45) * 5 : u > 0.82 ? ((u - 0.82) / 0.18) * 9 : 0;
         c.style.visibility = "visible";
@@ -122,24 +133,22 @@ export function Passeio() {
             className="absolute inset-0 will-change-[transform,opacity]"
             style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? "visible" : "hidden" }}
           >
-            {"fotoCelular" in c && c.fotoCelular ? (
-              <>
-                <Image src={c.fotoCelular} alt={c.alt} fill sizes="100vw" className="object-cover md:hidden" />
-                <Image src={c.foto} alt={c.alt} fill sizes="100vw" className="object-cover max-md:hidden" />
-              </>
-            ) : (
-              <Image
-                src={c.foto}
-                alt={c.alt}
-                fill
-                sizes="100vw"
-                preload={i === 0}
-                className="object-cover"
-                style={{ objectPosition: c.foco }}
-              />
-            )}
+            <Image src={c.foto} alt={c.alt} fill sizes="100vw" preload={i === 0} className="object-cover" style={{ objectPosition: c.foco }} />
           </div>
         ))}
+
+        {/* a cachorra: a mesma em todo o passeio, fixa no centro como a proa do barco; só o mundo troca */}
+        <div className="pointer-events-none absolute bottom-0 left-1/2 h-[54svh] -translate-x-1/2 max-md:h-[48svh]">
+          <div ref={passo} className="h-full origin-bottom will-change-transform">
+            <Image
+              src={cachorra}
+              alt={altCachorra}
+              preload
+              sizes="(max-width: 768px) 60vw, 30vw"
+              className="h-full w-auto motion-safe:animate-[respira_3.6s_ease-in-out_infinite] origin-bottom"
+            />
+          </div>
+        </div>
 
         {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -160,13 +169,19 @@ export function Passeio() {
           )}
         </div>
 
+        {/* uma só luz de amanhecer sobre o mundo e a cachorra: lavanda no alto, pêssego no meio, azul-ardósia embaixo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(185_190_212/0.55)_0%,rgb(236_203_189/0.4)_48%,rgb(44_57_74/0.45)_100%)] mix-blend-soft-light"
+        />
+
         {/* véu escuro no alto: texto branco legível sobre qualquer foto */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[42svh] bg-[linear-gradient(rgb(16_20_30/0.55),rgb(16_20_30/0))]" />
 
         {/* hero: o primeiro quadro do passeio */}
         <div
           inert={fase !== "hero"}
-          className={`absolute inset-x-0 top-0 flex flex-col items-center px-5 pt-[15svh] text-center transition-[opacity,translate] duration-700 ease-saida motion-reduce:translate-y-0 ${fase === "hero" ? "opacity-100" : "pointer-events-none -translate-y-6 opacity-0"}`}
+          className={`absolute inset-x-0 top-0 flex flex-col items-center px-5 pt-[12svh] text-center transition-[opacity,translate] duration-700 ease-saida motion-reduce:translate-y-0 ${fase === "hero" ? "opacity-100" : "pointer-events-none -translate-y-6 opacity-0"}`}
         >
           <h1 id="titulo-hero" className="text-display [text-shadow:0_2px_40px_rgb(16_20_30/0.35)]">
             Cuidado
@@ -200,7 +215,7 @@ export function Passeio() {
         {/* chegada: a frase no céu, a porta é o botão */}
         <div
           inert={fase !== "chegada"}
-          className={`absolute inset-x-0 top-[9svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-500" : "pointer-events-none translate-y-4 opacity-0"}`}
+          className={`absolute inset-x-0 top-[30svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 max-md:top-[24svh] ease-saida motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-500" : "pointer-events-none translate-y-4 opacity-0"}`}
         >
           <p className="font-serifa text-titulo font-extralight [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
           <div className="mt-7">

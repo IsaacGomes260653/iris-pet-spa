@@ -1,9 +1,9 @@
-import ponte from "@/assets/passeio/passeio-1-ponte.jpg";
-import cidade from "@/assets/passeio/passeio-2-cidade.jpg";
-import trilha from "@/assets/passeio/passeio-3-trilha.jpg";
-import gramado from "@/assets/passeio/passeio-4-gramado.jpg";
-import lojaCelular from "@/assets/passeio/cena-loja-celular.jpg";
-import lojaDesktop from "@/assets/passeio/cena-loja-desktop.jpg";
+import ponte from "@/assets/passeio/fundo-1-ponte.jpg";
+import alameda from "@/assets/passeio/fundo-2-alameda.jpg";
+import trilha from "@/assets/passeio/fundo-3-trilha.jpg";
+import gramado from "@/assets/passeio/fundo-4-gramado.jpg";
+import loja from "@/assets/passeio/fundo-5-loja.jpg";
+export { default as cachorra } from "@/assets/passeio/cachorra.png";
 import banho from "@/assets/cards/card-banho.jpg";
 import tosa from "@/assets/cards/card-tosa.jpg";
 import spa from "@/assets/cards/card-spa.jpg";
@@ -14,14 +14,16 @@ import camas from "@/assets/cards/card-camas.jpg";
 import coleiras from "@/assets/cards/card-coleiras.jpg";
 import taxiDog from "@/assets/cards/card-taxi-dog.jpg";
 
-/** Cenários do passeio, em ordem. `foco` é o object-position no desktop (fotos verticais recortadas). */
+/** Cenários do passeio, em ordem (só o fundo; a cachorra é uma camada fixa por cima). `foco` é o object-position. */
 export const cenas = [
-  { nome: "Ponte de madeira", foto: ponte, foco: "50% 34%", alt: "Em primeira pessoa, um cão de orelhas em pé anda de guia à frente numa ponte de madeira estreita." },
-  { nome: "Calçada", foto: cidade, foco: "50% 22%", alt: "Cão preto de orelhas em pé e guia vermelha, de costas, olhando a calçada à frente." },
-  { nome: "Trilha", foto: trilha, foco: "50% 60%", alt: "Cão preto de guia caminha numa trilha de folhas secas, entre árvores, com sombras longas da manhã." },
-  { nome: "Gramado", foto: gramado, foco: "50% 46%", alt: "Uma mão segura a guia de um cão preto que corre à frente num gramado aberto." },
-  { nome: "Porta da loja Íris", foto: lojaDesktop, fotoCelular: lojaCelular, foco: "50% 50%", alt: "Fachada creme da loja Íris Pet Spa ao amanhecer, com toldo listrado e vitrines acesas." },
+  { nome: "Ponte de madeira", foto: ponte, foco: "50% 60%", alt: "Ponte de madeira estreita atravessando a mata, com o corrimão levando ao fundo." },
+  { nome: "Alameda florida", foto: alameda, foco: "50% 55%", alt: "Caminho de terra sob um túnel de árvores floridas de rosa." },
+  { nome: "Trilha", foto: trilha, foco: "50% 62%", alt: "Estrada de terra entre árvores altas, com névoa ao fundo." },
+  { nome: "Gramado com neblina", foto: gramado, foco: "50% 58%", alt: "Trilha num gramado com neblina da manhã e árvores ao longe." },
+  { nome: "Porta da loja Íris", foto: loja, foco: "48% 0%", alt: "Fachada creme da loja Íris Pet Spa, com porta e painel verde-sálvia e uma grande vitrine." },
 ];
+
+export const altCachorra = "Em primeira pessoa, a guia vai da mão até a coleira de uma cachorra preta que caminha à frente, de costas.";
 
 export const cards = [
   { rotulo: "Banho — água morna", foto: banho, alt: "Cão preto de orelhas em pé tomando um jato de água de mangueira no gramado." },

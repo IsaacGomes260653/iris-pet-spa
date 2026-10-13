@@ -26,15 +26,16 @@ const TROCA = 0.1; // fração final de cada trecho em que a cena seguinte entra
 
 /**
  * Cards por cenário: [cenário, início dentro do trecho, lado, card]. O primeiro de cada cenário é o da frase ativa;
- * no celular entram só os dois primeiros.
+ * as janelas se sobrepõem, então no desktop há sempre um card perto e outro chegando. No celular, só o principal.
  */
 const roteiro: [number, number, -1 | 1, number][] = [
-  [0, 0.04, 1, 0], [0, 0.44, -1, 2],
-  [1, 0.04, -1, 1], [1, 0.44, 1, 7],
-  [2, 0.02, 1, 3], [2, 0.28, -1, 4], [2, 0.54, 1, 5],
-  [3, 0.02, -1, 8], [3, 0.4, 1, 6],
+  [0, 0, 1, 0], [0, 0.4, -1, 2],
+  [1, 0, -1, 1], [1, 0.4, 1, 7],
+  [2, 0, 1, 3], [2, 0.2, -1, 4], [2, 0.4, 1, 5],
+  [3, 0, -1, 8], [3, 0.4, 1, 6],
 ];
-const DURACAO = 0.36; // do card nascer no ponto de fuga até passar pela câmera, em fração do trecho
+const DURACAO = 0.6; // do card nascer no ponto de fuga até sair pela borda, em fração do trecho
+const DENTRO = 0.88; // até aqui o card fica inteiro na tela; só no fim sai pela borda
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const limitar = (t: number) => Math.min(1, Math.max(0, t));
@@ -119,17 +120,30 @@ export function Passeio() {
           c.style.visibility = "hidden";
           return;
         }
-        const x = lado * (lerp(leve ? 16 : 13, leve ? 26 : 30, u) + Math.pow(u, 4) * (leve ? 42 : 38));
-        const y = lerp(-17, leve ? -2 : 4, u);
-        const escala = lerp(0.16, leve ? 1.5 : 1.8, Math.pow(u, 1.6));
-        const desfoque = u < 0.35 ? (1 - u / 0.35) * 6 : 0;
+        let x, escala;
+        if (u < DENTRO) {
+          const v = u / DENTRO;
+          x = lerp(leve ? 6 : 11, leve ? 14 : 27, Math.pow(v, 1.3));
+          escala = lerp(0.3, leve ? 1.4 : 1.3, Math.pow(v, 1.6));
+        } else {
+          const v = (u - DENTRO) / (1 - DENTRO);
+          x = (leve ? 14 : 27) + v * v * 45;
+          escala = (leve ? 1.4 : 1.3) + v * 0.3;
+        }
+        const y = leve ? lerp(-12, -4, u) : lerp(-15, 2, u);
+        const desfoque = u < 0.4 ? (1 - u / 0.4) * 4 : 0;
         c.style.visibility = "visible";
-        c.style.opacity = String(Math.min(suave(0, 0.1, u), 1 - suave(0.95, 1, u)));
-        c.style.transform = `translate(-50%, -50%) translate(${x}vw, ${y}svh) scale(${escala})`;
-        c.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
-        // a etiqueta não acompanha a escala inteira: fica entre 11 e 18 px, legível longe e perto
-        const e = etiquetas.current[k];
-        if (e) e.style.transform = `scale(${(Math.min(18, Math.max(11, 12 * escala)) / (12 * escala)).toFixed(3)})`;
+        c.style.opacity = String(Math.min(suave(0, 0.12, u) * (0.7 + 0.3 * suave(0.1, 0.4, u)), 1 - suave(0.97, 1, u)));
+        c.style.transform = `translate(${(lado * x).toFixed(2)}vw, ${y.toFixed(2)}svh)`;
+        f.style.transform = `translate(-50%, -50%) scale(${escala.toFixed(4)})`;
+        f.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
+        if (e) {
+          // etiqueta presa ao canto superior direito da foto, nunca mais larga que ela
+          const w = f.offsetWidth * escala;
+          const h = f.offsetHeight * escala;
+          e.style.transform = `translate(${(w / 2 - e.offsetWidth).toFixed(1)}px, ${(-h / 2 - e.offsetHeight).toFixed(1)}px)`;
+          e.style.opacity = w >= e.offsetWidth + 8 ? "1" : "0";
+        }
       });
     };
     const aoRolar = () => (raf ||= requestAnimationFrame(ler));
@@ -185,31 +199,6 @@ export function Passeio() {
         {/* chão escuro na base: a guia e a cachorra saem da tela como a proa */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[22svh] bg-[linear-gradient(0deg,rgb(20_24_32/0.55),rgb(20_24_32/0))]" />
 
-        {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          {roteiro.map(([i, , lado, card], k) =>
-            leve && k - roteiro.findIndex(([j]) => j === i) > 1 ? null : (
-              <div
-                key={k}
-                ref={(el) => void (cartoes.current[k] = el)}
-                className="absolute top-1/2 left-1/2 w-[min(30vw,420px)] will-change-[transform,opacity] max-md:w-[58vw]"
-                style={{ visibility: "hidden" }}
-              >
-                <div className="relative aspect-[16/10] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)]">
-                  <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 90vw, 55vw" className="object-cover" />
-                </div>
-                {/* etiqueta no canto de dentro (voltado para a cachorra): continua na tela quando o card sai pela borda */}
-                <span
-                  ref={(el) => void (etiquetas.current[k] = el)}
-                  className={`absolute bottom-full ${lado > 0 ? "left-0 origin-bottom-left" : "right-0 origin-bottom-right"}`}
-                >
-                  <Etiqueta>{cards[card].rotulo}</Etiqueta>
-                </span>
-              </div>
-            ),
-          )}
-        </div>
-
         {/* uma só luz de amanhecer sobre o mundo e a cachorra: lavanda no alto, pêssego no meio, azul-ardósia embaixo */}
         <div
           aria-hidden
@@ -220,7 +209,31 @@ export function Passeio() {
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[34svh] bg-[linear-gradient(rgb(236_203_189/0.2),rgb(236_203_189/0))] mix-blend-screen" />
 
         {/* véu ardósia no alto: texto branco legível sobre qualquer foto */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[40svh] bg-[linear-gradient(rgb(36_46_60/0.6),rgb(44_57_74/0.3)_55%,rgb(44_57_74/0))]" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[linear-gradient(rgb(28_32_46/0.5),rgb(28_32_46/0))]" />
+
+        {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {roteiro.map(([i, , , card], k) =>
+            leve && roteiro.findIndex(([j]) => j === i) !== k ? null : (
+              <div
+                key={k}
+                ref={(el) => void (cartoes.current[k] = el)}
+                className="absolute top-1/2 left-1/2 size-0 will-change-[transform,opacity]"
+                style={{ visibility: "hidden" }}
+              >
+                <div
+                  ref={(el) => void (fotos.current[k] = el)}
+                  className="absolute top-0 left-0 aspect-[16/10] w-[min(30vw,420px)] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)] max-md:w-[44vw]"
+                >
+                  <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 65vw, 560px" className="object-cover" />
+                </div>
+                <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 whitespace-nowrap transition-opacity duration-200">
+                  <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>
+                </span>
+              </div>
+            ),
+          )}
+        </div>
 
         {/* hero: o primeiro quadro do passeio */}
         <div
@@ -247,7 +260,7 @@ export function Passeio() {
         {/* frases: só a do cenário atual em destaque */}
         <ol
           aria-label="O que a Íris faz pelo caminho"
-          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-light transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.3)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-light transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.25)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
         >
           {frases.map((f, i) => (
             <li key={f} aria-current={i === cena ? "step" : undefined} className={`transition-opacity duration-500 ${i === cena ? "opacity-100" : "opacity-55"}`}>

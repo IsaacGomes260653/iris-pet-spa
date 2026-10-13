@@ -17,7 +17,7 @@ MAPA_COR = np.array([[0x26, 0x30, 0x42], [0x66, 0x6E, 0x91], [0xC0, 0xA4, 0xB0],
 GRUPOS = {
     # prefixo: (pasta, lado maior, luminância média alvo, saturação, força do tom, piso dos pretos)
     "fundo-": ("passeio", 2560, 0.46, 0.64, 0.36, 0.03),
-    "card-": ("cards", 1400, 0.52, 0.92, 0.12, 0.015),  # leve: preserva o contraste da foto
+    "card-": ("cards", 1400, 0.5, 0.74, 0.24, 0.07),  # a mesma manhã dos fundos, com pretos levantados
 }
 
 def luminancia(img):

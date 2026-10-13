@@ -6,6 +6,7 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 | Arquivo | Foto de | Página original |
 |---|---|---|
 | `src/assets/passeio/cachorra.png` | [Keenan Barber](https://unsplash.com/@keebarber?utm_source=iris_pet_spa&utm_medium=referral) | [El9ectjP4Oc](https://unsplash.com/photos/black-and-white-short-coat-large-dog-on-forest-during-daytime-El9ectjP4Oc?utm_source=iris_pet_spa&utm_medium=referral) (recorte) |
+| `src/assets/passeio/mao.png` | [Harrison Kugler](https://unsplash.com/@harrisonkugler?utm_source=iris_pet_spa&utm_medium=referral) | [BD9aCnOXobQ](https://unsplash.com/photos/person-holding-black-and-brown-dog-BD9aCnOXobQ?utm_source=iris_pet_spa&utm_medium=referral) (recorte) |
 | `src/assets/cards/card-banho.jpg` | [Pierre Bamin](https://unsplash.com/@bamin?utm_source=iris_pet_spa&utm_medium=referral) | [lS2aGyKTnkQ](https://unsplash.com/photos/black-short-coated-dog-drinking-water-from-yellow-plastic-bucket-lS2aGyKTnkQ?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/cards/card-brinquedos.jpg` | [Graham Smith](https://unsplash.com/@smithographic?utm_source=iris_pet_spa&utm_medium=referral) | [5iw12BPqWGI](https://unsplash.com/photos/a-black-dog-laying-on-top-of-a-pillow-on-a-bed-5iw12BPqWGI?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/cards/card-camas.jpg` | [Jeffrey Addenbrooke](https://unsplash.com/@theblacksandcollective?utm_source=iris_pet_spa&utm_medium=referral) | [OZ2PtmqXckk](https://unsplash.com/photos/black-short-coated-dog-on-black-textile-OZ2PtmqXckk?utm_source=iris_pet_spa&utm_medium=referral) |
@@ -24,6 +25,7 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 ## Montagens
 
 - `src/assets/passeio/cachorra.png`: a cachorra foi recortada (fundo removido com a biblioteca livre `rembg`) da foto de Keenan Barber listada acima e recebeu a luz de amanhecer em `scripts/preparar-passeio.py`.
+- `src/assets/passeio/mao.png`: a mão com a alça da guia foi recortada da foto de Harrison Kugler (alça pelo `rembg`, pele por cor), girada e recebeu a luz de amanhecer em `scripts/preparar-passeio.py`.
 - `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Robert Bye listada acima. Em `scripts/preparar-passeio.py` a pessoa sentada no banco foi retirada (a vitrine da direita é a da esquerda espelhada), o nome do toldo virou "Íris Pet Spa" (fontes Literata e Martian Mono, licença SIL Open Font) e o sol duro foi suavizado.
 - `src/assets/passeio/fundo-3-trilha.jpg` e `fundo-4-gramado.jpg`: recortadas no próprio Unsplash para o caminho ficar no centro, atrás da cachorra.
 

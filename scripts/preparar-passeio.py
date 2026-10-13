@@ -1,6 +1,7 @@
 """Prepara as camadas do passeio a partir dos originais em media-src/ (requer Pillow e numpy).
 
 - cachorra.png: a cachorra recortada (fundo transparente), limpa e com a mesma luz de amanhecer.
+- mao.png: a mão segurando a alça da guia, na base da tela.
 - fundo-5-loja.jpg: montagem da fachada real, sem pessoas, com o nome Íris no toldo verde-sálvia.
 
 Os fundos (fundo-1 a fundo-4) passam só pela correção de cor de scripts/gradear.py.
@@ -42,11 +43,36 @@ def cachorra():
     joelho = 0.3
     alvo = np.where(lum > joelho, joelho + (lum - joelho) * 0.5, lum)
     rgb = np.clip(rgb * alvo / np.maximum(lum, 1e-4), 0, 1)
+    rgb = rgb ** 1.25 * 0.88  # médios do pelo mais fundos: lê como pastora preta, não cinza
     saida = Image.fromarray((rgb * 255).astype(np.uint8)).convert("RGBA")
     saida.putalpha(im.getchannel("A"))
     saida.thumbnail((900, 2000), Image.LANCZOS)
     saida.save(DESTINO / "cachorra.png", optimize=True)
     print("cachorra.png", saida.size)
+
+
+def mao():
+    """A mão segurando a alça da guia (foto de POV), girada para a alça subir reta até a guia da cachorra."""
+    im = Image.open(ORIGEM / "mao-1.jpg").convert("RGB").crop((80, 520, 1180, 1333))
+    a = np.asarray(im, dtype=np.float32) / 255
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    pele = (r > g * 1.08) & (r > b * 1.05)  # a pele contra a grama verde
+    alca = np.asarray(Image.open(ORIGEM / "recorte" / "mao-isnet.png").getchannel("A")) > 128  # a alça preta (rembg)
+    m = Image.fromarray(((pele | alca) * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(7))
+    ImageDraw.floodfill(m, (300, 780), 128)
+    m = np.asarray(m.point(lambda v: 255 if v == 128 else 0).filter(ImageFilter.MaxFilter(3)), dtype=np.float32)
+    # some o que passa da alça para cima (patas do cão da foto) e a alça se dissolve na guia
+    m *= np.clip((np.arange(m.shape[0])[:, None] - 330) / 110, 0, 1)
+    alfa = Image.fromarray(m.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5))
+    rgb = a * 0.8 + a * (np.array([0.72, 0.7, 0.86]) - 0.5) * 0.35  # mesma manhã fria dos fundos
+    rgb = np.clip(rgb * 0.82, 0, 1)
+    saida = Image.fromarray((rgb * 255).astype(np.uint8)).convert("RGBA")
+    saida.putalpha(alfa)
+    saida = saida.rotate(17, resample=Image.BICUBIC, expand=True)
+    saida = saida.crop(saida.getchannel("A").getbbox())
+    saida.thumbnail((900, 900), Image.LANCZOS)
+    saida.save(DESTINO / "mao.png", optimize=True)
+    print("mao.png", saida.size)
 
 
 def colar(img: np.ndarray, origem, destino, espelhar=False, borda=4):
@@ -95,4 +121,5 @@ def loja():
 if __name__ == "__main__":
     DESTINO.mkdir(parents=True, exist_ok=True)
     cachorra()
+    mao()
     loja()

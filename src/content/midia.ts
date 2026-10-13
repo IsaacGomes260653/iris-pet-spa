@@ -4,6 +4,7 @@ import trilha from "@/assets/passeio/fundo-3-trilha.jpg";
 import gramado from "@/assets/passeio/fundo-4-gramado.jpg";
 import loja from "@/assets/passeio/fundo-5-loja.jpg";
 export { default as cachorra } from "@/assets/passeio/cachorra.png";
+export { default as mao } from "@/assets/passeio/mao.png";
 import banho from "@/assets/cards/card-banho.jpg";
 import tosa from "@/assets/cards/card-tosa.jpg";
 import spa from "@/assets/cards/card-spa.jpg";

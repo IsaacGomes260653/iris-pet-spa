@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Botao, Etiqueta } from "@/components/ui";
-import { altCachorra, cachorra, cards, cenas } from "@/content/midia";
+import { altCachorra, cachorra, cards, cenas, mao } from "@/content/midia";
 
 function useMidia(consulta: string) {
   return useSyncExternalStore(
@@ -182,18 +182,28 @@ export function Passeio() {
           </div>
         ))}
 
+        {/* sombra no chão sob a cachorra */}
+        <div aria-hidden className="pointer-events-none absolute bottom-[-4svh] left-1/2 h-[140px] w-[520px] max-w-[90vw] -translate-x-1/2 bg-[radial-gradient(closest-side,rgb(20_18_26/0.35),rgb(20_18_26/0))]" />
+
         {/* a cachorra: a mesma em todo o passeio, fixa no centro como a proa do barco; só o mundo troca */}
         {/* afundada abaixo da borda: o recorte nunca aparece, nem no alto do balanço */}
-        <div className="pointer-events-none absolute -bottom-[12svh] left-1/2 h-[60svh] -translate-x-1/2 max-md:h-[54svh]">
+        <div ref={cao} className="pointer-events-none absolute -bottom-[12svh] left-1/2 h-[60svh] -translate-x-1/2 max-md:h-[54svh]">
           <div ref={passo} className="h-full origin-bottom will-change-transform">
             <Image
               src={cachorra}
               alt={altCachorra}
               preload
               sizes="(max-width: 768px) 60vw, 30vw"
-              className="h-full w-auto origin-bottom saturate-[0.85] motion-safe:animate-[respira_3.6s_ease-in-out_infinite]"
+              className="h-full w-auto origin-bottom saturate-[0.85] drop-shadow-[-1px_-1px_0_rgb(236_203_189/0.35)] motion-safe:animate-[respira_3.6s_ease-in-out_infinite]"
             />
           </div>
+          {/* a mão que segura a guia, na base da tela: o ponto de vista é o de quem passeia */}
+          <Image
+            src={mao}
+            alt=""
+            sizes="320px"
+            className="absolute bottom-[calc(12svh-90px)] left-1/2 h-[220px] w-auto max-w-none -translate-x-[52%] max-md:h-[170px] max-md:bottom-[calc(12svh-70px)]"
+          />
         </div>
 
         {/* chão escuro na base: a guia e a cachorra saem da tela como a proa */}

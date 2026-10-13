@@ -180,8 +180,11 @@ export function Passeio() {
           className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(185_190_212/0.55)_0%,rgb(236_203_189/0.4)_48%,rgb(44_57_74/0.45)_100%)] mix-blend-soft-light"
         />
 
-        {/* véu escuro no alto: texto branco legível sobre qualquer foto */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[42svh] bg-[linear-gradient(rgb(16_20_30/0.55),rgb(16_20_30/0))]" />
+        {/* pêssego no terço de cima, como o sol baixo atravessando a névoa */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[34svh] bg-[linear-gradient(rgb(236_203_189/0.2),rgb(236_203_189/0))] mix-blend-screen" />
+
+        {/* véu ardósia no alto: texto branco legível sobre qualquer foto */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[40svh] bg-[linear-gradient(rgb(36_46_60/0.6),rgb(44_57_74/0.3)_55%,rgb(44_57_74/0))]" />
 
         {/* hero: o primeiro quadro do passeio */}
         <div

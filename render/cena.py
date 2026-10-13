@@ -60,7 +60,7 @@ def material_pelo(nome, melanina, vermelho):
 
 
 PELE = material("Pele", **{"Base Color": (0.012, 0.010, 0.009, 1), "Roughness": 0.7})
-PELO = material_pelo("Pelo", 0.985, 0.32)
+PELO = material_pelo("Pelo", 0.995, 0.12)
 COURO = material("Couro conhaque", **{"Base Color": (0.27, 0.09, 0.03, 1), "Roughness": 0.45})
 METAL = material("Argola", **{"Base Color": (0.75, 0.62, 0.4, 1), "Metallic": 1.0, "Roughness": 0.3})
 CORDA = material("Corda sálvia", **{"Base Color": (0.075, 0.11, 0.07, 1), "Roughness": 0.85})
@@ -221,16 +221,18 @@ a = armacao.matrix_world @ pesc.head
 b = armacao.matrix_world @ cab.head
 eixo = (b - a).normalized()
 meio = a.lerp(b, 0.5)
-bpy.ops.mesh.primitive_torus_add(major_radius=0.105, minor_radius=0.012, location=meio)
+bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.098, depth=0.026, end_fill_type="NOTHING", location=meio)
 coleira = bpy.context.active_object
 coleira.rotation_euler = eixo.to_track_quat("Z", "Y").to_euler()
+espessura = coleira.modifiers.new("Couro", "SOLIDIFY")
+espessura.thickness = 0.004
 coleira.data.materials.append(COURO)
 bpy.ops.object.shade_smooth()
 cima = Vector((0, 0, 1))
 nuca = meio + (cima - eixo * eixo.dot(cima)).normalized() * 0.11
 
-CAM = Vector((0.0, nuca.y + 1.85, 1.12))
-mao = Vector((0.22, nuca.y + 1.25, 0.74))
+CAM = Vector((0.0, nuca.y + 3.7, 1.32))
+mao = Vector((0.36, nuca.y + 3.15, 0.92))
 curva = bpy.data.curves.new("Guia", "CURVE")
 curva.dimensions = "3D"
 curva.bevel_depth = 0.0075
@@ -240,8 +242,8 @@ sp.bezier_points.add(1)
 for p, co in zip(sp.bezier_points, (mao, nuca)):
     p.co = co
     p.handle_left_type = p.handle_right_type = "AUTO"
-sp.bezier_points[0].handle_right = mao.lerp(nuca, 0.4) + Vector((0, 0, -0.18))
-sp.bezier_points[1].handle_left = mao.lerp(nuca, 0.7) + Vector((0, 0, -0.1))
+sp.bezier_points[0].handle_right = mao.lerp(nuca, 0.35) + Vector((0, 0, -0.32))
+sp.bezier_points[1].handle_left = mao.lerp(nuca, 0.75) + Vector((0, 0, -0.16))
 guia = bpy.data.objects.new("Guia", curva)
 guia.data.materials.append(CORDA)
 cena.collection.objects.link(guia)
@@ -273,7 +275,7 @@ def textura_terra():
 
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -14, 0))
 trilha = bpy.context.active_object
-trilha.scale = (2.6, 44, 1)
+trilha.scale = (1.25, 44, 1)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 trilha.data.materials.append(textura_terra())
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -14, -0.01))
@@ -295,7 +297,7 @@ _l.new(_info.outputs["Random"], _aleat.inputs["Fac"])
 _aleat.inputs["Color2"].default_value = (0.7, 0.62, 0.45, 1)
 _l.new(_rampa.outputs["Color"], _aleat.inputs["Color1"])
 _l.new(_aleat.outputs["Color"], _n["Principled BSDF"].inputs["Base Color"])
-bpy.ops.mesh.primitive_grid_add(x_subdivisions=80, y_subdivisions=160, size=1, location=(0, -22, 0))
+bpy.ops.mesh.primitive_grid_add(x_subdivisions=240, y_subdivisions=400, size=1, location=(0, -22, 0))
 campo = bpy.context.active_object
 campo.scale = (30, 60, 1)
 # tira a faixa da trilha do campo de capim
@@ -303,13 +305,14 @@ bpy.ops.object.mode_set(mode="EDIT")
 bpy.ops.mesh.select_all(action="DESELECT")
 bpy.ops.object.mode_set(mode="OBJECT")
 for f in campo.data.polygons:
-    if abs((campo.matrix_world @ f.center).x) < 1.45:
+    c = campo.matrix_world @ f.center
+    if abs(c.x) < 0.42 + 0.12 * math.sin(c.y * 0.9) ** 2:  # borda irregular: o capim invade a trilha
         f.select = True
 bpy.ops.object.mode_set(mode="EDIT")
 bpy.ops.mesh.delete(type="FACE")
 bpy.ops.object.mode_set(mode="OBJECT")
 campo.hide_render = True
-grupo_capim = arvore_pelo("Capim", campo, 700, 0.2, 0.0018, CAPIM)
+grupo_capim = arvore_pelo("Capim", campo, 900, 0.26, 0.0016, CAPIM)
 # capim cresce para cima, não "penteado"
 for no in grupo_capim.nodes:
     if no.bl_idname == "ShaderNodeCombineXYZ":
@@ -329,7 +332,7 @@ mapa = nos.new("ShaderNodeMapping")
 lig.new(coord.outputs["Generated"], mapa.inputs["Vector"])
 lig.new(mapa.outputs[0], env.inputs["Vector"])
 lig.new(env.outputs["Color"], fundo.inputs["Color"])
-fundo.inputs["Strength"].default_value = 1.0
+fundo.inputs["Strength"].default_value = 0.55
 
 # acha o sol no HDRI e gira o mundo para ele ficar à frente da câmera (contraluz no pelo preto)
 px = np.empty(env.image.size[0] * env.image.size[1] * 4, dtype=np.float32)
@@ -341,16 +344,16 @@ u, v = xx / env.image.size[0], yy / env.image.size[1]
 az_sol = (u - 0.5) * 2 * math.pi
 alt_sol = (v - 0.5) * math.pi
 # Blender: direção (x, y) do pixel u é atan2(y, -x) = 2π(u - 0.5); queremos o sol em -Y, um pouco à esquerda
-alvo_az = math.atan2(-1.0, 0.25)
+alvo_az = math.atan2(-1.0, 0.12)
 mapa.inputs["Rotation"].default_value[2] = alvo_az - az_sol
 print("SOL", u, v, "elevação", math.degrees(alt_sol))
 
 sol = bpy.data.lights.new("Sol", "SUN")
-sol.energy = 6.5
+sol.energy = 9.0
 sol.color = (1.0, 0.78, 0.6)
 sol.angle = math.radians(1.5)
 luz = bpy.data.objects.new("Sol", sol)
-direcao = Vector((0.25, -1.0, math.tan(max(alt_sol, math.radians(8)))))
+direcao = Vector((0.12, -1.0, math.tan(math.radians(6))))
 luz.rotation_euler = (-direcao).to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz)
 
@@ -363,21 +366,32 @@ mv.use_nodes = True
 mv.node_tree.nodes.remove(mv.node_tree.nodes["Principled BSDF"])
 vol = mv.node_tree.nodes.new("ShaderNodeVolumePrincipled")
 vol.inputs["Color"].default_value = (0.86, 0.80, 0.86, 1)
-vol.inputs["Density"].default_value = 0.012
-vol.inputs["Anisotropy"].default_value = 0.55
+vol.inputs["Anisotropy"].default_value = 0.6
+_co = mv.node_tree.nodes.new("ShaderNodeTexCoord")
+_sep = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
+_alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
+_alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 3.5
+_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.011, 0.0012
+mv.node_tree.links.new(_co.outputs["Object"], _sep.inputs[0])
+_z = mv.node_tree.nodes.new("ShaderNodeMath")
+_z.operation = "MULTIPLY_ADD"
+_z.inputs[1].default_value, _z.inputs[2].default_value = 14.0, 6.0  # coordenada local → altura em metros
+mv.node_tree.links.new(_sep.outputs["Z"], _z.inputs[0])
+mv.node_tree.links.new(_z.outputs[0], _alt.inputs["Value"])
+mv.node_tree.links.new(_alt.outputs["Result"], vol.inputs["Density"])
 mv.node_tree.links.new(vol.outputs[0], mv.node_tree.nodes["Material Output"].inputs["Volume"])
 nevoa.data.materials.append(mv)
 nevoa.visible_shadow = False
 
 # ---------------------------------------------------------------- câmera em primeira pessoa
 cam = bpy.data.cameras.new("Olhar")
-cam.lens = 32
+cam.lens = 35
 cam.dof.use_dof = True
-cam.dof.aperture_fstop = 1.6
+cam.dof.aperture_fstop = 2.0
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
 camobj.location = CAM
-alvo = Vector((0.0, nuca.y - 9.0, 0.05))
+alvo = Vector((0.0, nuca.y - 12.0, -0.25))
 camobj.rotation_euler = (alvo - CAM).to_track_quat("-Z", "Y").to_euler()
 cam.dof.focus_distance = (CAM - meio).length
 cena.camera = camobj

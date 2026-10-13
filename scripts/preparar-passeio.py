@@ -78,16 +78,16 @@ def loja():
     foto = Image.fromarray((img * 255).astype(np.uint8))
 
     # nome no toldo em verde-escuro, pintado como as letras do original (branco some na névoa)
-    serifa = ImageFont.truetype(str(ORIGEM / "fontes" / "Literata.ttf"), 120)
+    serifa = ImageFont.truetype(str(ORIGEM / "fontes" / "Literata.ttf"), 150)
     serifa.set_variation_by_axes([72, 500])  # opsz, wght
-    mono = ImageFont.truetype(str(ORIGEM / "fontes" / "MartianMono.ttf"), 38)
+    mono = ImageFont.truetype(str(ORIGEM / "fontes" / "MartianMono.ttf"), 50)
     mono.set_variation_by_axes([87.5, 600])  # wdth, wght
     d = ImageDraw.Draw(foto)
-    base, cx = 478, 1600
-    largura = d.textlength("Íris", font=serifa) + 36 + d.textlength("PET SPA", font=mono)
+    base, cx = 488, 1600
+    largura = d.textlength("Íris", font=serifa) + 44 + d.textlength("PET SPA", font=mono)
     x = cx - largura / 2
     d.text((x, base), "Íris", font=serifa, fill=(34, 52, 48), anchor="ls")
-    d.text((x + d.textlength("Íris", font=serifa) + 36, base), "PET SPA", font=mono, fill=(34, 52, 48), anchor="ls")
+    d.text((x + d.textlength("Íris", font=serifa) + 44, base), "PET SPA", font=mono, fill=(34, 52, 48), anchor="ls")
     foto.save(ORIGEM / "fundo-5-loja-montada.jpg", quality=92)
     print("fundo-5-loja-montada.jpg", foto.size)
 

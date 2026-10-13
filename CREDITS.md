@@ -19,12 +19,13 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 | `src/assets/passeio/fundo-2-alameda.jpg` | [Tatiana Rodriguez](https://unsplash.com/@tata186?utm_source=iris_pet_spa&utm_medium=referral) | [5bXUxtRXi8w](https://unsplash.com/photos/cherry-blossom-5bXUxtRXi8w?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/passeio/fundo-3-trilha.jpg` | [Myriam Zilles](https://unsplash.com/@myriamzilles?utm_source=iris_pet_spa&utm_medium=referral) | [lyOgdiNu9H0](https://unsplash.com/photos/pathway-between-trees-during-daytime-lyOgdiNu9H0?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/passeio/fundo-4-gramado.jpg` | [Sergei Gussev](https://unsplash.com/@sergei_gussev?utm_source=iris_pet_spa&utm_medium=referral) | [VgYanGEFrLY](https://unsplash.com/photos/a-dirt-path-winds-through-a-misty-green-field-VgYanGEFrLY?utm_source=iris_pet_spa&utm_medium=referral) |
-| `src/assets/passeio/fundo-5-loja.jpg` | [Roman Akash](https://unsplash.com/@romanakash27?utm_source=iris_pet_spa&utm_medium=referral) | [IRkP9FVrBZ0](https://unsplash.com/photos/a-window-with-a-glass-door-IRkP9FVrBZ0?utm_source=iris_pet_spa&utm_medium=referral) |
+| `src/assets/passeio/fundo-5-loja.jpg` | [Robert Bye](https://unsplash.com/@robertbye?utm_source=iris_pet_spa&utm_medium=referral) | [Kz3Gc9i6luo](https://unsplash.com/photos/woman-sitting-in-front-of-the-store-Kz3Gc9i6luo?utm_source=iris_pet_spa&utm_medium=referral) |
 
 ## Montagens
 
 - `src/assets/passeio/cachorra.png`: a cachorra foi recortada (fundo removido com a biblioteca livre `rembg`) da foto de Keenan Barber listada acima e recebeu a luz de amanhecer em `scripts/preparar-passeio.py`.
-- `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Roman Akash listada acima. O letreiro "Íris Pet Spa" e a cor verde-sálvia da porta e do painel foram aplicados por montagem em `scripts/preparar-passeio.py`, com as fontes Literata e Martian Mono (licença SIL Open Font).
+- `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Robert Bye listada acima. Em `scripts/preparar-passeio.py` a pessoa sentada no banco foi retirada (a vitrine da direita é a da esquerda espelhada), o nome do toldo virou "Íris Pet Spa" (fontes Literata e Martian Mono, licença SIL Open Font) e o sol duro foi suavizado.
+- `src/assets/passeio/fundo-3-trilha.jpg` e `fundo-4-gramado.jpg`: recortadas no próprio Unsplash para o caminho ficar no centro, atrás da cachorra.
 
 ## Pendentes (download manual)
 

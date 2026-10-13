@@ -1,7 +1,7 @@
 """Prepara as camadas do passeio a partir dos originais em media-src/ (requer Pillow e numpy).
 
 - cachorra.png: a cachorra recortada (fundo transparente), limpa e com a mesma luz de amanhecer.
-- fundo-5-loja.jpg: montagem da fachada real com o letreiro Íris e a porta verde-sálvia.
+- fundo-5-loja.jpg: montagem da fachada real, sem pessoas, com o nome Íris no toldo verde-sálvia.
 
 Os fundos (fundo-1 a fundo-4) passam só pela correção de cor de scripts/gradear.py.
 Uso: python scripts/preparar-passeio.py
@@ -14,7 +14,6 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 RAIZ = Path(__file__).resolve().parent.parent
 ORIGEM = RAIZ / "media-src"
 DESTINO = RAIZ / "src" / "assets" / "passeio"
-SALVIA, SALVIA_ESCURO = (143, 163, 139), (95, 117, 92)
 
 
 def maior_regiao(alfa: Image.Image, semente: tuple[int, int]) -> Image.Image:
@@ -45,41 +44,45 @@ def cachorra():
     print("cachorra.png", saida.size)
 
 
-def tingir(img: np.ndarray, caixa, cor, forca=0.85):
-    """Pinta uma área clara (porta, painel) mantendo a luz e as sombras da foto."""
-    x0, y0, x1, y1 = caixa
-    area = img[y0:y1, x0:x1]
-    lum = area @ np.array([0.2126, 0.7152, 0.0722])
-    tinta = (np.array(cor) / 255) * (0.35 + 0.75 * lum[..., None])
-    img[y0:y1, x0:x1] = area * (1 - forca) + tinta * forca
+def colar(img: np.ndarray, origem, destino, espelhar=False, borda=4):
+    """Cola um retalho da própria foto sobre outro ponto, com a borda esfumada (tira pessoas e textos)."""
+    x0, y0, x1, y1 = origem
+    retalho = img[y0:y1, x0:x1]
+    if espelhar:
+        retalho = retalho[:, ::-1]
+    dx, dy = destino
+    mascara = np.zeros(img.shape[:2], np.uint8)
+    mascara[dy:dy + retalho.shape[0], dx:dx + retalho.shape[1]] = 255
+    m = np.asarray(Image.fromarray(mascara).filter(ImageFilter.GaussianBlur(borda)), dtype=np.float32)[..., None] / 255
+    copia = img.copy()
+    copia[dy:dy + retalho.shape[0], dx:dx + retalho.shape[1]] = retalho
+    return img * (1 - m) + copia * m
 
 
 def loja():
-    foto = Image.open(ORIGEM / "fundo-5-loja.jpg").convert("RGB")
-    W, H = foto.size  # 3000 x 2000
-    img = np.asarray(foto, dtype=np.float32) / 255
-    # porta e painel sob a vitrine em verde-sálvia (coordenadas da foto original 3000x2000)
-    tingir(img, (296, 830, 866, 1812), SALVIA)
-    tingir(img, (1050, 1560, 2850, 1830), SALVIA, 0.75)
-    tingir(img, (176, 330, 2890, 380), SALVIA_ESCURO, 0.7)  # beiral
-    foto = Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8))
+    """Fachada vista da rua (foto de Robert Bye), com o toldo verde-sálvia levando o nome Íris Pet Spa."""
+    foto = Image.open(ORIGEM / "fundo-5-loja-b.jpg").convert("RGB")
+    img = np.asarray(foto, dtype=np.float32) / 255  # 3200 x 2133
+    img = colar(img, (624, 536, 1424, 1395), (1824, 536), espelhar=True)  # vitrine da direita sem a pessoa no banco
+    img = colar(img, (900, 1380, 1776, 1428), (1824, 1380), borda=6)  # calçada sem a sombra dela
+    img = colar(img, (400, 395, 1064, 500), (1288, 395), borda=6)  # toldo liso no lugar do nome antigo
+    # sol de meio-dia vira manhã difusa: sombras duras abertas pela média local
+    lum = img @ np.array([0.2126, 0.7152, 0.0722])
+    media = np.asarray(Image.fromarray((lum * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(60)), dtype=np.float32) / 255
+    img = np.clip(img * ((media + 0.25) / (lum + 0.25))[..., None] ** 0.4, 0, 1)
+    foto = Image.fromarray((img * 255).astype(np.uint8))
 
-    # letreiro em letras de volume na faixa de parede acima do beiral
-    serifa = ImageFont.truetype(str(ORIGEM / "fontes" / "Literata.ttf"), 205)
-    serifa.set_variation_by_axes([72, 300])  # opsz, wght
-    mono = ImageFont.truetype(str(ORIGEM / "fontes" / "MartianMono.ttf"), 46)
-    mono.set_variation_by_axes([87.5, 450])  # wdth, wght
-    camada = Image.new("RGBA", foto.size, (0, 0, 0, 0))
-    sombra = Image.new("RGBA", foto.size, (0, 0, 0, 0))
-    cx = (220 + 2920) // 2 - 60  # centro da fachada depois do recorte das bordas
-    for alvo, deslocamento, cor in ((sombra, (14, 18), (60, 50, 40, 120)), (camada, (0, 0), SALVIA_ESCURO + (255,))):
-        d = ImageDraw.Draw(alvo)
-        d.text((cx + deslocamento[0], 262 + deslocamento[1]), "Íris", font=serifa, fill=cor, anchor="ms")
-        d.text((cx + 250 + deslocamento[0], 262 + deslocamento[1]), "PET SPA", font=mono, fill=cor, anchor="ls")
-    foto = Image.alpha_composite(foto.convert("RGBA"), sombra.filter(ImageFilter.GaussianBlur(9)))
-    foto = Image.alpha_composite(foto, camada).convert("RGB")
-    # tira os números da casa nas bordas
-    foto = foto.crop((220, 0, 2920, H))
+    # nome no toldo em verde-escuro, pintado como as letras do original (branco some na névoa)
+    serifa = ImageFont.truetype(str(ORIGEM / "fontes" / "Literata.ttf"), 120)
+    serifa.set_variation_by_axes([72, 500])  # opsz, wght
+    mono = ImageFont.truetype(str(ORIGEM / "fontes" / "MartianMono.ttf"), 38)
+    mono.set_variation_by_axes([87.5, 600])  # wdth, wght
+    d = ImageDraw.Draw(foto)
+    base, cx = 478, 1600
+    largura = d.textlength("Íris", font=serifa) + 36 + d.textlength("PET SPA", font=mono)
+    x = cx - largura / 2
+    d.text((x, base), "Íris", font=serifa, fill=(34, 52, 48), anchor="ls")
+    d.text((x + d.textlength("Íris", font=serifa) + 36, base), "PET SPA", font=mono, fill=(34, 52, 48), anchor="ls")
     foto.save(ORIGEM / "fundo-5-loja-montada.jpg", quality=92)
     print("fundo-5-loja-montada.jpg", foto.size)
 

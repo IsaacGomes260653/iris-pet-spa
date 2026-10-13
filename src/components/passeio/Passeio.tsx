@@ -118,6 +118,11 @@ export function Passeio() {
     };
   }, [leve, quieto]);
 
+  // na chegada o nome já está no toldo: o logo do topo sai de cena
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-chegada", fase === "chegada");
+  }, [fase]);
+
   return (
     <section
       ref={secao}
@@ -212,13 +217,14 @@ export function Passeio() {
           ))}
         </ol>
 
-        {/* chegada: a frase no céu, a porta é o botão */}
+        {/* chegada: a frase sobre as vitrines escuras, com um véu atrás; o botão bem acima da cabeça dela */}
         <div
           inert={fase !== "chegada"}
-          className={`absolute inset-x-0 top-[30svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 max-md:top-[24svh] ease-saida motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-500" : "pointer-events-none translate-y-4 opacity-0"}`}
+          className={`isolate absolute inset-x-0 top-[23svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida max-md:top-[26svh] motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"}`}
         >
-          <p className="font-serifa text-titulo font-extralight [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
-          <div className="mt-7">
+          <div aria-hidden className="absolute inset-x-0 -inset-y-[10svh] -z-10 bg-[radial-gradient(ellipse_50%_50%_at_50%_45%,rgb(16_20_30/0.3),rgb(16_20_30/0))]" />
+          <p className="font-serifa text-titulo font-extralight text-balance [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
+          <div className="mt-8">
             <Botao href="#agendar">Agendar banho</Botao>
           </div>
         </div>

@@ -20,7 +20,7 @@ export const cenas = [
   { nome: "Alameda florida", foto: alameda, foco: "50% 55%", alt: "Caminho de terra sob um túnel de árvores floridas de rosa." },
   { nome: "Trilha", foto: trilha, foco: "50% 62%", alt: "Estrada de terra entre árvores altas, com névoa ao fundo." },
   { nome: "Gramado com neblina", foto: gramado, foco: "50% 58%", alt: "Trilha num gramado com neblina da manhã e árvores ao longe." },
-  { nome: "Porta da loja Íris", foto: loja, foco: "48% 0%", alt: "Fachada creme da loja Íris Pet Spa, com porta e painel verde-sálvia e uma grande vitrine." },
+  { nome: "Porta da loja Íris", foto: loja, foco: "50% 72%", alt: "Do outro lado da rua, a fachada branca da loja Íris Pet Spa, com toldo verde-sálvia, vitrines e dois bancos na calçada." },
 ];
 
 export const altCachorra = "Em primeira pessoa, a guia vai da mão até a coleira de uma cachorra preta que caminha à frente, de costas.";

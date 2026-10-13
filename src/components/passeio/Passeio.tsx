@@ -22,7 +22,7 @@ const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.
 
 // cada um dos 4 primeiros cenários ocupa 20% da rolagem; o último (a loja) é a chegada
 const TRECHO = 0.2;
-const TROCA = 0.2; // fração final de cada trecho em que a cena seguinte entra
+const TROCA = 0.1; // fração final de cada trecho em que a cena seguinte entra
 
 /**
  * Cards por cenário: [cenário, início dentro do trecho, lado, card]. O primeiro de cada cenário é o da frase ativa;
@@ -47,8 +47,11 @@ export function Passeio() {
   const secao = useRef<HTMLElement>(null);
   const camadas = useRef<(HTMLDivElement | null)[]>([]);
   const cartoes = useRef<(HTMLDivElement | null)[]>([]);
+  const fotos = useRef<(HTMLDivElement | null)[]>([]);
   const etiquetas = useRef<(HTMLSpanElement | null)[]>([]);
   const passo = useRef<HTMLDivElement>(null);
+  const cao = useRef<HTMLDivElement>(null);
+  const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
   const leve = useMidia("(max-width: 768px)");
@@ -76,7 +79,8 @@ export function Passeio() {
       }
       pAnterior = p;
 
-      // cenários: zoom lento enquanto anda; na troca, zoom forte, desfoque e crossfade
+      // cenários: zoom lento enquanto anda; na troca curta, a que sai cresce e desfoca, a que entra assenta e foca.
+      // nenhuma camada fica abaixo de 1.04 de escala: a borda da foto nunca aparece
       camadas.current.forEach((c, i) => {
         if (!c) return;
         const t = (p - i * TRECHO) / TRECHO; // 0..1 dentro do próprio trecho
@@ -86,15 +90,29 @@ export function Passeio() {
         c.style.opacity = String(visivel);
         c.style.visibility = visivel > 0.002 ? "visible" : "hidden";
         if (quieto) return;
-        const anda = limitar(t) * (i === ultima ? 0.05 : 0.1);
-        const escala = 1 + anda + sai * 0.22 - (1 - entra) * 0.04;
-        c.style.transform = `scale(${escala})`;
-        c.style.filter = sai > 0.01 ? `blur(${(sai * (leve ? 4 : 7)).toFixed(1)}px)` : "none";
+        const anda = limitar(t) * (i === ultima ? 0.03 : 0.06);
+        const escala = 1.04 + anda + (1 - entra) * 0.1 + sai * 0.16;
+        c.style.transform = `scale(${escala.toFixed(4)})`;
+        const desfoque = (sai + (1 - entra)) * (leve ? 4 : 6);
+        c.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
       });
 
-      // cards: nascem pequenos e desfocados no ponto de fuga, ficam nítidos e crescem ao lado da cachorra, saem pela borda
+      // saída: a cachorra sai primeiro, para baixo; depois a frase da chegada sobe e some, antes da névoa creme
+      if (cao.current && fim.current && !quieto) {
+        const s1 = suave(0.9, 0.95, p);
+        cao.current.style.transform = `translateX(-50%) translateY(${(s1 * 30).toFixed(2)}svh)`;
+        cao.current.style.opacity = String(1 - s1);
+        const s2 = suave(0.94, 0.98, p);
+        fim.current.style.transform = `translateY(${(-40 * s2).toFixed(1)}px)`;
+        fim.current.style.opacity = String(1 - s2);
+      }
+
+      // cards: nascem pequenos e desfocados no ponto de fuga, crescem nítidos ao lado da cachorra (inteiros na tela)
+      // e só no fim do trajeto saem pela borda. Só a foto escala; a etiqueta fica no tamanho real, sem borrar
       cartoes.current.forEach((c, k) => {
-        if (!c) return;
+        const f = fotos.current[k];
+        const e = etiquetas.current[k];
+        if (!c || !f) return;
         const [i, inicio, lado] = roteiro[k];
         const u = (p - (i + inicio) * TRECHO) / (DURACAO * TRECHO);
         if (quieto || u <= 0 || u >= 1) {
@@ -137,15 +155,16 @@ export function Passeio() {
       aria-labelledby="titulo-hero"
       className={`relative ${quieto ? "h-[320svh]" : "h-[620svh] max-md:h-[540svh]"}`}
     >
-      <div className="sticky top-0 h-svh overflow-hidden bg-ardosia text-papel">
+      <div className="sticky top-0 h-svh overflow-hidden bg-[#8e93a3] text-papel">
         {cenas.map((c, i) => (
           <div
             key={c.nome}
             ref={(el) => void (camadas.current[i] = el)}
-            className="absolute inset-0 will-change-[transform,opacity]"
-            style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? "visible" : "hidden" }}
+            className="absolute inset-0 origin-[50%_60%] will-change-[transform,opacity]"
+            style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? "visible" : "hidden", transform: "scale(1.04)" }}
           >
-            <Image src={c.foto} alt={c.alt} fill sizes="100vw" preload={i === 0} className="object-cover" style={{ objectPosition: c.foco }} />
+            {/* em retrato a foto de paisagem cobre a altura: pede uma largura de ~2,3 telas de altura */}
+            <Image src={c.foto} alt={c.alt} fill sizes="(orientation: portrait) 230vh, 100vw" preload={i === 0} className="object-cover" style={{ objectPosition: c.foco }} />
           </div>
         ))}
 
@@ -240,12 +259,14 @@ export function Passeio() {
         {/* chegada: a frase sobre as vitrines escuras, com um véu atrás; o botão bem acima da cabeça dela */}
         <div
           inert={fase !== "chegada"}
-          className={`isolate absolute inset-x-0 top-[23svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida max-md:top-[26svh] motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"}`}
+          className={`isolate absolute inset-x-0 top-[23svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida max-md:top-[31svh] motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"}`}
         >
-          <div aria-hidden className="absolute inset-x-0 -inset-y-[10svh] -z-10 bg-[radial-gradient(ellipse_50%_50%_at_50%_45%,rgb(16_20_30/0.3),rgb(16_20_30/0))]" />
-          <p className="font-serifa text-titulo font-extralight text-balance [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
-          <div className="mt-8">
-            <Botao href="#agendar">Agendar banho</Botao>
+          <div ref={fim} className="flex flex-col items-center">
+            <div aria-hidden className="absolute inset-x-0 -inset-y-[10svh] -z-10 bg-[radial-gradient(ellipse_50%_50%_at_50%_45%,rgb(16_20_30/0.3),rgb(16_20_30/0))]" />
+            <p className="font-serifa text-titulo font-extralight text-balance [text-shadow:0_2px_30px_rgb(16_20_30/0.4)]">Todo passeio termina aqui.</p>
+            <div className="mt-8">
+              <Botao href="#agendar">Agendar banho</Botao>
+            </div>
           </div>
         </div>
 

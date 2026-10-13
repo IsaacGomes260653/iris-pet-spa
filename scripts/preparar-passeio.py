@@ -37,6 +37,11 @@ def cachorra():
     t = np.clip(lum / 0.6, 0, 1)[..., None]
     tom = np.array([0.20, 0.21, 0.30]) * (1 - t) + np.array([1.0, 0.86, 0.76]) * t
     rgb = np.clip(rgb * 0.82 + tom * rgb * 0.3, 0, 1)
+    # pelo fosco: o brilho especular da foto original não combina com a luz difusa dos fundos
+    lum = (rgb @ np.array([0.2126, 0.7152, 0.0722]))[..., None]
+    joelho = 0.3
+    alvo = np.where(lum > joelho, joelho + (lum - joelho) * 0.5, lum)
+    rgb = np.clip(rgb * alvo / np.maximum(lum, 1e-4), 0, 1)
     saida = Image.fromarray((rgb * 255).astype(np.uint8)).convert("RGBA")
     saida.putalpha(im.getchannel("A"))
     saida.thumbnail((900, 2000), Image.LANCZOS)

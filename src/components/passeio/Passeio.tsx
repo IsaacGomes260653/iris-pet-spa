@@ -143,14 +143,15 @@ export function Passeio() {
         ))}
 
         {/* a cachorra: a mesma em todo o passeio, fixa no centro como a proa do barco; só o mundo troca */}
-        <div className="pointer-events-none absolute bottom-0 left-1/2 h-[54svh] -translate-x-1/2 max-md:h-[48svh]">
+        {/* afundada abaixo da borda: o recorte nunca aparece, nem no alto do balanço */}
+        <div className="pointer-events-none absolute -bottom-[12svh] left-1/2 h-[60svh] -translate-x-1/2 max-md:h-[54svh]">
           <div ref={passo} className="h-full origin-bottom will-change-transform">
             <Image
               src={cachorra}
               alt={altCachorra}
               preload
               sizes="(max-width: 768px) 60vw, 30vw"
-              className="h-full w-auto motion-safe:animate-[respira_3.6s_ease-in-out_infinite] origin-bottom"
+              className="h-full w-auto origin-bottom saturate-[0.85] motion-safe:animate-[respira_3.6s_ease-in-out_infinite]"
             />
           </div>
         </div>

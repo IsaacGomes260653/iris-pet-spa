@@ -29,22 +29,18 @@ const topo = (pagina) => pagina.evaluate(() => document.querySelector("#banho-e-
   await pagina.close();
 }
 
-// celular: cards empilhados; abre os detalhes do segundo passo
+// celular: os passos empilhados, descendo a seção até a passagem para o verde-água
 {
   const pagina = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await pagina.goto(url, { waitUntil: "networkidle" });
   const t = await topo(pagina);
   const fim = await pagina.evaluate(() => document.querySelector("#banho-e-tosa").offsetHeight);
   let n = 1;
-  for (let y = t; y < t + fim; y += 700) {
+  for (let y = t; y < t + fim + 400; y += 700) {
     await ir(pagina, y);
     await pagina.waitForTimeout(2200);
     await pagina.screenshot({ path: `${saida}/celular-${String(n++).padStart(2, "0")}.png` });
   }
-  await pagina.locator("#banho-e-tosa button[aria-expanded]").nth(1).click();
-  await pagina.locator("#detalhes-tosa").scrollIntoViewIfNeeded();
-  await pagina.waitForTimeout(2200);
-  await pagina.screenshot({ path: `${saida}/celular-${String(n).padStart(2, "0")}-aberto.png` });
   await pagina.close();
 }
 await navegador.close();

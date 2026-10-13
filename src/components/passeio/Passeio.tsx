@@ -222,7 +222,7 @@ export function Passeio() {
           inert={fase !== "passeio"}
           className={`absolute top-5 right-5 transition-opacity duration-500 md:top-6 md:right-8 ${fase === "passeio" ? "opacity-100" : "pointer-events-none opacity-0"}`}
         >
-          <Botao href="#agendar">Agendar</Botao>
+          <Botao href="#agendar" compacto>Agendar</Botao>
         </div>
 
         {/* frases: só a do cenário atual em destaque */}

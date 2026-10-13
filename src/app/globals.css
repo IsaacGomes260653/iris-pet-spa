@@ -110,6 +110,12 @@
   }
 }
 
+/* a cachorra respira quando o passeio para */
+@keyframes respira {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.004, 1.012); }
+}
+
 /* fundos dos temas (camada fixa; ver FundoTema) */
 .grad-amanhecer {
   background: linear-gradient(180deg, #b9bed4 0%, #d3c4d3 26%, #eccbbd 50%, #93a3b5 76%, #2c394a 100%);

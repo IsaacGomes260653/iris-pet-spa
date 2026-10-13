@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
 const [pasta = "passeio", url = "http://localhost:3100/"] = process.argv.slice(2);
-const pontos = [0, 0.05, 0.15, 0.27, 0.4, 0.52, 0.64, 0.76, 0.88, 0.97, 1.0];
+const pontos = [0, 0.04, 0.066, 0.15, 0.27, 0.47, 0.58, 0.67, 0.76, 0.86, 0.95, 1.0];
 const telas = { desktop: { width: 1440, height: 900, dpr: 1 }, celular: { width: 390, height: 844, dpr: 2 } };
 const saida = `capturas/${pasta}`;
 mkdirSync(saida, { recursive: true });
@@ -25,7 +25,7 @@ for (const [nome, t] of Object.entries(telas)) {
       const topo = s.getBoundingClientRect().top + scrollY;
       scrollTo({ top: p > 1 ? topo + s.offsetHeight : topo + p * (s.offsetHeight - innerHeight), behavior: "instant" });
     }, p);
-    await pagina.waitForTimeout(4200); // a câmera alcança o ponto com amortecimento
+    await pagina.waitForTimeout(4200); // a rolagem suave alcança o ponto
     await pagina.screenshot({ path: `${saida}/${nome}-${String(i + 1).padStart(2, "0")}-p${p}.png` });
   }
   // depois do passeio: a próxima seção (creme)

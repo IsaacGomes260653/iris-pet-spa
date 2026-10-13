@@ -17,20 +17,24 @@ function useMidia(consulta: string) {
   );
 }
 
-const frases = ["O banho que acalma.", "A tosa que respeita cada raça.", "A loja com tudo que ele ama.", "O spa que ele merece.", "O Táxi Dog que busca e leva."];
+// uma frase por cenário: a frase troca no meio do crossfade, junto com o mundo
+const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.", "A loja com tudo que ele ama.", "O Táxi Dog que busca e leva."];
 
 // cada um dos 4 primeiros cenários ocupa 20% da rolagem; o último (a loja) é a chegada
 const TRECHO = 0.2;
 const TROCA = 0.2; // fração final de cada trecho em que a cena seguinte entra
 
-/** Cards por cenário: [cenário, início dentro do trecho, lado]. No celular, só o primeiro de cada cenário. */
-const roteiro: [number, number, -1 | 1][] = [
-  [0, 0.08, 1], [0, 0.46, -1],
-  [1, 0.08, -1], [1, 0.46, 1],
-  [2, 0.08, 1], [2, 0.46, -1],
-  [3, 0.02, -1], [3, 0.34, 1], [3, 0.6, -1],
+/**
+ * Cards por cenário: [cenário, início dentro do trecho, lado, card]. O primeiro de cada cenário é o da frase ativa;
+ * no celular entram só os dois primeiros.
+ */
+const roteiro: [number, number, -1 | 1, number][] = [
+  [0, 0.04, 1, 0], [0, 0.44, -1, 2],
+  [1, 0.04, -1, 1], [1, 0.44, 1, 7],
+  [2, 0.02, 1, 3], [2, 0.28, -1, 4], [2, 0.54, 1, 5],
+  [3, 0.02, -1, 8], [3, 0.4, 1, 6],
 ];
-const DURACAO = 0.32; // do card nascer no ponto de fuga até passar pela câmera, em fração do trecho
+const DURACAO = 0.36; // do card nascer no ponto de fuga até passar pela câmera, em fração do trecho
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const limitar = (t: number) => Math.min(1, Math.max(0, t));
@@ -43,6 +47,7 @@ export function Passeio() {
   const secao = useRef<HTMLElement>(null);
   const camadas = useRef<(HTMLDivElement | null)[]>([]);
   const cartoes = useRef<(HTMLDivElement | null)[]>([]);
+  const etiquetas = useRef<(HTMLSpanElement | null)[]>([]);
   const passo = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
@@ -60,7 +65,7 @@ export function Passeio() {
       const r = el.getBoundingClientRect();
       const p = limitar(-r.top / (r.height - innerHeight));
       const ultima = cenas.length - 1;
-      setCena(Math.min(frases.length - 1, Math.floor(p / (TRECHO * 4 / frases.length))));
+      setCena(Math.min(frases.length - 1, Math.floor(p / TRECHO + TROCA / 2)));
       setFase(p < 0.025 ? "hero" : p > 0.79 ? "chegada" : "passeio");
 
       // a cachorra anda quando a rolagem anda: balanço de passo proporcional ao quanto se rolou
@@ -87,7 +92,7 @@ export function Passeio() {
         c.style.filter = sai > 0.01 ? `blur(${(sai * (leve ? 4 : 7)).toFixed(1)}px)` : "none";
       });
 
-      // cards: nascem pequenos e desfocados no ponto de fuga, crescem para o lado e passam pela câmera
+      // cards: nascem pequenos e desfocados no ponto de fuga, ficam nítidos e crescem ao lado da cachorra, saem pela borda
       cartoes.current.forEach((c, k) => {
         if (!c) return;
         const [i, inicio, lado] = roteiro[k];
@@ -96,15 +101,17 @@ export function Passeio() {
           c.style.visibility = "hidden";
           return;
         }
-        // nasce perto do horizonte, ao lado da cachorra (nunca por cima dela), e sai pela lateral
-        const x = lado * lerp(leve ? 16 : 13, leve ? 36 : 40, Math.pow(u, 1.5));
-        const y = lerp(-17, leve ? -4 : 2, u);
-        const escala = lerp(0.16, leve ? 1.5 : 1.75, Math.pow(u, 2.2));
-        const desfoque = u < 0.45 ? (1 - u / 0.45) * 5 : u > 0.82 ? ((u - 0.82) / 0.18) * 9 : 0;
+        const x = lado * (lerp(leve ? 16 : 13, leve ? 26 : 30, u) + Math.pow(u, 4) * (leve ? 42 : 38));
+        const y = lerp(-17, leve ? -2 : 4, u);
+        const escala = lerp(0.16, leve ? 1.5 : 1.8, Math.pow(u, 1.6));
+        const desfoque = u < 0.35 ? (1 - u / 0.35) * 6 : 0;
         c.style.visibility = "visible";
-        c.style.opacity = String(Math.min(suave(0, 0.14, u), 1 - suave(0.86, 1, u)));
+        c.style.opacity = String(Math.min(suave(0, 0.1, u), 1 - suave(0.95, 1, u)));
         c.style.transform = `translate(-50%, -50%) translate(${x}vw, ${y}svh) scale(${escala})`;
         c.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
+        // a etiqueta não acompanha a escala inteira: fica entre 11 e 18 px, legível longe e perto
+        const e = etiquetas.current[k];
+        if (e) e.style.transform = `scale(${(Math.min(18, Math.max(11, 12 * escala)) / (12 * escala)).toFixed(3)})`;
       });
     };
     const aoRolar = () => (raf ||= requestAnimationFrame(ler));
@@ -156,10 +163,13 @@ export function Passeio() {
           </div>
         </div>
 
+        {/* chão escuro na base: a guia e a cachorra saem da tela como a proa */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[22svh] bg-[linear-gradient(0deg,rgb(20_24_32/0.55),rgb(20_24_32/0))]" />
+
         {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          {roteiro.map(([i], k) =>
-            leve && roteiro.findIndex(([j]) => j === i) !== k ? null : (
+          {roteiro.map(([i, , lado, card], k) =>
+            leve && k - roteiro.findIndex(([j]) => j === i) > 1 ? null : (
               <div
                 key={k}
                 ref={(el) => void (cartoes.current[k] = el)}
@@ -167,9 +177,15 @@ export function Passeio() {
                 style={{ visibility: "hidden" }}
               >
                 <div className="relative aspect-[16/10] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)]">
-                  <Image src={cards[k].foto} alt="" fill sizes="(max-width: 768px) 90vw, 50vw" className="object-cover" />
+                  <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 90vw, 55vw" className="object-cover" />
                 </div>
-                <Etiqueta className="absolute -top-[1.9rem] right-0">{cards[k].rotulo}</Etiqueta>
+                {/* etiqueta no canto de dentro (voltado para a cachorra): continua na tela quando o card sai pela borda */}
+                <span
+                  ref={(el) => void (etiquetas.current[k] = el)}
+                  className={`absolute bottom-full ${lado > 0 ? "left-0 origin-bottom-left" : "right-0 origin-bottom-right"}`}
+                >
+                  <Etiqueta>{cards[card].rotulo}</Etiqueta>
+                </span>
               </div>
             ),
           )}
@@ -212,10 +228,10 @@ export function Passeio() {
         {/* frases: só a do cenário atual em destaque */}
         <ol
           aria-label="O que a Íris faz pelo caminho"
-          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-frase font-light transition-opacity duration-700 [text-shadow:0_1px_24px_rgb(16_20_30/0.45)] max-md:text-[1.05rem] md:top-[7svh] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-light transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.3)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
         >
           {frases.map((f, i) => (
-            <li key={f} aria-current={i === cena ? "step" : undefined} className={`transition-opacity duration-500 ${i === cena ? "opacity-100" : "opacity-45"}`}>
+            <li key={f} aria-current={i === cena ? "step" : undefined} className={`transition-opacity duration-500 ${i === cena ? "opacity-100" : "opacity-55"}`}>
               {f}
             </li>
           ))}

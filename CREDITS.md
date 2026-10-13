@@ -27,6 +27,20 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 - `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Robert Bye listada acima. Em `scripts/preparar-passeio.py` a pessoa sentada no banco foi retirada (a vitrine da direita é a da esquerda espelhada), o nome do toldo virou "Íris Pet Spa" (fontes Literata e Martian Mono, licença SIL Open Font) e o sol duro foi suavizado.
 - `src/assets/passeio/fundo-3-trilha.jpg` e `fundo-4-gramado.jpg`: recortadas no próprio Unsplash para o caminho ficar no centro, atrás da cachorra.
 
-## Pendentes (download manual)
+## Vídeos
 
-Vídeos (banho, tosa, finalização), áudio do botão SOM e a foto POV da faixa de pedestres: ver `docs/assets.md`. A origem de cada um entra aqui quando o arquivo chegar.
+Vídeos do [Pexels](https://www.pexels.com) sob a [Licença Pexels](https://www.pexels.com/license/) (uso livre, inclusive comercial, sem exigência de atribuição; atribuímos mesmo assim). Foram cortados, levemente gradeados e recodificados em `scripts/videos.sh` (MP4 H.264 e WebM, versões para celular em 4:5 e posters); os originais ficam fora do Git, em `media-src/videos/`.
+
+| Arquivo | Vídeo de | Página original |
+|---|---|---|
+| `public/videos/banho*.{mp4,webm}`, `src/assets/videos/banho-poster.jpg` | Tima Miroshnichenko | [Close-up of a dog being bathed](https://www.pexels.com/video/close-up-of-a-dog-being-bathed-6131725/) |
+| `public/videos/tosa*.{mp4,webm}`, `src/assets/videos/tosa-poster.jpg` | Tima Miroshnichenko | [Person grooming a dog](https://www.pexels.com/video/person-grooming-a-dog-6131498/) |
+| `public/videos/finalizacao*.{mp4,webm}`, `src/assets/videos/finalizacao-poster.jpg` | Tima Miroshnichenko | [A person drying a shivering dog with a towel](https://www.pexels.com/video/a-person-drying-a-shivering-dog-with-a-towel-6131727/) |
+
+## Ícones
+
+[Phosphor Icons](https://phosphoricons.com) (licença MIT), pelo pacote `@phosphor-icons/react`.
+
+## Pendentes
+
+Áudio do botão SOM (Fase 6). A origem entra aqui quando o arquivo chegar.

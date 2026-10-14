@@ -331,7 +331,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
         </ol>
       </div>
       {/* a mesma passagem do desktop: o creme tinge de verde-água e leva ao mapa */}
-      <div aria-hidden className="-mx-5 mt-[12svh] h-[70svh] bg-[linear-gradient(#fbf6ee,#fde7d2_30%,#dff1e4_55%,#2e7a72)]" />
+      <div aria-hidden className="-mx-5 mt-[12svh] h-[40svh] bg-[linear-gradient(#fbf6ee,#fde7d2_30%,#dff1e4_55%,#2e7a72)]" />
     </section>
   );
 }

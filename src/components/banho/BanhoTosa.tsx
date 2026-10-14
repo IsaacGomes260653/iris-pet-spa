@@ -57,14 +57,26 @@ function useMidia(consulta: string) {
 const FOCO: Record<Passo["id"], string> = { banho: "object-[60%_50%]", tosa: "object-[15%_50%]", finalizacao: "object-center" };
 
 function Video({ passo, refVideo, className = "" }: { passo: Passo; refVideo?: (v: HTMLVideoElement | null) => void; className?: string }) {
+  // o poster só baixa quando o vídeo chega a uma tela de distância (não disputa a rede com a abertura)
+  const [perto, setPerto] = useState(false);
+  const el = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (!el.current) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setPerto(true), { rootMargin: "100% 0px" });
+    io.observe(el.current);
+    return () => io.disconnect();
+  }, []);
   return (
     <video
-      ref={refVideo}
+      ref={(v) => {
+        el.current = v;
+        refVideo?.(v);
+      }}
       muted
       loop
       playsInline
       preload="none"
-      poster={passo.poster.src}
+      poster={perto ? passo.poster.src : undefined}
       aria-hidden
       className={`size-full object-cover ${FOCO[passo.id]} ${className}`}
     >

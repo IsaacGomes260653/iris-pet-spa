@@ -53,6 +53,9 @@ function useMidia(consulta: string) {
   );
 }
 
+// onde está o cão em cada vídeo, para o enquadramento cheio não cortar a cabeça
+const FOCO: Record<Passo["id"], string> = { banho: "object-[60%_50%]", tosa: "object-[15%_50%]", finalizacao: "object-center" };
+
 function Video({ passo, refVideo, className = "" }: { passo: Passo; refVideo?: (v: HTMLVideoElement | null) => void; className?: string }) {
   return (
     <video
@@ -63,7 +66,7 @@ function Video({ passo, refVideo, className = "" }: { passo: Passo; refVideo?: (
       preload="none"
       poster={passo.poster.src}
       aria-hidden
-      className={`size-full object-cover ${className}`}
+      className={`size-full object-cover ${FOCO[passo.id]} ${className}`}
     >
       <source media="(max-width: 768px)" src={`/videos/${passo.id}-celular.webm`} type="video/webm" />
       <source media="(max-width: 768px)" src={`/videos/${passo.id}-celular.mp4`} type="video/mp4" />

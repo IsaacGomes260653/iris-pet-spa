@@ -39,6 +39,10 @@ Vídeos do [Pexels](https://www.pexels.com) sob a [Licença Pexels](https://www.
 | `public/videos/tosa*.{mp4,webm}`, `src/assets/videos/tosa-poster.jpg` | Tima Miroshnichenko | [Person grooming a dog](https://www.pexels.com/video/person-grooming-a-dog-6131498/) |
 | `public/videos/finalizacao*.{mp4,webm}`, `src/assets/videos/finalizacao-poster.jpg` | Tima Miroshnichenko | [A person drying a shivering dog with a towel](https://www.pexels.com/video/a-person-drying-a-shivering-dog-with-a-towel-6131727/) |
 
+## Globo
+
+`public/globo/terra-{4096,2048}.webp`: [Blue Marble: Next Generation](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation-w-topography-and-bathymetry) (dezembro, com relevo e batimetria), de Reto Stöckli, NASA Earth Observatory. Imagem da NASA em domínio público. O mar foi recolorido para o verde-água da marca e a terra levemente dessaturada em `scripts/preparar-globo.py`.
+
 ## Ícones
 
 [Phosphor Icons](https://phosphoricons.com) (licença MIT), pelo pacote `@phosphor-icons/react`.

@@ -45,14 +45,14 @@ def material_pelo(nome, melanina, vermelho):
     pelo.inputs["Melanin Redness"].default_value = vermelho
     pelo.inputs["Roughness"].default_value = 0.42
     pelo.inputs["Radial Roughness"].default_value = 0.55
-    pelo.inputs["Coat"].default_value = 0.12
+    pelo.inputs["Coat"].default_value = 0.1
     pelo.inputs["Random Color"].default_value = 0.12
     pelo.inputs["Random Roughness"].default_value = 0.2
     # pontas um pouco mais claras e quentes: o marrom-escuro da Ellie aparece na contraluz
     info = nos.new("ShaderNodeHairInfo")
     rampa = nos.new("ShaderNodeMapRange")
     rampa.inputs["From Min"].default_value, rampa.inputs["From Max"].default_value = 0.4, 1.0
-    rampa.inputs["To Min"].default_value, rampa.inputs["To Max"].default_value = melanina, melanina - 0.12
+    rampa.inputs["To Min"].default_value, rampa.inputs["To Max"].default_value = melanina, melanina - 0.03
     lig.new(info.outputs["Intercept"], rampa.inputs["Value"])
     lig.new(rampa.outputs["Result"], pelo.inputs["Melanin"])
     lig.new(pelo.outputs[0], saida.inputs["Surface"])
@@ -60,10 +60,10 @@ def material_pelo(nome, melanina, vermelho):
 
 
 PELE = material("Pele", **{"Base Color": (0.006, 0.006, 0.007, 1), "Roughness": 0.7})
-PELO = material_pelo("Pelo", 1.0, 0.0)
+PELO = material_pelo("Pelo", 1.0, 0.05)
 COURO = material("Couro conhaque", **{"Base Color": (0.27, 0.09, 0.03, 1), "Roughness": 0.45})
 METAL = material("Argola", **{"Base Color": (0.75, 0.62, 0.4, 1), "Metallic": 1.0, "Roughness": 0.3})
-CORDA = material("Corda sálvia", **{"Base Color": (0.2, 0.27, 0.18, 1), "Roughness": 0.85})
+CORDA = material("Corda sálvia", **{"Base Color": (0.27, 0.37, 0.27, 1), "Roughness": 0.75, "Sheen Weight": 0.3})
 
 # ---------------------------------------------------------------- a cachorra
 bpy.ops.import_scene.gltf(filepath=str(MIDIA / "modelos" / "lobo-cinza.glb"))
@@ -225,21 +225,21 @@ a = armacao.matrix_world @ pesc.head
 b = armacao.matrix_world @ cab.head
 eixo = (b - a).normalized()
 meio = a.lerp(b, 0.5)
-bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.098, depth=0.026, end_fill_type="NOTHING", location=meio)
+bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.118, depth=0.035, end_fill_type="NOTHING", location=meio)
 coleira = bpy.context.active_object
 coleira.rotation_euler = eixo.to_track_quat("Z", "Y").to_euler()
 espessura = coleira.modifiers.new("Couro", "SOLIDIFY")
-espessura.thickness = 0.004
+espessura.thickness = 0.006
 coleira.data.materials.append(COURO)
 bpy.ops.object.shade_smooth()
 cima = Vector((0, 0, 1))
 nuca = meio + (cima - eixo * eixo.dot(cima)).normalized() * 0.11
 
-CAM = Vector((0.0, nuca.y + 3.7, 1.32))
-mao = Vector((-0.5, nuca.y + 3.3, 0.72))  # a câmera olha para -Y: o lado direito da tela é -X
+CAM = Vector((0.0, nuca.y + 2.5, 1.22))
+mao = CAM + Vector((-0.34, -0.5, -0.62))  # a câmera olha para -Y: o lado direito da tela é -X
 curva = bpy.data.curves.new("Guia", "CURVE")
 curva.dimensions = "3D"
-curva.bevel_depth = 0.0075
+curva.bevel_depth = 0.0055
 curva.bevel_resolution = 4
 sp = curva.splines.new("BEZIER")
 sp.bezier_points.add(1)
@@ -269,7 +269,12 @@ def textura_terra():
             t.image.colorspace_settings.name = "Non-Color"
         lig.new(mapa.outputs[0], t.inputs["Vector"])
         return t
-    lig.new(tex("Diffuse").outputs["Color"], bsdf.inputs["Base Color"])
+    escurece = nos.new("ShaderNodeMixRGB")
+    escurece.blend_type = "MULTIPLY"
+    escurece.inputs["Fac"].default_value = 1.0
+    escurece.inputs["Color2"].default_value = (0.55, 0.55, 0.58, 1)
+    lig.new(tex("Diffuse").outputs["Color"], escurece.inputs["Color1"])
+    lig.new(escurece.outputs["Color"], bsdf.inputs["Base Color"])
     lig.new(tex("Rough", True).outputs["Color"], bsdf.inputs["Roughness"])
     nm = nos.new("ShaderNodeNormalMap")
     lig.new(tex("nor_gl", True).outputs["Color"], nm.inputs["Color"])
@@ -291,7 +296,21 @@ for v in trilha.data.vertices:
 trilha.data.materials.append(textura_terra())
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -14, -0.01))
 grama_base = bpy.context.active_object
-grama_base.scale = (160, 200, 1)
+grama_base.scale = (900, 900, 1)
+CASCA = material("Silhueta", **{"Base Color": (0.03, 0.035, 0.04, 1), "Roughness": 0.9})
+rng = np.random.default_rng(3)
+for dist in (45, 90, 160):
+    for _ in range(14):
+        lado = rng.choice((-1, 1))
+        x = lado * rng.uniform(6, 60) + curva(-dist)
+        y = -dist + rng.uniform(-12, 12)
+        alt = rng.uniform(7, 15)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.25, depth=alt * 0.5, location=(x, y, alt * 0.25))
+        bpy.context.active_object.data.materials.append(CASCA)
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=alt * rng.uniform(0.25, 0.35), location=(x, y, alt * 0.7))
+        copa = bpy.context.active_object
+        copa.scale.z = rng.uniform(1.2, 1.6)
+        copa.data.materials.append(CASCA)
 grama_base.data.materials.append(material("Solo", **{"Base Color": (0.05, 0.07, 0.035, 1), "Roughness": 1.0}))
 CAPIM = material("Capim", **{"Base Color": (0.11, 0.16, 0.06, 1), "Roughness": 0.65})
 _n, _l = CAPIM.node_tree.nodes, CAPIM.node_tree.links
@@ -345,7 +364,7 @@ mapa = nos.new("ShaderNodeMapping")
 lig.new(coord.outputs["Generated"], mapa.inputs["Vector"])
 lig.new(mapa.outputs[0], env.inputs["Vector"])
 lig.new(env.outputs["Color"], fundo.inputs["Color"])
-fundo.inputs["Strength"].default_value = 0.32
+fundo.inputs["Strength"].default_value = 0.24
 
 # acha o sol no HDRI e gira o mundo para ele ficar à frente da câmera (contraluz no pelo preto)
 px = np.empty(env.image.size[0] * env.image.size[1] * 4, dtype=np.float32)
@@ -362,11 +381,11 @@ mapa.inputs["Rotation"].default_value[2] = alvo_az - az_sol
 print("SOL", u, v, "elevação", math.degrees(alt_sol))
 
 sol = bpy.data.lights.new("Sol", "SUN")
-sol.energy = 15.0
-sol.color = (1.0, 0.78, 0.6)
+sol.energy = 7.0
+sol.color = (1.0, 0.74, 0.55)
 sol.angle = math.radians(1.5)
 luz = bpy.data.objects.new("Sol", sol)
-direcao = Vector((0.12, -1.0, math.tan(math.radians(6))))
+direcao = Vector((0.18, -1.0, math.tan(math.radians(9))))
 luz.rotation_euler = (-direcao).to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz)
 
@@ -378,13 +397,13 @@ mv = bpy.data.materials.new("Névoa")
 mv.use_nodes = True
 mv.node_tree.nodes.remove(mv.node_tree.nodes["Principled BSDF"])
 vol = mv.node_tree.nodes.new("ShaderNodeVolumePrincipled")
-vol.inputs["Color"].default_value = (0.86, 0.80, 0.86, 1)
+vol.inputs["Color"].default_value = (0.83, 0.77, 0.83, 1)
 vol.inputs["Anisotropy"].default_value = 0.6
 _co = mv.node_tree.nodes.new("ShaderNodeTexCoord")
 _sep = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
 _alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 3.5
-_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.007, 0.0008
+_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.014, 0.0015
 mv.node_tree.links.new(_co.outputs["Object"], _sep.inputs[0])
 _z = mv.node_tree.nodes.new("ShaderNodeMath")
 _z.operation = "MULTIPLY_ADD"
@@ -398,13 +417,13 @@ nevoa.visible_shadow = False
 
 # ---------------------------------------------------------------- câmera em primeira pessoa
 cam = bpy.data.cameras.new("Olhar")
-cam.lens = 35
+cam.lens = 24
 cam.dof.use_dof = True
-cam.dof.aperture_fstop = 2.0
+cam.dof.aperture_fstop = 2.8
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
 camobj.location = CAM
-alvo = Vector((0.0, nuca.y - 12.0, -0.25))
+alvo = Vector((0.0, nuca.y - 12.0, CAM.z - math.tan(math.radians(12)) * 14.5))
 camobj.rotation_euler = (alvo - CAM).to_track_quat("-Z", "Y").to_euler()
 cam.dof.focus_distance = (CAM - meio).length
 cena.camera = camobj
@@ -424,7 +443,7 @@ cena.cycles.volume_step_rate = 2.0
 cena.render.resolution_x, cena.render.resolution_y = 1600, 900
 cena.render.film_transparent = False
 cena.view_settings.view_transform = "AgX"
-cena.view_settings.look = "AgX - High Contrast"
+cena.view_settings.look = "AgX - Medium High Contrast"
 cena.render.image_settings.file_format = "PNG"
 cena.render.filepath = SAIDA
 dep = bpy.context.evaluated_depsgraph_get()

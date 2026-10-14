@@ -12,6 +12,11 @@ t = np.clip(lum, 0, 1)[..., None]
 tom = np.array([0.36, 0.38, 0.55]) * (1 - t) + np.array([1.0, 0.84, 0.74]) * t
 suave = (1 - 2 * tom) * img * img + 2 * tom * img
 img = img * 0.62 + suave * 0.38
+# lavanda no alto, azul-acinzentado nas sombras (paleta do site)
+alto = np.clip(1 - np.mgrid[0:h, 0:w][0] / (h * 0.45), 0, 1)[..., None]
+img = img * (1 - 0.22 * alto) + np.array([0.725, 0.745, 0.83]) * 0.22 * alto
+sombra = np.clip(1 - lum / 0.35, 0, 1)[..., None]
+img = img * (1 - 0.18 * sombra) + np.array([0.24, 0.29, 0.36]) * img.mean() * 0.18 * sombra
 yy, xx = np.mgrid[0:h, 0:w]
 r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h * 0.55) / (h / 2)) ** 2)
 img *= (1 - 0.28 * np.clip(r - 0.55, 0, 1) ** 1.5)[..., None]

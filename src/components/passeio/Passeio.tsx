@@ -58,6 +58,8 @@ export function Passeio() {
   const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
+  // só o primeiro cenário entra no carregamento inicial; os outros e as fotos dos cards vêm na primeira interação
+  const [resto, setResto] = useState(false);
   const leve = useMidia("(max-width: 768px)");
   const quieto = useMidia("(prefers-reduced-motion: reduce)");
 
@@ -174,6 +176,13 @@ export function Passeio() {
     };
   }, [leve, quieto]);
 
+  useEffect(() => {
+    const liberar = () => setResto(true);
+    const eventos = ["scroll", "pointerdown", "keydown", "wheel", "touchstart"] as const;
+    eventos.forEach((ev) => addEventListener(ev, liberar, { once: true, passive: true }));
+    return () => eventos.forEach((ev) => removeEventListener(ev, liberar));
+  }, []);
+
   // na chegada o nome já está no toldo: o logo do topo sai de cena
   useEffect(() => {
     document.documentElement.toggleAttribute("data-chegada", fase === "chegada");
@@ -196,7 +205,9 @@ export function Passeio() {
             style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? "visible" : "hidden", transform: "scale(1.04)" }}
           >
             {/* em retrato a foto de paisagem cobre a altura: pede uma largura de ~2,3 telas de altura */}
-            <Image src={c.foto} alt={c.alt} fill sizes="(orientation: portrait) 230vh, 100vw" preload={i === 0} className="object-cover" style={{ objectPosition: c.foco }} />
+            {(i === 0 || resto) && (
+              <Image src={c.foto} alt={c.alt} fill sizes="(orientation: portrait) 200vh, 100vw" quality={60} preload={i === 0} className="object-cover" style={{ objectPosition: c.foco }} />
+            )}
           </div>
         ))}
 
@@ -251,7 +262,7 @@ export function Passeio() {
                   ref={(el) => void (fotos.current[k] = el)}
                   className="absolute top-0 left-0 aspect-[16/10] w-[min(30vw,420px)] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)] max-md:w-[44vw]"
                 >
-                  <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 65vw, 560px" className="object-cover" />
+                  {resto && <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 65vw, 560px" className="object-cover" />}
                 </div>
                 <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 whitespace-nowrap transition-opacity duration-200">
                   <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>

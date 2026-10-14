@@ -187,7 +187,7 @@ export function Passeio() {
 
         {/* a cachorra: a mesma em todo o passeio, fixa no centro como a proa do barco; só o mundo troca */}
         {/* afundada abaixo da borda: o recorte nunca aparece, nem no alto do balanço */}
-        <div ref={cao} className="pointer-events-none absolute -bottom-[12svh] left-1/2 h-[60svh] -translate-x-1/2 max-md:h-[54svh]">
+        <div ref={cao} className="pointer-events-none absolute -bottom-[12svh] left-1/2 h-[60svh] origin-bottom max-md:h-[54svh]" style={{ transform: "translateX(-50%)" }}>
           <div ref={passo} className="h-full origin-bottom will-change-transform">
             <Image
               src={cachorra}

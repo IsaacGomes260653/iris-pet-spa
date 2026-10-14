@@ -16,9 +16,9 @@ export function noGlobo(lat: number, lng: number, raio = 1) {
  * Rotação (x, y) do globo que traz um ponto para a frente da câmera: o giro em Y o leva para o plano da câmera
  * e a inclinação em X o sobe a ~42° de elevação, o meio da calota que aparece acima do horizonte da tela.
  */
-export function rotacaoPara(lat: number, lng: number) {
+export function rotacaoPara(lat: number, lng: number, elevacao = 42) {
   const phi = ((lng + 180) / 360) * Math.PI * 2;
-  return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - 42) };
+  return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - elevacao) };
 }
 
 /** Um marcador no globo: uma unidade sozinha ou um grupo de unidades vizinhas (com a contagem). */
@@ -107,7 +107,7 @@ type Props = {
 // câmera olhando reto para -Z, abaixada para o topo do globo ficar perto do alto da área (desktop, celular)
 const CAMERA: [number, number, number][] = [
   [0, -0.54, 2.1],
-  [0, -0.78, 3.2],
+  [0, -0.6, 2.4],
 ];
 
 function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoEscolherGrupo, quieto, celular }: Props) {
@@ -153,13 +153,22 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     for (const gr of grupos) {
       const n = gr.membros.length;
       if (n > 1 && !m.has(n))
-        m.set(n, textura((g) => {
-          anel(g, false);
-          g.font = "500 46px ui-monospace, monospace";
-          g.textAlign = "center";
-          g.textBaseline = "middle";
-          g.fillText(String(n), 64, 67);
-        }));
+        m.set(
+          n,
+          textura((g) => {
+            // disco verde-escuro dentro do anel: o número fica legível sobre qualquer terreno
+            g.fillStyle = "rgba(12, 40, 41, 0.85)";
+            g.beginPath();
+            g.arc(64, 64, 46, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = "#ffffff";
+            anel(g, false);
+            g.font = "600 54px ui-monospace, monospace";
+            g.textAlign = "center";
+            g.textBaseline = "middle";
+            g.fillText(String(n), 64, 68);
+          }),
+        );
     }
     return m;
   }, [grupos]);
@@ -215,8 +224,9 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
 
   // escolher uma unidade (no marcador ou na lista) gira o globo até ela
   useEffect(() => {
-    if (selecionada) giro.current.alvo = rotacaoPara(selecionada.lat, selecionada.lng);
-  }, [selecionada]);
+    // no celular a folha do card cobre a base: a unidade sobe mais na calota
+    if (selecionada) giro.current.alvo = rotacaoPara(selecionada.lat, selecionada.lng, celular ? 58 : 42);
+  }, [selecionada, celular]);
 
   // arcos de grande círculo, um pouco acima da superfície
   const caminhos = useMemo(
@@ -259,10 +269,11 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       const gr = grupos[i];
       const e = estado.current[i];
       const ativo = gr.membros.some((l) => ativos.has(l.id));
-      const escolhido = gr.membros.length === 1 && selecionada?.id === gr.membros[0].id;
-      // fora do filtro a unidade não some: fica a 20%, para o mapa continuar inteiro
-      e.opacidade += ((ativo ? 1 : 0.2) - e.opacidade) * Math.min(1, dt * 6);
-      e.escala += ((escolhido ? 1.6 : gr.membros.length > 1 ? 1.15 : 1) - e.escala) * Math.min(1, dt * 6);
+      const escolhido = !!selecionada && gr.membros.some((l) => l.id === selecionada.id);
+      // fora do filtro a unidade não some: fica a 20%; com um card aberto, as outras baixam para 50%
+      const alvo = !ativo ? 0.2 : selecionada && !escolhido ? 0.5 : 1;
+      e.opacidade += (alvo - e.opacidade) * Math.min(1, dt * 6);
+      e.escala += ((escolhido ? 1.5 : gr.membros.length > 1 ? 1.15 : 1) - e.escala) * Math.min(1, dt * 6);
       const pulso = quieto || !ativo ? 1 : 1 + Math.sin(t * 2.2 + i * 0.7) * 0.06;
       const s = base * e.escala * pulso;
       m.scale.set(s, s, s);
@@ -278,9 +289,10 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     // um ponto percorre cada rota, como um carro do Táxi Dog
     viajantes.current.forEach((v, i) => {
       if (!v) return;
-      const u = quieto ? 0.5 : (t * 0.08 + i * 0.37) % 1;
+      // fases desencontradas e longe das pontas, para os pontos não se juntarem sobre as unidades
+      const u = quieto ? 0.5 : 0.12 + 0.76 * ((t * 0.08 + i * 0.37) % 1);
       v.position.copy(caminhos[i].curva.getPointAt(u));
-      const s = (celular ? 0.03 : 0.022) * (rotasFortes ? 1 : 0);
+      const s = (celular ? 0.011 : 0.009) * (rotasFortes ? 1 : 0);
       v.scale.set(s, s, s);
     });
   });
@@ -325,7 +337,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
                   depthWrite={false}
                 />
               </mesh>
-              <sprite ref={(s) => void (viajantes.current[i] = s)} renderOrder={3}>
+              <sprite ref={(s) => void (viajantes.current[i] = s)} renderOrder={1}>
                 <spriteMaterial map={texPonto} transparent depthWrite={false} />
               </sprite>
             </group>

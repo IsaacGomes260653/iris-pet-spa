@@ -230,10 +230,10 @@ function Fixado() {
                   {/* o que aparece por cima do vídeo aberto, dentro do próprio card */}
                   <div
                     ref={(el) => void (camadas.current[i] = el)}
-                    className="invisible pointer-events-none absolute inset-0 flex min-w-[960px] flex-col justify-between bg-[linear-gradient(rgb(0_0_0/0.45),rgb(0_0_0/0)_38%,rgb(0_0_0/0)_60%,rgb(0_0_0/0.55))] px-12 pt-24 pb-12 opacity-0"
+                    className="invisible pointer-events-none absolute inset-0 flex min-w-[960px] flex-col justify-between bg-[radial-gradient(ellipse_60%_45%_at_0%_0%,rgb(0_0_0/0.4),rgb(0_0_0/0)),linear-gradient(rgb(0_0_0/0.45),rgb(0_0_0/0)_38%,rgb(0_0_0/0)_60%,rgb(0_0_0/0.55))] px-12 pt-24 pb-12 opacity-0"
                   >
                     <div>
-                      <p className="max-w-[14ch] font-serifa text-titulo font-extralight">{p.frase}</p>
+                      <p className="font-serifa text-[clamp(2.5rem,4.4vw,4rem)] leading-none font-extralight whitespace-nowrap">{p.frase}</p>
                       <div className="mt-6 flex flex-wrap items-center gap-3">
                         <Etiqueta>{p.rotulo}</Etiqueta>
                         <p className="text-lead">{p.legenda}</p>

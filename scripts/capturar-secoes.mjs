@@ -35,7 +35,7 @@ for (const [nome, opcoes] of Object.entries(telas)) {
   await ir(pagina, "#raio-x");
   await foto("04-raio-x");
   await pagina.getByRole("switch", { name: "Raio-X" }).click();
-  await pagina.getByRole("radio", { name: "Spa Premium" }).click();
+  await pagina.getByRole("radio", { name: "Spa", exact: true }).click();
   await pagina.waitForTimeout(1200);
   await foto("05-raio-x-ligado");
   await ir(pagina, "#rede");

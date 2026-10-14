@@ -49,18 +49,20 @@ function Contador({ valor, casas = 0 }: { valor: number; casas?: number }) {
 
 export function Rede() {
   return (
-    <section id="rede" data-tema="agua" aria-labelledby="titulo-rede" className="relative z-10 px-5 pt-[8svh] pb-[18svh] text-papel md:px-[6vw]">
+    <section id="rede" data-tema="agua" aria-labelledby="titulo-rede" className="relative z-10 flex min-h-svh flex-col justify-between gap-16 px-5 pt-[8svh] pb-[14svh] text-papel md:px-[6vw]">
+      <div>
       <Rotulo numero={indice.rede} claro>
         A rede
       </Rotulo>
       <h2 id="titulo-rede" className="mt-6 max-w-[16ch] text-titulo">
         Uma rede inteira cuidando de um só.
       </h2>
-      <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-5">
-        {numeros.map((n) => (
-          <div key={n.rotulo} className="border-t border-papel/25 pt-5">
+      </div>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-5">
+        {numeros.map((n, i) => (
+          <div key={n.rotulo} className={`border-t border-papel/25 pt-5 pr-6 ${i === numeros.length - 1 ? "max-md:col-span-2" : ""}`}>
             <dt className="font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel-suave">{n.rotulo}</dt>
-            <dd className="mt-3 font-mono text-[clamp(2rem,3.6vw,3.5rem)] leading-none tracking-[-0.03em] [font-stretch:87.5%]">
+            <dd className="mt-3 font-serifa text-[clamp(2.75rem,4.4vw,4.5rem)] leading-none font-extralight tracking-[-0.02em] tabular-nums">
               <Contador valor={n.valor} casas={n.casas} />
               <span className="sr-only">{formato(n.valor, n.casas)}</span>
             </dd>

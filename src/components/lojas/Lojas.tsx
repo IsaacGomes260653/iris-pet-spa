@@ -76,9 +76,10 @@ function agrupar(): Grupo[] {
   return grupos;
 }
 
-// dados fixos: calculados uma vez
-const rotas = calcularRotas();
+// dados fixos: calculados uma vez. Rotas dentro de um mesmo grupo viram rabisco: ficam só as que ligam grupos
 const grupos = agrupar();
+const grupoDe = (l: Loja) => grupos.find((g) => g.membros.includes(l));
+const rotas = calcularRotas().filter(([a, b]) => grupoDe(a) !== grupoDe(b));
 
 const normalizar = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 

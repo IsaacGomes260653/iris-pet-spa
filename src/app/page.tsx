@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BanhoTosa } from "@/components/banho/BanhoTosa";
+import { Lojas } from "@/components/lojas/Lojas";
 import { Passeio } from "@/components/passeio/Passeio";
 import { Logo } from "@/components/ui";
 
@@ -11,19 +12,8 @@ export default function Home() {
       </Link>
       <Passeio />
       <BanhoTosa />
-      {/* começo da Fase 4: no desktop entra sobreposta à tinta verde-água do banho (topo transparente), então o
-          título do mapa sobe por cima dela sem tela vazia; no celular segue a faixa em degradê */}
-      <section
-        id="lojas"
-        data-tema="agua"
-        aria-labelledby="titulo-lojas"
-        className="relative z-10 bg-[linear-gradient(#2e7a72,#1d5554)] px-5 pt-[14svh] pb-[24svh] text-papel md:px-[6vw] md:motion-safe:-mt-[80svh] md:motion-safe:bg-[linear-gradient(rgb(29_85_84/0)_0,rgb(29_85_84/0)_80svh,#1d5554_80svh)] md:motion-safe:pt-[12svh]"
-      >
-        <h2 id="titulo-lojas" className="max-w-[10ch] text-titulo">
-          Patinha após patinha
-        </h2>
-        <p className="mt-6 max-w-[38ch] text-lead text-papel-suave">A Íris está em todo o Brasil. Arraste para explorar nossas unidades.</p>
-      </section>
+      {/* no desktop entra sobreposta à cortina verde-água do banho: o título do mapa sobe por cima dela */}
+      <Lojas />
       {/* destino do "Agendar banho" (o agendamento completo entra na Fase 5) */}
       <section id="agendar" data-tema="creme" aria-labelledby="titulo-agendar" className="flex min-h-[70svh] flex-col items-center justify-center px-5 text-center">
         <h2 id="titulo-agendar" className="text-titulo">Hora do banho.</h2>

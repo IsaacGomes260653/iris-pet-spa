@@ -55,7 +55,7 @@
   --text-corpo: 1.0625rem;
   --text-corpo--line-height: 1.55;
   --text-rotulo: 0.75rem;
-  --text-rotulo--line-height: 1;
+  --text-rotulo--line-height: 1.35;
   --text-rotulo--letter-spacing: 0.02em;
 
   --ease-saida: cubic-bezier(0.16, 1, 0.3, 1);

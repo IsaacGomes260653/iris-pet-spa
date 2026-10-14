@@ -1,5 +1,3 @@
-import Image, { type StaticImageData } from "next/image";
-
 /** Etiqueta mono branca de canto vivo (como "PATH OF HURRICANES" na referência). */
 export function Etiqueta({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -54,32 +52,5 @@ export function Logo({ className = "" }: { className?: string }) {
     <span className={`font-serifa text-[1.875rem] font-light leading-none tracking-[-0.03em] ${className}`}>
       Íris<span className="sr-only"> Pet Spa</span>
     </span>
-  );
-}
-
-/**
- * Foto de cena em tela cheia. No celular (retrato) cobre a tela; em telas largas a foto
- * vertical fica centralizada sobre uma versão desfocada dela mesma, com as bordas esfumadas.
- */
-export function CenaFoto({ foto, alt, preload = false }: { foto: StaticImageData; alt: string; preload?: boolean }) {
-  // em tela larga, a foto vertical é recortada no máximo até 3:4 para não virar uma tarja estreita
-  const proporcao = Math.max(foto.width / foto.height, 3 / 4);
-  return (
-    <div className="absolute inset-0 overflow-hidden bg-ardosia">
-      <Image src={foto} alt="" aria-hidden fill sizes="96px" quality={60} className="scale-110 object-cover blur-3xl brightness-90" />
-      <div
-        style={{ "--ar": proporcao } as React.CSSProperties}
-        className="absolute inset-0 paisagem:right-auto paisagem:left-1/2 paisagem:aspect-(--ar) paisagem:-translate-x-1/2 paisagem:mask-x-from-82% paisagem:mask-x-to-100%"
-      >
-        <Image
-          src={foto}
-          alt={alt}
-          fill
-          preload={preload}
-          sizes={`(min-aspect-ratio: 4/5) ${Math.ceil(100 * proporcao)}vh, 100vw`}
-          className="object-cover"
-        />
-      </div>
-    </div>
   );
 }

@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* tela mais larga que 4:5 (desktop, tablet deitado): fotos verticais ficam centralizadas */
-@custom-variant paisagem (@media (min-aspect-ratio: 4/5));
-
 @theme {
   /* tinta e papel */
   --color-tinta: #22252b; /* grafite: texto sobre fundo claro (≥12:1 no tema 2) */

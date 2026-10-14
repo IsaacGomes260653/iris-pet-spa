@@ -73,17 +73,18 @@ function Video({ passo, refVideo, className = "" }: { passo: Passo; refVideo?: (
   );
 }
 
-function BotaoPausa({ pausado, alternar }: { pausado: boolean; alternar: () => void }) {
+function BotaoPausa({ pausado, alternar, curto = false }: { pausado: boolean; alternar: () => void; curto?: boolean }) {
   const Icone = pausado ? Play : Pause;
   return (
     <button
       type="button"
       onClick={alternar}
       aria-pressed={pausado}
-      className="inline-flex min-h-11 items-center gap-2 bg-papel px-3 font-mono text-rotulo text-[#2a2a2e] uppercase [font-stretch:87.5%] shadow-[0_6px_20px_-12px_rgb(15_47_49/0.5)] transition-colors hover:bg-creme"
+      aria-label={curto ? (pausado ? "Tocar vídeos" : "Pausar vídeos") : undefined}
+      className="inline-flex min-h-9 items-center gap-2 bg-papel px-3 font-mono md:min-h-11 text-rotulo text-[#2a2a2e] uppercase [font-stretch:87.5%] shadow-[0_6px_20px_-12px_rgb(15_47_49/0.5)] transition-colors hover:bg-creme"
     >
       <Icone size={14} weight="fill" aria-hidden />
-      {pausado ? "Tocar vídeos" : "Pausar vídeos"}
+      {curto ? (pausado ? "Tocar" : "Pausar") : pausado ? "Tocar vídeos" : "Pausar vídeos"}
     </button>
   );
 }
@@ -271,16 +272,21 @@ function Fixado() {
 /** Celular e reduced-motion: os três passos empilhados, com os detalhes sempre à vista. */
 function Empilhado({ quieto }: { quieto: boolean }) {
   const [pausado, setPausado] = useState(quieto);
+  const [comVideo, setComVideo] = useState(false);
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
+    const visiveis = new Set<Element>();
     const io = new IntersectionObserver(
       (entradas) => {
         for (const e of entradas) {
           const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting) visiveis.add(v);
+          else visiveis.delete(v);
           if (e.isIntersecting && !pausado) v.play().catch(() => {});
           else v.pause();
         }
+        setComVideo(visiveis.size > 0);
       },
       { threshold: 0.5 },
     );
@@ -297,12 +303,12 @@ function Empilhado({ quieto }: { quieto: boolean }) {
         <br />
         Carinho do começo ao fim.
       </h2>
-      {/* pausa sempre à mão, no canto, enquanto os vídeos passam (só até o fim da lista) */}
+      {/* pausa no canto enquanto há vídeo na tela */}
+      <div className={`fixed top-3 right-3 z-30 transition-opacity duration-300 ${comVideo ? "opacity-100" : "pointer-events-none opacity-0"}`} inert={!comVideo}>
+        <BotaoPausa pausado={pausado} alternar={() => setPausado((v) => !v)} curto />
+      </div>
       <div>
-        <div className="sticky top-3 z-20 mt-6 -mb-5 flex justify-end">
-          <BotaoPausa pausado={pausado} alternar={() => setPausado((v) => !v)} />
-        </div>
-        <ol className="grid gap-14">
+        <ol className="mt-10 grid gap-14">
           {passos.map((p, i) => (
             <li key={p.id}>
               {/* o título do passo fica preso no alto enquanto o vídeo e os detalhes passam */}

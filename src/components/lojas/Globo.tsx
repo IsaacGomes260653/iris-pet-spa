@@ -150,9 +150,9 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
   );
   const texGrupos = useMemo(() => {
     const m = new Map<number, THREE.CanvasTexture>();
-    for (const gr of grupos) {
-      const n = gr.membros.length;
-      if (n > 1 && !m.has(n))
+    const maior = Math.max(...grupos.map((gr) => gr.membros.length));
+    for (let n = 1; n <= maior; n++) {
+      if (!m.has(n))
         m.set(
           n,
           textura((g) => {
@@ -173,6 +173,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     return m;
   }, [grupos]);
   const { gl, camera } = useThree();
+  const aux = useMemo(() => ({ ponto: new THREE.Vector3(), centro: new THREE.Vector3(0, -1.08, 0), normal: new THREE.Vector3(), vista: new THREE.Vector3() }), []);
 
   // estado da rotação: alvo, velocidade (inércia) e se a pessoa já mexeu (aí a rotação automática para)
   const giro = useRef({ ...rotacaoPara(-14, -51), vx: 0, vy: 0, mexeu: false, arrastando: false, px: 0, py: 0, alvo: null as null | { x: number; y: number } });
@@ -268,7 +269,8 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       if (!m) return;
       const gr = grupos[i];
       const e = estado.current[i];
-      const ativo = gr.membros.some((l) => ativos.has(l.id));
+      const acesos = gr.membros.filter((l) => ativos.has(l.id)).length;
+      const ativo = acesos > 0;
       const escolhido = !!selecionada && gr.membros.some((l) => l.id === selecionada.id);
       // fora do filtro a unidade não some: fica a 20%; com um card aberto, as outras baixam para 50%
       const alvo = !ativo ? 0.2 : selecionada && !escolhido ? 0.5 : 1;
@@ -278,13 +280,21 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       const s = base * e.escala * pulso;
       m.scale.set(s, s, s);
       const mat = m.material as THREE.SpriteMaterial;
-      mat.opacity = e.opacidade;
+      // o marcador é desenhado por cima de tudo (sem ser cortado pela esfera) e some suavemente atrás do globo
+      m.getWorldPosition(aux.ponto);
+      aux.normal.subVectors(aux.ponto, aux.centro).normalize();
+      aux.vista.subVectors(camera.position, aux.ponto).normalize();
+      const frente = THREE.MathUtils.smoothstep(aux.normal.dot(aux.vista), 0.02, 0.2);
+      mat.opacity = e.opacidade * frente;
+      m.visible = frente > 0.01;
       if (gr.membros.length === 1) mat.map = escolhido ? texEscolhida : texSolta;
+      else mat.map = texGrupos.get(ativo ? acesos : gr.membros.length) ?? null;
     });
     rotaMats.current.forEach((mat) => {
       if (!mat) return;
       mat.uniforms.tempo.value = quieto ? 0 : t * 0.9;
-      mat.uniforms.opacidade.value += ((rotasFortes ? 0.95 : 0.3) - mat.uniforms.opacidade.value) * Math.min(1, dt * 5);
+      const alvo = !rotasFortes ? 0.25 : selecionada ? 0.4 : 0.9;
+      mat.uniforms.opacidade.value += (alvo - mat.uniforms.opacidade.value) * Math.min(1, dt * 5);
     });
     // um ponto percorre cada rota, como um carro do Táxi Dog
     viajantes.current.forEach((v, i) => {
@@ -312,7 +322,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
               key={gr.id}
               ref={(s) => void (marcadores.current[i] = s)}
               position={noGlobo(gr.lat, gr.lng, 1.012)}
-              renderOrder={2}
+              renderOrder={5}
               onClick={(e) => {
                 e.stopPropagation();
                 if (!gr.membros.some((l) => ativos.has(l.id))) return;
@@ -322,7 +332,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
               onPointerOver={() => (document.body.style.cursor = "pointer")}
               onPointerOut={() => (document.body.style.cursor = "")}
             >
-              <spriteMaterial map={gr.membros.length > 1 ? texGrupos.get(gr.membros.length) : texSolta} transparent depthWrite={false} />
+              <spriteMaterial map={gr.membros.length > 1 ? texGrupos.get(gr.membros.length) : texSolta} transparent depthWrite={false} depthTest={false} />
             </sprite>
           ))}
           {caminhos.map((c, i) => (

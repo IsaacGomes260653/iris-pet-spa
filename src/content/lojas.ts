@@ -15,10 +15,11 @@ export type Loja = {
 };
 
 export const nomesServico: Record<Servico, string> = {
-  "banho-tosa": "Banho & tosa",
+  // espaços inseparáveis: o nome do serviço nunca quebra no meio
+  "banho-tosa": "Banho\u00a0&\u00a0tosa",
   loja: "Loja",
   spa: "Spa",
-  "taxi-dog": "Táxi Dog",
+  "taxi-dog": "Táxi\u00a0Dog",
 };
 
 /** Unidades fictícias da Íris em cidades reais, com as coordenadas reais de cada cidade ou bairro. Endereços inventados. */

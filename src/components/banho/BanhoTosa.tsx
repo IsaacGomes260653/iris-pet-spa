@@ -20,7 +20,8 @@ import {
 } from "@phosphor-icons/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMidia } from "@/components/useMidia";
 import { Etiqueta } from "@/components/ui";
 import { passos, type Passo } from "@/content/servicos";
 
@@ -40,18 +41,6 @@ const ICONES: Record<Passo["detalhes"][number]["icone"], Icon> = {
   escova: PaintBrush,
   flor: FlowerLotus,
 };
-
-function useMidia(consulta: string) {
-  return useSyncExternalStore(
-    (aviso) => {
-      const m = matchMedia(consulta);
-      m.addEventListener("change", aviso);
-      return () => m.removeEventListener("change", aviso);
-    },
-    () => matchMedia(consulta).matches,
-    () => false,
-  );
-}
 
 // onde está o cão em cada vídeo, para o enquadramento cheio não cortar a cabeça
 const FOCO: Record<Passo["id"], string> = { banho: "object-[60%_50%]", tosa: "object-[15%_50%]", finalizacao: "object-center" };

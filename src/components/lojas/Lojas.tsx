@@ -2,25 +2,14 @@
 
 import { CaretRight, MapPin, Star, X } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMidia } from "@/components/useMidia";
 import { Botao } from "@/components/ui";
 import { lojas, nomesServico, type Loja, type Servico } from "@/content/lojas";
 import type { Grupo } from "./Globo";
 
 // o globo (three.js) só baixa quando a seção chega perto
 const Globo = dynamic(() => import("./Globo"), { ssr: false });
-
-function useMidia(consulta: string) {
-  return useSyncExternalStore(
-    (aviso) => {
-      const m = matchMedia(consulta);
-      m.addEventListener("change", aviso);
-      return () => m.removeEventListener("change", aviso);
-    },
-    () => matchMedia(consulta).matches,
-    () => false,
-  );
-}
 
 const filtros: { id: "todas" | Servico; rotulo: string }[] = [
   { id: "todas", rotulo: "Todas" },

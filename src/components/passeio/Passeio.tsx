@@ -1,21 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMidia } from "@/components/useMidia";
 import { Botao, Etiqueta } from "@/components/ui";
 import { altCachorra, cachorra, cards, cenas, mao } from "@/content/midia";
-
-function useMidia(consulta: string) {
-  return useSyncExternalStore(
-    (aviso) => {
-      const m = matchMedia(consulta);
-      m.addEventListener("change", aviso);
-      return () => m.removeEventListener("change", aviso);
-    },
-    () => matchMedia(consulta).matches,
-    () => false,
-  );
-}
 
 // uma frase por cenário: a frase troca no meio do crossfade, junto com o mundo
 const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.", "A loja com tudo que ele ama.", "O Táxi Dog que busca e leva."];

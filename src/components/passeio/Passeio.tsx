@@ -32,9 +32,9 @@ const roteiro: [number, number, -1 | 1, number][] = [
   [0, 0, 1, 0], [0, 0.4, -1, 2],
   [1, 0, -1, 1], [1, 0.4, 1, 7],
   [2, 0, 1, 3], [2, 0.2, -1, 4], [2, 0.4, 1, 5],
-  [3, 0, -1, 8], [3, 0.4, 1, 6],
+  [3, 0, -1, 8], [3, 0.2, 1, 6],
 ];
-const DURACAO = 0.6; // do card nascer no ponto de fuga até sair pela borda, em fração do trecho
+const DURACAO = 0.8; // do card nascer no ponto de fuga até sair pela borda, em fração do trecho
 const DENTRO = 0.88; // até aqui o card fica inteiro na tela; só no fim sai pela borda
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -128,29 +128,35 @@ export function Passeio() {
           c.style.visibility = "hidden";
           return;
         }
+        // nasce no horizonte, acima da cabeça da cachorra, e se abre para o lado enquanto cresce
         let x, escala;
         if (u < DENTRO) {
           const v = u / DENTRO;
-          x = lerp(leve ? 6 : 11, leve ? 14 : 27, Math.pow(v, 1.3));
-          escala = lerp(0.3, leve ? 1.4 : 1.3, Math.pow(v, 1.6));
+          x = lerp(leve ? 4 : 6, leve ? 18 : 27, Math.pow(v, 1.3));
+          escala = lerp(0.35, leve ? 1.4 : 1.3, Math.pow(v, 1.6));
         } else {
           const v = (u - DENTRO) / (1 - DENTRO);
-          x = (leve ? 14 : 27) + v * v * 45;
-          escala = (leve ? 1.4 : 1.3) + v * 0.3;
+          x = (leve ? 18 : 27) + v * v * 45;
+          escala = (leve ? 1.4 : 1.3) + v * 0.4;
         }
-        const y = leve ? lerp(-12, -4, u) : lerp(-15, 2, u);
-        const desfoque = u < 0.4 ? (1 - u / 0.4) * 4 : 0;
+        const y = leve ? lerp(-14, -6, u) : lerp(-20, 0, u);
+        const w = f.offsetWidth * escala;
+        const h = f.offsetHeight * escala;
+        let xPx = (x * innerWidth) / 100;
+        // zona da cachorra (o terço do meio, abaixo de 48% da altura): nenhum card a cruza no desktop
+        if (!leve && innerHeight / 2 + (y * innerHeight) / 100 + h / 2 > innerHeight * 0.48) xPx = Math.max(xPx, innerWidth * 0.17 + w / 2);
+        const desfoque = u < 0.4 ? (1 - u / 0.4) * 2 : 0;
         c.style.visibility = "visible";
         c.style.opacity = String(Math.min(suave(0, 0.12, u) * (0.7 + 0.3 * suave(0.1, 0.4, u)), 1 - suave(0.97, 1, u)));
-        c.style.transform = `translate(${(lado * x).toFixed(2)}vw, ${y.toFixed(2)}svh)`;
+        c.style.transform = `translate(${(lado * xPx).toFixed(1)}px, ${y.toFixed(2)}svh)`;
         f.style.transform = `translate(-50%, -50%) scale(${escala.toFixed(4)})`;
-        f.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
+        // o desfoque de distância fica só na foto, dentro da moldura nítida
+        const foto = f.firstElementChild as HTMLElement | null;
+        if (foto) foto.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
         if (e) {
-          // etiqueta presa ao canto superior direito da foto, nunca mais larga que ela
-          const w = f.offsetWidth * escala;
-          const h = f.offsetHeight * escala;
+          // etiqueta presa ao canto superior direito da foto; no desktop só aparece quando cabe sobre ela
           e.style.transform = `translate(${(w / 2 - e.offsetWidth).toFixed(1)}px, ${(-h / 2 - e.offsetHeight).toFixed(1)}px)`;
-          e.style.opacity = w >= e.offsetWidth + 8 ? "1" : "0";
+          e.style.opacity = leve || w >= e.offsetWidth + 8 ? "1" : "0";
         }
       });
     };
@@ -230,7 +236,7 @@ export function Passeio() {
         {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {roteiro.map(([i, , , card], k) =>
-            leve && roteiro.findIndex(([j]) => j === i) !== k ? null : (
+            leve && k - roteiro.findIndex(([j]) => j === i) > 1 ? null : (
               <div
                 key={k}
                 ref={(el) => void (cartoes.current[k] = el)}

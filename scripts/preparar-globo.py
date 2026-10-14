@@ -23,7 +23,8 @@ def preparar():
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     lum = a @ np.array([0.2126, 0.7152, 0.0722])
     # o mar da Blue Marble é azul e escuro; a máscara é suavizada para a costa não serrilhar
-    mar = ((b > r * 1.12) & (b > g * 0.98) & (lum < 0.5)).astype(np.float32)
+    # lagos escuros (o Titicaca vira um borrão preto) também ganham a cor do mar
+    mar = (((b > r * 1.12) & (b > g * 0.98) & (lum < 0.5)) | (lum < 0.07)).astype(np.float32)
     mar = np.asarray(Image.fromarray((mar * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32)[..., None] / 255
     # batimetria mais suave: comprime o relevo do fundo do mar (a plataforma continental não vira contorno brilhante)
     profundo = np.clip(lum / 0.32, 0, 1) ** 0.75 * 0.85
@@ -31,7 +32,7 @@ def preparar():
     # terra: um pouco menos saturada e mais quente, para combinar com o verde-água
     cinza = lum[..., None]
     terra = np.clip(cinza + 0.78 * (a - cinza), 0, 1) ** 0.72 * np.array([1.04, 1.0, 0.9])  # florestas menos pretas, tom cáqui
-    saida = terra * (1 - mar) + agua * mar
+    saida = np.maximum(terra * (1 - mar) + agua * mar, 0.08)  # nada abaixo de ~20/255
     img = Image.fromarray((np.clip(saida, 0, 1) * 255).astype(np.uint8))
     DESTINO.mkdir(parents=True, exist_ok=True)
     for largura in (4096, 2048):

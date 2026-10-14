@@ -97,8 +97,8 @@ function Colunas({ passo, barras }: { passo: Passo; barras?: (el: HTMLSpanElemen
         return (
           <li key={d.titulo} className="relative pt-5">
             {/* linha fina com o trecho que avança: progresso dentro do passo */}
-            <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-current/30">
-              <span ref={(el) => barras?.(el, k)} className="absolute inset-y-0 left-0 w-full origin-left bg-current" style={{ transform: barras ? "scaleX(0)" : undefined }} />
+            <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-current/15 md:bg-current/30">
+              {barras && <span ref={(el) => barras(el, k)} className="absolute inset-y-0 left-0 w-full origin-left bg-current" style={{ transform: "scaleX(0)" }} />}
             </span>
             <Icone size={26} weight="light" aria-hidden />
             <h4 className="mt-3 text-lead font-medium">{d.titulo}</h4>
@@ -312,7 +312,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
           {passos.map((p, i) => (
             <li key={p.id}>
               {/* o título do passo fica preso no alto enquanto o vídeo e os detalhes passam */}
-              <h3 className="sticky top-0 z-10 -mx-5 bg-creme/92 px-5 pt-[4.25rem] pb-3 text-[1.75rem] leading-[1.1] backdrop-blur-sm">{p.frase}</h3>
+              <h3 className="sticky top-0 z-10 -mx-5 bg-creme px-5 pt-[4.25rem] pb-3 text-[1.75rem] leading-[1.1] after:absolute after:inset-x-0 after:top-full after:h-6 after:bg-[linear-gradient(#fbf6ee,rgb(251_246_238/0))]">{p.frase}</h3>
               <div className="relative mt-2 aspect-[4/5] overflow-hidden rounded-[10px] bg-ardosia">
                 <Video passo={p} refVideo={(v) => void (videos.current[i] = v)} />
                 <Etiqueta className="absolute top-0 right-0">{p.rotulo}</Etiqueta>

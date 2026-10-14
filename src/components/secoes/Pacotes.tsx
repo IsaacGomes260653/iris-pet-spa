@@ -11,15 +11,11 @@ import { Rotulo } from "./Rotulo";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-// cada pacote com as cores de um dos temas do site (amanhecer, creme, verde-água)
-const cabecalho = [
-  "bg-[linear-gradient(160deg,#b9bed4,#d3c4d3_55%,#eccbbd)]",
-  "bg-[linear-gradient(160deg,#fde7d2,#dff1e4)]",
-  "bg-[linear-gradient(160deg,#2e7a72,#1d5554)]",
-];
+// cabeçalhos neutros; só o pacote mais completo ganha o verde-água
+const cabecalho = ["bg-papel", "bg-papel", "bg-[linear-gradient(160deg,#2e7a72,#1d5554)]"];
 const textoCabecalho = ["text-tinta", "text-tinta", "text-papel"];
-// velocidades diferentes no parallax: a do meio sobe mais
-const deslocamento = [-8, -22, -12];
+// parallax só dentro da moldura (a foto tem 16% de folga): velocidades diferentes, a do meio mais rápida
+const deslocamento = [4, 7, 5];
 
 export function Pacotes() {
   const secao = useRef<HTMLElement>(null);
@@ -32,7 +28,7 @@ export function Pacotes() {
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         fotos.current.forEach((f, i) => {
           if (!f) return;
-          gsap.fromTo(f, { yPercent: 10 }, { yPercent: deslocamento[i], ease: "none", scrollTrigger: { trigger: f, start: "top bottom", end: "bottom top", scrub: true } });
+          gsap.fromTo(f, { yPercent: deslocamento[i] }, { yPercent: -deslocamento[i], ease: "none", scrollTrigger: { trigger: f.parentElement, start: "top bottom", end: "bottom top", scrub: true } });
         });
       });
     },
@@ -50,11 +46,13 @@ export function Pacotes() {
       <ul className="mt-14 grid grid-cols-3 gap-3 md:gap-6">
         {pacotes.map((p, i) => (
           <li key={p.id} className={i === 1 ? "md:mt-24" : i === 2 ? "md:mt-10" : ""}>
-            <div ref={(el) => void (fotos.current[i] = el)} className="relative aspect-[3/4] overflow-hidden rounded-[10px]">
-              <Image src={p.foto} alt={p.alt} fill sizes="(max-width: 768px) 33vw, 30vw" className="object-cover" />
+            <div className="relative aspect-[3/4] overflow-hidden rounded-[10px]">
+              <div ref={(el) => void (fotos.current[i] = el)} className="absolute inset-x-0 -top-[8%] h-[116%]">
+                <Image src={p.foto} alt={p.alt} fill sizes="(max-width: 768px) 33vw, 30vw" className="object-cover" />
+              </div>
               <Etiqueta className="absolute top-0 right-0 max-md:hidden">{p.nome}</Etiqueta>
             </div>
-            <p className="mt-3 text-corpo max-md:text-[0.875rem]">
+            <p className="relative mt-3 text-corpo max-md:text-[0.875rem]">
               <span className="font-medium">{p.nome}</span>
               <span className="block text-tinta-suave max-md:hidden">{p.frase}</span>
             </p>
@@ -67,13 +65,20 @@ export function Pacotes() {
         <h3 className="text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Lado a lado</h3>
 
         {/* desktop: tabela */}
-        <table className="mt-8 w-full border-collapse text-left max-md:hidden">
+        <table className="mt-8 w-full table-fixed border-collapse text-left max-md:hidden">
           <caption className="sr-only">Comparativo dos pacotes de banho</caption>
+          <colgroup>
+            <col className="w-[220px]" />
+            <col />
+            <col />
+            <col />
+          </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="w-[22%]" />
+              <th scope="col" />
               {pacotes.map((p, i) => (
                 <th key={p.id} scope="col" className={`${cabecalho[i]} ${textoCabecalho[i]} rounded-t-[10px] p-5 align-bottom font-normal`}>
+                  {i === 2 && <span className="mb-3 inline-block bg-papel px-2 py-1 font-mono text-rotulo uppercase text-tinta [font-stretch:87.5%]">Mais completo</span>}
                   <span className="block font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</span>
                   <span className="mt-1 block text-[0.9375rem] opacity-85">{p.frase}</span>
                 </th>
@@ -115,15 +120,15 @@ export function Pacotes() {
           </div>
           {pacotes.map((p, i) => (
             <div key={p.id} role="tabpanel" id={`painel-${p.id}`} aria-labelledby={`aba-${p.id}`} hidden={aba !== i} className="mt-4">
-              <div className={`${cabecalho[i]} ${textoCabecalho[i]} rounded-[10px] p-5`}>
+              <div className={`${cabecalho[i]} ${textoCabecalho[i]} rounded-[10px] border border-tinta/10 p-5`}>
                 <p className="font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</p>
                 <p className="mt-1 text-[0.9375rem] opacity-85">{p.frase}</p>
               </div>
               <dl className="mt-2">
                 {ficha.map((linha) => (
-                  <div key={linha.item} className="grid grid-cols-[8.5rem_1fr] gap-3 border-b border-tinta/12 py-3">
+                  <div key={linha.item} className="grid grid-cols-[8.5rem_1fr] items-baseline gap-3 border-b border-tinta/12 py-3">
                     <dt className="font-mono text-rotulo uppercase [font-stretch:87.5%] text-tinta-suave">{linha.item}</dt>
-                    <dd className="text-corpo">{linha.valores[i]}</dd>
+                    <dd className={linha.item === "A partir de" ? "font-serifa text-[1.75rem] font-extralight" : "text-corpo"}>{linha.valores[i]}</dd>
                   </div>
                 ))}
               </dl>

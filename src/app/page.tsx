@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { BanhoTosa } from "@/components/banho/BanhoTosa";
 import { Lojas } from "@/components/lojas/Lojas";
+import { Agendar } from "@/components/secoes/Agendar";
+import { Clientes } from "@/components/secoes/Clientes";
+import { Especialistas } from "@/components/secoes/Especialistas";
+import { Guia } from "@/components/secoes/Guia";
+import { Pacotes } from "@/components/secoes/Pacotes";
+import { RaioX } from "@/components/secoes/RaioX";
+import { Rede } from "@/components/secoes/Rede";
+import { Rodape } from "@/components/secoes/Rodape";
 import { Passeio } from "@/components/passeio/Passeio";
 import { Logo } from "@/components/ui";
 
@@ -14,13 +22,14 @@ export default function Home() {
       <BanhoTosa />
       {/* no desktop entra sobreposta à cortina verde-água do banho: o título do mapa sobe por cima dela */}
       <Lojas />
-      {/* destino do "Agendar banho" (o agendamento completo entra na Fase 5) */}
-      <section id="agendar" data-tema="creme" aria-labelledby="titulo-agendar" className="flex min-h-[70svh] flex-col items-center justify-center px-5 text-center">
-        <h2 id="titulo-agendar" className="text-titulo">Hora do banho.</h2>
-        <p className="mt-6 max-w-[40ch] text-lead text-tinta-suave">
-          Escolha a unidade, o serviço e o horário. Ele volta para casa cheiroso e calmo.
-        </p>
-      </section>
+      <Pacotes />
+      <RaioX />
+      <Rede />
+      <Especialistas />
+      <Clientes />
+      <Guia />
+      <Agendar />
+      <Rodape />
     </main>
   );
 }

@@ -57,13 +57,17 @@ function calcularRotas() {
   return rotas;
 }
 
-/** Unidades a menos de ~2,6° uma da outra viram um marcador só, com a contagem (senão os anéis se empilham). */
+/**
+ * Unidades próximas viram um marcador só, com a contagem: a ~4,5° os anéis já se tocam na tela, no desktop e no
+ * celular. Começa pelas cidades com mais vizinhas, para São Paulo, Rio e BH puxarem as do entorno.
+ */
 function agrupar(): Grupo[] {
-  const livres = [...lojas];
+  const peso = (l: Loja) => lojas.filter((o) => distancia(o, l) < 4.5).length;
+  const livres = [...lojas].sort((a, b) => peso(b) - peso(a));
   const grupos: Grupo[] = [];
   while (livres.length) {
     const semente = livres.shift()!;
-    const membros = [semente, ...livres.filter((l) => distancia(semente, l) < 2.6)];
+    const membros = [semente, ...livres.filter((l) => distancia(semente, l) < 4.5)];
     for (const m of membros.slice(1)) livres.splice(livres.indexOf(m), 1);
     const lat = membros.reduce((s, l) => s + l.lat, 0) / membros.length;
     const lng = membros.reduce((s, l) => s + l.lng, 0) / membros.length;
@@ -86,6 +90,7 @@ export function Lojas() {
   const [selecionada, setSelecionada] = useState<Loja | null>(null);
   const [grupo, setGrupo] = useState<Grupo | null>(null);
   const [busca, setBusca] = useState("");
+  const [listaAberta, setListaAberta] = useState(false);
   const celular = useMidia("(max-width: 768px)");
   const quieto = useMidia("(prefers-reduced-motion: reduce)");
 
@@ -107,6 +112,7 @@ export function Lojas() {
   const abrirLista = (g: Grupo | null) => {
     setGrupo(g);
     setBusca("");
+    setListaAberta(true);
     dialogo.current?.showModal();
   };
   const escolher = (l: Loja) => {
@@ -157,7 +163,10 @@ export function Lojas() {
         </div>
 
         {/* filtros em pílula, com a contagem do que está aceso */}
-        <div className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:bottom-8 ${celular && selecionada ? "pointer-events-none opacity-0" : ""}`}>
+        <div
+          inert={listaAberta || (celular && !!selecionada)}
+          className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:bottom-8 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
+        >
           <p className="font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel/85" aria-live="polite">
             {filtro === "todas" ? `${lojas.length} unidades` : `${filtradas.length} unidades com ${rotuloFiltro}`}
           </p>
@@ -235,10 +244,13 @@ export function Lojas() {
       <dialog
         ref={dialogo}
         aria-labelledby="lista-titulo"
-        onClose={() => setGrupo(null)}
-        className="mx-auto mt-[8vh] h-[min(84vh,760px)] w-[min(560px,calc(100vw-2rem))] overflow-hidden rounded-[14px] bg-papel p-0 text-tinta backdrop:bg-abismo/70"
+        onClose={() => {
+          setGrupo(null);
+          setListaAberta(false);
+        }}
+        className="mx-auto mt-[8vh] max-h-[min(720px,calc(100dvh-96px))] w-[min(560px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[14px] bg-papel p-0 text-tinta backdrop:bg-abismo/70 open:flex max-md:mt-auto max-md:mb-0 max-md:w-full max-md:max-w-none max-md:rounded-b-none max-md:rounded-t-[20px]"
       >
-        <div className="flex h-full flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="border-b border-tinta/10 p-6">
             <div className="flex items-start justify-between gap-4">
               <h2 id="lista-titulo" className="text-[2rem] leading-none">
@@ -282,7 +294,7 @@ export function Lojas() {
             </p>
           </div>
           <div className="relative min-h-0 flex-1">
-            <div className="h-full overflow-y-auto px-6 pb-10">
+            <div className="max-h-full overflow-y-auto px-6 pb-10">
               {naLista.length === 0 && <p className="mt-6 text-corpo text-tinta-suave">Ainda não chegamos aí. Tente uma cidade vizinha.</p>}
               {regioes.map((r) => {
                 const daRegiao = naLista.filter((l) => l.regiao === r);

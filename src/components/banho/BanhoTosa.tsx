@@ -268,7 +268,7 @@ function Fixado() {
           <BotaoPausa pausado={pausado} alternar={() => setPausado((v) => !v)} />
         </div>
 
-        <div ref={tinta} aria-hidden className="invisible pointer-events-none absolute inset-0 z-50 bg-[linear-gradient(180deg,#2e7a72,#1d5554)] opacity-0" />
+        <div ref={tinta} aria-hidden className="grad-agua invisible pointer-events-none absolute inset-0 z-50 bg-fixed opacity-0" />
       </div>
     </section>
   );

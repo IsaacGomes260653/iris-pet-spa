@@ -18,6 +18,7 @@ GRUPOS = {
     # prefixo: (pasta, lado maior, luminância média alvo, saturação, força do tom, piso dos pretos)
     "fundo-": ("passeio", 2560, 0.46, 0.64, 0.36, 0.03),
     "card-": ("cards", 1400, 0.5, 0.74, 0.24, 0.07),  # a mesma manhã dos fundos, com pretos levantados
+    "foto-": ("fotos", 1800, 0.5, 0.8, 0.18, 0.04),  # pacotes, raio-x, guia e especialistas: um pouco mais de cor
 }
 
 def luminancia(img):

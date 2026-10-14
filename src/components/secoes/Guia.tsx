@@ -5,7 +5,7 @@ import { Rotulo } from "./Rotulo";
 
 export function Guia() {
   return (
-    <section id="guia" data-tema="creme" aria-labelledby="titulo-guia" className="relative z-10 px-5 py-[14svh] md:px-[6vw]">
+    <section id="guia" data-tema="creme" aria-labelledby="titulo-guia" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 px-5 py-[14svh] md:px-[6vw]">
       <div className="grid items-center gap-12 md:grid-cols-[minmax(0,9fr)_minmax(0,11fr)] md:gap-[6vw]">
         <div>
           <Rotulo numero={indice.guia}>Guia de cuidados</Rotulo>
@@ -32,7 +32,8 @@ export function Guia() {
           <a
             href="/guia-de-cuidados.pdf"
             download
-            aria-label="Baixar o guia de cuidados (PDF, 2 páginas)"
+            aria-hidden
+            tabIndex={-1}
             className="absolute -bottom-8 left-5 flex aspect-[210/297] w-[38%] max-w-[220px] -rotate-3 flex-col justify-between bg-[linear-gradient(180deg,#b9bed4_0%,#d3c4d3_30%,#eccbbd_58%,#93a3b5_85%,#2c394a_100%)] p-4 text-papel shadow-[0_24px_50px_-20px_rgb(34_37_43/0.55)] transition-transform hover:-rotate-1 md:-left-10"
           >
             <span className="font-serifa text-[0.95rem] font-light">Íris</span>

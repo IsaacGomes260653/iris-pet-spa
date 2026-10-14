@@ -1,8 +1,8 @@
 # Estudo da referência — seasats.com
 
-Estudo feito em 01/10/2026 navegando a página com Playwright (desktop 1440×900 e celular 390×844), lendo o DOM e os estilos calculados, e cruzando com as prints em `docs/referencias/`.
+Estudo feito em 01/10/2026 navegando a página com Playwright (desktop 1440×900 e celular 390×844), lendo o DOM e os estilos calculados, e cruzando com prints próprias (guardadas só localmente, em `docs/referencias/`, fora do repositório por serem capturas de um site de terceiros).
 
-- Capturas em sequência: `docs/referencias/seasats-live/contato-desktop.jpg` (46 telas, rotuladas pelo `scrollY`) e `contato-mobile.jpg` (24 telas).
+- Capturas em sequência (locais, fora do repositório): 46 telas no desktop e 24 no celular, rotuladas pelo `scrollY`.
 - Nada daqui será copiado (código, textos, imagens, vídeos). O que reaproveitamos é o **mecanismo**: ritmo, fixação, transições, hierarquia tipográfica.
 
 ---

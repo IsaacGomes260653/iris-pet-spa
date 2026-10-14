@@ -36,10 +36,10 @@ export function Guia() {
             tabIndex={-1}
             className="absolute -bottom-8 left-5 flex aspect-[210/297] w-[38%] max-w-[220px] -rotate-3 flex-col justify-between bg-[linear-gradient(180deg,#b9bed4_0%,#d3c4d3_30%,#eccbbd_58%,#93a3b5_85%,#2c394a_100%)] p-4 text-papel shadow-[0_24px_50px_-20px_rgb(34_37_43/0.55)] transition-transform hover:-rotate-1 md:-left-10"
           >
-            <span className="font-serifa text-[0.95rem] font-light">Íris</span>
+            <span className="font-serifa text-[0.95rem] font-light text-ardosia">Íris</span>
             <span>
               <span className="block bg-papel px-1.5 py-0.5 font-mono text-[0.5625rem] uppercase text-tinta [font-stretch:87.5%] w-fit">Guia de cuidados</span>
-              <span className="mt-2 block font-serifa text-[clamp(1rem,1.6vw,1.375rem)] leading-[1] font-extralight">Pelo bonito. Rotina simples.</span>
+              <span className="mt-2 block font-serifa text-[clamp(1rem,1.6vw,1.375rem)] leading-[1] font-light text-ardosia">Pelo bonito. Rotina simples.</span>
             </span>
             <span className="font-mono text-[0.5625rem] uppercase [font-stretch:87.5%]">2 páginas · PDF · 96 KB</span>
           </a>

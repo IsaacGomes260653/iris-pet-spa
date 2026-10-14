@@ -43,25 +43,25 @@ export function Pacotes() {
       </h2>
 
       {/* abertura: as três fotos sobem em velocidades diferentes */}
-      <ul className="mt-14 grid grid-cols-3 gap-3 md:gap-6">
+      <ul className="mt-14 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:-mx-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
         {pacotes.map((p, i) => (
-          <li key={p.id} className={i === 1 ? "md:mt-24" : i === 2 ? "md:mt-10" : ""}>
+          <li key={p.id} className={`w-[72vw] shrink-0 snap-start md:w-auto ${i === 1 ? "md:mt-24" : i === 2 ? "md:mt-10" : ""}`}>
             <div className="relative aspect-[3/4] overflow-hidden rounded-[10px]">
               <div ref={(el) => void (fotos.current[i] = el)} className="absolute inset-x-0 -top-[8%] h-[116%]">
                 <Image src={p.foto} alt={p.alt} fill sizes="(max-width: 768px) 33vw, 30vw" className="object-cover" />
               </div>
               <Etiqueta className="absolute top-0 right-0 max-md:hidden">{p.nome}</Etiqueta>
             </div>
-            <p className="relative mt-3 text-corpo max-md:text-[0.875rem]">
+            <p className="relative mt-3 text-corpo">
               <span className="font-medium">{p.nome}</span>
-              <span className="block text-tinta-suave max-md:hidden">{p.frase}</span>
+              <span className="block text-tinta-suave">{p.frase}</span>
             </p>
           </li>
         ))}
       </ul>
 
       {/* ficha técnica */}
-      <div className="mt-[14svh]">
+      <div className="mt-[10svh] md:mt-[14svh]">
         <h3 className="text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Lado a lado</h3>
 
         {/* desktop: tabela */}
@@ -77,7 +77,7 @@ export function Pacotes() {
             <tr>
               <th scope="col" />
               {pacotes.map((p, i) => (
-                <th key={p.id} scope="col" className={`${cabecalho[i]} ${textoCabecalho[i]} rounded-t-[10px] p-5 align-bottom font-normal`}>
+                <th key={p.id} scope="col" className={`${cabecalho[i]} ${textoCabecalho[i]} ${i === 0 ? "rounded-tl-[10px]" : ""} ${i === 2 ? "rounded-tr-[10px]" : ""} p-5 align-bottom font-normal`}>
                   {i === 2 && <span className="mb-3 inline-block bg-papel px-2 py-1 font-mono text-rotulo uppercase text-tinta [font-stretch:87.5%]">Mais completo</span>}
                   <span className="block font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</span>
                   <span className="mt-1 block text-[0.9375rem] opacity-85">{p.frase}</span>
@@ -92,7 +92,7 @@ export function Pacotes() {
                   {linha.item}
                 </th>
                 {linha.valores.map((v, i) => (
-                  <td key={i} className={`px-5 py-4 text-corpo ${linha.item === "A partir de" ? "font-serifa text-[1.75rem] font-extralight" : ""}`}>
+                  <td key={i} className={`px-5 py-4 text-corpo ${i === 2 ? "bg-[#2e7a72]/[0.07]" : ""} ${linha.item === "A partir de" ? "font-serifa text-[1.75rem] font-extralight" : ""}`}>
                     {v}
                   </td>
                 ))}

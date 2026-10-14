@@ -107,7 +107,7 @@ export function Rodape() {
         © 2026 Íris Pet Spa · feito com carinho e muitas patinhas
       </p>
       {/* o nome gigante, de margem a margem, como a assinatura no fim da página (espaço para o acento) */}
-      <p aria-hidden className="mt-[0.15em] pt-[0.3em] text-center font-serifa text-[76vw] leading-[0.82] font-extralight tracking-[-0.045em] whitespace-nowrap select-none">
+      <p aria-hidden className="mt-[0.15em] pt-[0.3em] text-center font-serifa text-[64vw] leading-[0.82] font-extralight tracking-[-0.045em] whitespace-nowrap select-none">
         Íris
       </p>
     </footer>

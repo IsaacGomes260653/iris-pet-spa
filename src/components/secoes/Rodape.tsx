@@ -53,7 +53,7 @@ export function Rodape() {
   }, []);
 
   return (
-    <footer data-tema="agua" className="relative z-10 overflow-hidden bg-[linear-gradient(#123b3d,#0c2829)] px-5 pt-[14svh] pb-8 text-papel md:px-[6vw]">
+    <footer data-tema="agua" className="relative z-10 overflow-hidden bg-[linear-gradient(#0c2829,#0a2122)] px-5 pt-[12svh] pb-8 text-papel md:px-[6vw]">
       <div className="grid gap-12 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         {/* o easter egg: decorativo, fora da leitura de tela */}
         <div aria-hidden className="grid grid-cols-2 gap-6">
@@ -103,9 +103,11 @@ export function Rodape() {
         </div>
       </div>
 
-      <p className="mt-[10svh] font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel-suave">© 2026 Íris Pet Spa · feito com carinho e muitas patinhas</p>
-      {/* o nome gigante, como a assinatura no fim da página */}
-      <p aria-hidden className="mt-4 -mb-[0.2em] font-serifa text-[38vw] leading-[0.8] font-extralight tracking-[-0.04em] select-none">
+      <p className="mt-[10svh] font-mono text-rotulo leading-[1.4] uppercase [font-stretch:87.5%] text-papel-suave">
+        © 2026 Íris Pet Spa · feito com carinho e muitas patinhas
+      </p>
+      {/* o nome gigante, de margem a margem, como a assinatura no fim da página (espaço para o acento) */}
+      <p aria-hidden className="mt-[0.15em] pt-[0.3em] text-center font-serifa text-[57vw] leading-[0.82] font-extralight tracking-[-0.045em] select-none md:text-[54vw]">
         Íris
       </p>
     </footer>

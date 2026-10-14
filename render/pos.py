@@ -16,6 +16,6 @@ yy, xx = np.mgrid[0:h, 0:w]
 r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h * 0.55) / (h / 2)) ** 2)
 img *= (1 - 0.28 * np.clip(r - 0.55, 0, 1) ** 1.5)[..., None]
 rng = np.random.default_rng(7)
-img += rng.normal(0, 0.012, img.shape[:2])[..., None]
+img += rng.normal(0, 0.005, img.shape[:2])[..., None]
 Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8)).save(sai, quality=92)
 print(sai)

@@ -1,7 +1,7 @@
 """Cena do passeio para o Blender (Cycles): a pastora preta de costas, em primeira pessoa, ao amanhecer.
 
 Uso:  blender -b --factory-startup --python render/cena.py -- <saida.png> [quadro] [amostras]
-Precisa de media-src/modelos/lobo-original.glb e media-src/render/ (HDRI e texturas do Poly Haven).
+Precisa de media-src/modelos/lobo-cinza.glb e media-src/render/ (HDRI e texturas do Poly Haven).
 """
 import math
 import sys
@@ -15,7 +15,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 MIDIA = RAIZ / "media-src"
 args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 SAIDA = args[0] if args else str(MIDIA / "render" / "teste.png")
-QUADRO = int(args[1]) if len(args) > 1 else 40
+QUADRO = int(args[1]) if len(args) > 1 else 72
 AMOSTRAS = int(args[2]) if len(args) > 2 else 192
 
 cena = bpy.context.scene
@@ -59,54 +59,58 @@ def material_pelo(nome, melanina, vermelho):
     return m
 
 
-PELE = material("Pele", **{"Base Color": (0.012, 0.010, 0.009, 1), "Roughness": 0.7})
-PELO = material_pelo("Pelo", 0.995, 0.12)
+PELE = material("Pele", **{"Base Color": (0.006, 0.006, 0.007, 1), "Roughness": 0.7})
+PELO = material_pelo("Pelo", 1.0, 0.0)
 COURO = material("Couro conhaque", **{"Base Color": (0.27, 0.09, 0.03, 1), "Roughness": 0.45})
 METAL = material("Argola", **{"Base Color": (0.75, 0.62, 0.4, 1), "Metallic": 1.0, "Roughness": 0.3})
-CORDA = material("Corda sálvia", **{"Base Color": (0.075, 0.11, 0.07, 1), "Roughness": 0.85})
+CORDA = material("Corda sálvia", **{"Base Color": (0.2, 0.27, 0.18, 1), "Roughness": 0.85})
 
 # ---------------------------------------------------------------- a cachorra
-bpy.ops.import_scene.gltf(filepath=str(MIDIA / "modelos" / "lobo-original.glb"))
+bpy.ops.import_scene.gltf(filepath=str(MIDIA / "modelos" / "lobo-cinza.glb"))
 importados = list(bpy.context.selected_objects)
-raiz = next(o for o in importados if o.parent is None)
+raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
 armacao = next(o for o in importados if o.type == "ARMATURE")
-corpo = None
+corpo = olhos = None
 for o in importados:
     if o.type != "MESH":
         continue
     nomes = [s.material.name for s in o.material_slots if s.material]
-    if any(n.startswith("Wolf_1") for n in nomes):
+    if o.parent is None:
+        o.hide_render = o.hide_viewport = True  # esfera solta do arquivo original
+    elif any(n.startswith("Wolf_Main") for n in nomes):
         corpo = o
-        o.data.materials.clear()
-        o.data.materials.append(PELE)
-    elif any(n.startswith(("Wolf_Fur", "Material.001")) for n in nomes):
-        o.hide_render = o.hide_viewport = True  # cartões de pelo falsos e disco de sombra do arquivo original
-    elif any(n.startswith("Wolf_claws") for n in nomes):
+    elif any(n.startswith("Wolf_Eye") for n in nomes):
+        olhos = o
+    if o.parent is not None and not any(n.startswith(("Wolf_Main", "Claw")) for n in nomes):
+        o.hide_render = True  # olhos, língua e dentes não aparecem de costas
+    if o.parent is not None:
         o.data.materials.clear()
         o.data.materials.append(PELE)
 
-acao = next(a for a in bpy.data.actions if "walk" in a.name.lower())
+acao = bpy.data.actions[0]  # trote entre os quadros 60 e 105
 armacao.animation_data_create()
 armacao.animation_data.action = acao
 if hasattr(armacao.animation_data, "action_slot") and acao.slots:
     armacao.animation_data.action_slot = acao.slots[0]
 cena.frame_set(QUADRO)
 
-# escala de pastora-alemã (~1,35 m do focinho à cauda), patas no chão, olhando para -Y
-bpy.context.view_layer.update()
-dep = bpy.context.evaluated_depsgraph_get()
-pts = np.array([corpo.matrix_world @ v.co for v in corpo.evaluated_get(dep).data.vertices])
+
+def vertices(obj):
+    bpy.context.view_layer.update()
+    ev = obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    return np.array([obj.matrix_world @ v.co for v in ev.data.vertices])
+
+
+# focinho para -Y (longe da câmera): gira pelo vetor centro do corpo → olhos
+pts, oc = vertices(corpo), vertices(olhos).mean(0)
+frente = oc[:2] - pts.mean(0)[:2]
+# (o importador de glTF usa quaternions: gira pela matriz, não por rotation_euler)
+raiz.matrix_world = Matrix.Rotation(math.atan2(-1.0, 0.0) - math.atan2(frente[1], frente[0]), 4, "Z") @ raiz.matrix_world
+# escala de pastora-alemã (~1,35 m do focinho à cauda), patas no chão, centrada em x
+pts = vertices(corpo)
 tam = pts.max(0) - pts.min(0)
-escala = 1.35 / max(tam[0], tam[1])
-raiz.scale = tuple(s * escala for s in raiz.scale)
-raiz.scale.x *= 1.12  # mais encorpada que o lobo original
-bpy.context.view_layer.update()
-pts = np.array([corpo.matrix_world @ v.co for v in corpo.evaluated_get(bpy.context.evaluated_depsgraph_get()).data.vertices])
-frente_y = pts[:, 1].min() < -pts[:, 1].max()  # focinho do lado -Y?
-if not frente_y:
-    raiz.rotation_euler.z += math.pi
-bpy.context.view_layer.update()
-pts = np.array([corpo.matrix_world @ v.co for v in corpo.evaluated_get(bpy.context.evaluated_depsgraph_get()).data.vertices])
+raiz.scale = tuple(s * 1.35 / tam[1] for s in raiz.scale)
+pts = vertices(corpo)
 raiz.location.z -= pts[:, 2].min()
 raiz.location.x -= (pts[:, 0].min() + pts[:, 0].max()) / 2
 bpy.context.view_layer.update()
@@ -215,8 +219,8 @@ objeto_gn("Pelo", arvore_pelo("Pelo", corpo, 140000, 0.058, 0.0009, PELO))
 # ---------------------------------------------------------------- coleira e guia
 bpy.context.view_layer.update()
 ossos = {b.name: b for b in armacao.pose.bones}
-pesc = next((b for n, b in ossos.items() if n.startswith("Hals_013")), None)
-cab = next((b for n, b in ossos.items() if n.startswith("Kopf_002")), None)
+pesc = ossos["Neck_Bone_Wolf_Armature"]
+cab = ossos["Head_Wolf_Armature"]
 a = armacao.matrix_world @ pesc.head
 b = armacao.matrix_world @ cab.head
 eixo = (b - a).normalized()
@@ -232,7 +236,7 @@ cima = Vector((0, 0, 1))
 nuca = meio + (cima - eixo * eixo.dot(cima)).normalized() * 0.11
 
 CAM = Vector((0.0, nuca.y + 3.7, 1.32))
-mao = Vector((0.36, nuca.y + 3.15, 0.92))
+mao = Vector((-0.5, nuca.y + 3.3, 0.72))  # a câmera olha para -Y: o lado direito da tela é -X
 curva = bpy.data.curves.new("Guia", "CURVE")
 curva.dimensions = "3D"
 curva.bevel_depth = 0.0075
@@ -242,8 +246,8 @@ sp.bezier_points.add(1)
 for p, co in zip(sp.bezier_points, (mao, nuca)):
     p.co = co
     p.handle_left_type = p.handle_right_type = "AUTO"
-sp.bezier_points[0].handle_right = mao.lerp(nuca, 0.35) + Vector((0, 0, -0.32))
-sp.bezier_points[1].handle_left = mao.lerp(nuca, 0.75) + Vector((0, 0, -0.16))
+sp.bezier_points[0].handle_right = mao.lerp(nuca, 0.35) + Vector((0, 0, -0.42))
+sp.bezier_points[1].handle_left = mao.lerp(nuca, 0.75) + Vector((0, 0, -0.3))
 guia = bpy.data.objects.new("Guia", curva)
 guia.data.materials.append(CORDA)
 cena.collection.objects.link(guia)
@@ -273,10 +277,17 @@ def textura_terra():
     return m
 
 
-bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -14, 0))
+def curva(y):
+    """Desvio lateral da trilha: reta perto da câmera, curvando para a esquerda ao longe."""
+    return -0.018 * min(0.0, y + 3.0) ** 2
+
+
+bpy.ops.mesh.primitive_grid_add(x_subdivisions=2, y_subdivisions=220, size=1, location=(0, -14, 0))
 trilha = bpy.context.active_object
 trilha.scale = (1.25, 44, 1)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+for v in trilha.data.vertices:
+    v.co.x += curva(v.co.y - 14)
 trilha.data.materials.append(textura_terra())
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -14, -0.01))
 grama_base = bpy.context.active_object
@@ -306,17 +317,19 @@ bpy.ops.mesh.select_all(action="DESELECT")
 bpy.ops.object.mode_set(mode="OBJECT")
 for f in campo.data.polygons:
     c = campo.matrix_world @ f.center
-    if abs(c.x) < 0.42 + 0.12 * math.sin(c.y * 0.9) ** 2:  # borda irregular: o capim invade a trilha
+    if abs(c.x - curva(c.y)) < 0.42 + 0.12 * math.sin(c.y * 0.9) ** 2:  # borda irregular: o capim invade a trilha
         f.select = True
 bpy.ops.object.mode_set(mode="EDIT")
 bpy.ops.mesh.delete(type="FACE")
 bpy.ops.object.mode_set(mode="OBJECT")
 campo.hide_render = True
-grupo_capim = arvore_pelo("Capim", campo, 900, 0.26, 0.0016, CAPIM)
+grupo_capim = arvore_pelo("Capim", campo, 1400, 0.3, 0.0016, CAPIM)
 # capim cresce para cima, não "penteado"
 for no in grupo_capim.nodes:
     if no.bl_idname == "ShaderNodeCombineXYZ":
         no.inputs["X"].default_value, no.inputs["Y"].default_value, no.inputs["Z"].default_value = 0.0, 0.05, 1.0
+    if no.bl_idname == "FunctionNodeRandomValue":
+        no.inputs["Min"].default_value, no.inputs["Max"].default_value = (1, 1, 0.25), (1, 1, 1.6)
 objeto_gn("Capim", grupo_capim)
 
 # ---------------------------------------------------------------- mundo: HDRI de amanhecer com névoa
@@ -332,7 +345,7 @@ mapa = nos.new("ShaderNodeMapping")
 lig.new(coord.outputs["Generated"], mapa.inputs["Vector"])
 lig.new(mapa.outputs[0], env.inputs["Vector"])
 lig.new(env.outputs["Color"], fundo.inputs["Color"])
-fundo.inputs["Strength"].default_value = 0.55
+fundo.inputs["Strength"].default_value = 0.32
 
 # acha o sol no HDRI e gira o mundo para ele ficar à frente da câmera (contraluz no pelo preto)
 px = np.empty(env.image.size[0] * env.image.size[1] * 4, dtype=np.float32)
@@ -349,7 +362,7 @@ mapa.inputs["Rotation"].default_value[2] = alvo_az - az_sol
 print("SOL", u, v, "elevação", math.degrees(alt_sol))
 
 sol = bpy.data.lights.new("Sol", "SUN")
-sol.energy = 9.0
+sol.energy = 15.0
 sol.color = (1.0, 0.78, 0.6)
 sol.angle = math.radians(1.5)
 luz = bpy.data.objects.new("Sol", sol)
@@ -371,7 +384,7 @@ _co = mv.node_tree.nodes.new("ShaderNodeTexCoord")
 _sep = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
 _alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 3.5
-_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.011, 0.0012
+_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.007, 0.0008
 mv.node_tree.links.new(_co.outputs["Object"], _sep.inputs[0])
 _z = mv.node_tree.nodes.new("ShaderNodeMath")
 _z.operation = "MULTIPLY_ADD"
@@ -411,7 +424,7 @@ cena.cycles.volume_step_rate = 2.0
 cena.render.resolution_x, cena.render.resolution_y = 1600, 900
 cena.render.film_transparent = False
 cena.view_settings.view_transform = "AgX"
-cena.view_settings.look = "AgX - Medium High Contrast"
+cena.view_settings.look = "AgX - High Contrast"
 cena.render.image_settings.file_format = "PNG"
 cena.render.filepath = SAIDA
 dep = bpy.context.evaluated_depsgraph_get()

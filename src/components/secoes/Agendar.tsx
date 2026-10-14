@@ -1,11 +1,13 @@
+import Image from "next/image";
 import { Botao } from "@/components/ui";
+import { cachorra } from "@/content/midia";
 import { indice } from "@/content/secoes";
 import { Rotulo } from "./Rotulo";
 
 /** Chamada final: o destino de todos os "Agendar banho" do site. */
 export function Agendar() {
   return (
-    <section id="agendar" data-tema="creme" aria-labelledby="titulo-agendar" className="relative z-10 flex min-h-[90svh] flex-col items-center justify-center px-5 py-[14svh] text-center">
+    <section id="agendar" data-tema="creme" aria-labelledby="titulo-agendar" className="relative z-10 flex flex-col items-center px-5 pt-[16svh] text-center">
       <Rotulo numero={indice.agendar}>Agendar</Rotulo>
       <h2 id="titulo-agendar" className="mt-8 text-display">
         Hora do banho.
@@ -21,6 +23,10 @@ export function Agendar() {
         >
           Ver os pacotes
         </a>
+      </div>
+      {/* a mesma cachorra do passeio, de costas, esperando na porta; o fundo escurece até o rodapé, como um fim de tarde */}
+      <div aria-hidden className="relative -mx-5 mt-[8svh] flex w-[calc(100%+2.5rem)] justify-center bg-[linear-gradient(rgb(251_246_238/0)_0%,#fde7d2_30%,#2e7a72_70%,#0c2829_100%)] pt-[6svh]">
+        <Image src={cachorra} alt="" sizes="200px" className="h-[34svh] w-auto translate-y-[2px] saturate-[0.85]" />
       </div>
     </section>
   );

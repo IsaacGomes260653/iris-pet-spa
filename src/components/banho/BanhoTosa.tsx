@@ -142,9 +142,8 @@ function Fixado() {
       const naFileira = (i: number) => ({ x: 0, y: 0, width: () => caixa(i).sw, height: () => caixa(i).sh, borderRadius: 10 });
 
       const tl = gsap.timeline({ defaults: { ease: "none" } });
-      // o título só entra com a chegada do passeio já coberta pela névoa
-      tl.fromTo(titulo.current, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.7 }, 0.3);
-      tl.to({}, { duration: 0.6 });
+      // o título já está na tela quando a seção fixa (o véu creme do passeio cobriu a fachada antes)
+      tl.to({}, { duration: 1.2 });
       const janelas: [number, number][] = [];
       passos.forEach((_, i) => {
         const t = tl.duration();
@@ -206,11 +205,11 @@ function Fixado() {
 
   return (
     <section ref={secao} id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[75svh] h-[600svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.5)_22svh,rgb(251_246_238/0.9)_44svh,#fbf6ee_62svh)]">
-      <div ref={palco} className="sticky top-0 h-svh overflow-hidden">
+      <div ref={palco} className="sticky top-0 h-svh overflow-hidden bg-[linear-gradient(180deg,rgb(251_246_238/0)_0%,#fbf6ee_30%,#fbf6ee_45%,#fde7d2_78%,#dff1e4_100%)]">
         <h2
           ref={titulo}
           id="titulo-banho"
-          className="invisible relative z-10 px-5 pt-[25svh] text-center text-[clamp(3rem,5.8vw,6rem)] leading-[0.95] tracking-[-0.02em] opacity-0"
+          className="relative z-10 px-5 pt-[25svh] text-center text-[clamp(3rem,5.8vw,6rem)] leading-[0.95] tracking-[-0.02em]"
         >
           Banho em minutos.
           <br />
@@ -290,7 +289,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
   }, [pausado]);
 
   return (
-    <section id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[60svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.5)_20svh,rgb(251_246_238/0.9)_40svh,#fbf6ee_56svh)] px-5 pt-[58svh]">
+    <section id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[40svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.6)_12svh,#fbf6ee_30svh)] px-5 pt-[32svh]">
       <h2 id="titulo-banho" className="text-center text-[2.25rem] leading-[1.05] md:text-display">
         Banho em minutos.
         <br />
@@ -321,7 +320,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
         </ol>
       </div>
       {/* a mesma passagem do desktop: o creme tinge de verde-água e leva ao mapa */}
-      <div aria-hidden className="-mx-5 mt-[12svh] h-[60svh] bg-[linear-gradient(#fbf6ee,#2e7a72)]" />
+      <div aria-hidden className="-mx-5 mt-[12svh] h-[70svh] bg-[linear-gradient(#fbf6ee,#fde7d2_30%,#dff1e4_55%,#2e7a72)]" />
     </section>
   );
 }

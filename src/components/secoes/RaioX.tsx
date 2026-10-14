@@ -17,7 +17,7 @@ export function RaioX() {
     <section id="raio-x" data-tema="agua" aria-labelledby="titulo-raio-x" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 bg-[linear-gradient(rgb(46_122_114/0),#2e7a72_14svh,#1d5554)] px-5 py-[16svh] text-papel md:px-[6vw]">
       {/* celular: título e controles, depois a foto presa no alto e a lista passando; desktop: foto à esquerda, o resto à direita */}
       <div className="flex flex-col gap-10 md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-start md:gap-[6vw]">
-        <div className="sticky top-16 z-10 order-2 aspect-[2/3] h-[55svh] self-start overflow-hidden rounded-[14px] bg-abismo md:top-[8svh] md:order-none md:h-[min(780px,calc(100svh-9rem))] md:w-auto">
+        <div className="sticky top-16 z-10 order-2 aspect-[2/3] h-[55svh] self-start overflow-hidden rounded-[14px] bg-abismo md:top-[8svh] md:order-none md:h-[min(740px,calc(100svh-10rem))] md:w-auto">
           <Image src={fotoRaioX} alt="Pastora-alemã preta de pé, de frente, num gramado." fill sizes="(max-width: 768px) 60vw, 40vw" className="object-cover" />
           {/* a radiografia: silhueta clara sobre fundo escuro, revelada por uma varredura de cima para baixo */}
           <div
@@ -73,8 +73,8 @@ export function RaioX() {
             <p className="mt-6 max-w-[42ch] text-lead text-papel-suave">Escolha o pacote e veja, ponto por ponto, o que a equipe cuida em cada banho.</p>
 
             {/* seletor de pacote + chave do raio-x */}
-            <div className="mt-8 flex flex-nowrap items-center gap-3 md:mt-10 md:gap-4">
-              <div role="radiogroup" aria-label="Pacote" className="flex gap-1 rounded-[14px] bg-papel p-1">
+            <div className="mt-8 flex flex-col items-start gap-3 md:mt-10 md:flex-row md:items-center md:gap-4">
+              <div role="radiogroup" aria-label="Pacote" className="grid w-full grid-cols-3 gap-1 rounded-[14px] bg-papel p-1 md:flex md:w-auto">
                 {pacotes.map((p) => (
                   <button
                     key={p.id}

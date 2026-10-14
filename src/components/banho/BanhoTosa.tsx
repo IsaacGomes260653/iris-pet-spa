@@ -112,7 +112,7 @@ function Colunas({ passo, barras }: { passo: Passo; barras?: (el: HTMLSpanElemen
 
 // duração de cada passo na linha do tempo (unidades arbitrárias; a rolagem é distribuída proporcionalmente)
 const PASSO = 5;
-const TROCA = 0.45; // troca cruzada de um vídeo cheio para o seguinte
+const TROCA = 0.25; // troca cruzada curta de um vídeo cheio para o seguinte (sem dupla exposição longa)
 
 /**
  * Desktop: seção fixada. O primeiro card cresce da fileira até a tela inteira; de um vídeo cheio para o outro há
@@ -156,8 +156,8 @@ function Fixado() {
           parado = t + 1;
           janelas.push([t + 0.9, t + PASSO + TROCA / 2]);
         } else {
-          tl.set(molduras.current[i], { ...cheio(i), autoAlpha: 0, scale: 1.04 }, t);
-          tl.to(molduras.current[i], { autoAlpha: 1, scale: 1, duration: TROCA, ease: "power1.out" }, t);
+          tl.set(molduras.current[i], { ...cheio(i), autoAlpha: 0 }, t);
+          tl.to(molduras.current[i], { autoAlpha: 1, duration: TROCA, ease: "power1.out" }, t);
           tl.set(molduras.current[i - 1], { ...naFileira(i - 1), autoAlpha: 1 }, t + TROCA); // o anterior volta escondido atrás
           tl.set(slots.current[i - 1], { zIndex: 1 }, t + TROCA);
           parado = t + TROCA;

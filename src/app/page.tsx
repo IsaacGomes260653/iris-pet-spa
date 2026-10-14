@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { BanhoTosa } from "@/components/banho/BanhoTosa";
 import { BarraProgresso } from "@/components/BarraProgresso";
 import { Lojas } from "@/components/lojas/Lojas";
@@ -23,17 +24,26 @@ export default function Home() {
       <Som />
       <BarraProgresso />
       <Passeio />
-      <BanhoTosa />
+      {/* abaixo da dobra: limites de Suspense deixam o React hidratar em partes, sem uma tarefa longa só */}
+      <Suspense>
+        <BanhoTosa />
+      </Suspense>
       {/* no desktop entra sobreposta à cortina verde-água do banho: o título do mapa sobe por cima dela */}
-      <Lojas />
-      <Pacotes />
-      <RaioX />
-      <Rede />
-      <Especialistas />
-      <Clientes />
-      <Guia />
-      <Agendar />
-      <Rodape />
+      <Suspense>
+        <Lojas />
+      </Suspense>
+      <Suspense>
+        <Pacotes />
+        <RaioX />
+        <Rede />
+      </Suspense>
+      <Suspense>
+        <Especialistas />
+        <Clientes />
+        <Guia />
+        <Agendar />
+        <Rodape />
+      </Suspense>
     </main>
   );
 }

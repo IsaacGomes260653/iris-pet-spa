@@ -168,7 +168,7 @@ export function Lojas() {
           inert={listaAberta || (celular && !!selecionada)}
           className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:bottom-8 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
         >
-          <p className="font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel/85" aria-live="polite">
+          <p className="rounded-md bg-[#0c2829]/90 px-2 py-1 font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel" aria-live="polite">
             {filtro === "todas" ? `${lojas.length} unidades` : `${filtradas.length} unidades com ${rotuloFiltro}`}
           </p>
           <div role="group" aria-label="Filtrar unidades por serviço" className="flex max-w-full gap-1 overflow-x-auto rounded-[14px] bg-papel p-1 shadow-[0_10px_30px_-12px_rgb(12_40_41/0.6)]">

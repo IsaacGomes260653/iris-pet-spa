@@ -19,7 +19,7 @@ export function Especialistas() {
   };
 
   return (
-    <section id="especialistas" data-tema="creme" aria-labelledby="titulo-especialistas" className="relative z-10 py-[16svh]">
+    <section id="especialistas" data-tema="creme" aria-labelledby="titulo-especialistas" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 py-[16svh]">
       <div className="flex flex-wrap items-end justify-between gap-6 px-5 md:px-[6vw]">
         <div>
           <Rotulo numero={indice.especialistas}>Especialistas</Rotulo>

@@ -54,6 +54,7 @@ export function Passeio() {
   const cao = useRef<HTMLDivElement>(null);
   const maoRef = useRef<HTMLDivElement>(null);
   const veu = useRef<HTMLDivElement>(null);
+  const lista = useRef<HTMLOListElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
@@ -139,16 +140,18 @@ export function Passeio() {
           x = (leve ? 18 : 27) + v * v * 45;
           escala = (leve ? 1.4 : 1.3) + v * 0.4;
         }
-        const y = leve ? lerp(-14, -6, u) : lerp(-20, 0, u);
         const w = f.offsetWidth * escala;
         const h = f.offsetHeight * escala;
+        // nunca por cima da lista de frases: a etiqueta fica sempre abaixo dela
+        const piso = (lista.current?.getBoundingClientRect().bottom ?? 0) + 12 + (e?.offsetHeight ?? 0) + h / 2;
+        const yPx = Math.max(innerHeight / 2 + ((leve ? lerp(-14, -6, u) : lerp(-20, 0, u)) * innerHeight) / 100, piso);
         let xPx = (x * innerWidth) / 100;
         // zona da cachorra (o terço do meio, abaixo de 48% da altura): nenhum card a cruza no desktop
-        if (!leve && innerHeight / 2 + (y * innerHeight) / 100 + h / 2 > innerHeight * 0.48) xPx = Math.max(xPx, innerWidth * 0.17 + w / 2);
+        if (!leve && yPx + h / 2 > innerHeight * 0.48) xPx = Math.max(xPx, innerWidth * 0.17 + w / 2);
         const desfoque = u < 0.4 ? (1 - u / 0.4) * 2 : 0;
         c.style.visibility = "visible";
         c.style.opacity = String(Math.min(suave(0, 0.12, u) * (0.7 + 0.3 * suave(0.1, 0.4, u)), 1 - suave(0.97, 1, u)));
-        c.style.transform = `translate(${(lado * xPx).toFixed(1)}px, ${y.toFixed(2)}svh)`;
+        c.style.transform = `translate(${(lado * xPx).toFixed(1)}px, ${(yPx - innerHeight / 2).toFixed(1)}px)`;
         f.style.transform = `translate(-50%, -50%) scale(${escala.toFixed(4)})`;
         // o desfoque de distância fica só na foto, dentro da moldura nítida
         const foto = f.firstElementChild as HTMLElement | null;
@@ -236,7 +239,7 @@ export function Passeio() {
         {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {roteiro.map(([i, , , card], k) =>
-            leve && k - roteiro.findIndex(([j]) => j === i) > 1 ? null : (
+            leve && roteiro.findIndex(([j]) => j === i) !== k ? null : (
               <div
                 key={k}
                 ref={(el) => void (cartoes.current[k] = el)}

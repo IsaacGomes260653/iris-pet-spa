@@ -160,7 +160,7 @@ function Fixado() {
           tl.set(molduras.current[i - 1], { ...naFileira(i - 1), autoAlpha: 1 }, t + TROCA); // o anterior volta escondido atrás
           tl.set(slots.current[i - 1], { zIndex: 1 }, t + TROCA);
           parado = t + TROCA;
-          janelas.push([t + TROCA / 2, i === passos.length - 1 ? t + PASSO + 0.5 : t + PASSO + TROCA / 2]);
+          janelas.push([t + TROCA / 2, i === passos.length - 1 ? t + PASSO : t + PASSO + TROCA / 2]);
         }
         // textos dentro do card: só com o vídeo parado, e somem antes do próximo entrar
         tl.fromTo(camadas.current[i], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.35 }, parado);

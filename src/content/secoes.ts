@@ -47,16 +47,17 @@ export const ficha: { item: string; valores: [string, string, string] }[] = [
   { item: "A partir de", valores: ["R$ 69", "R$ 129", "R$ 219"] },
 ];
 
-export type Ponto = { id: string; nome: string; texto: string; x: number; y: number; pacotes: PacoteId[] };
+// `lado`: de que lado do ponto fica a etiqueta (escolhido para nenhuma encostar na outra)
+export type Ponto = { id: string; nome: string; texto: string; x: number; y: number; lado: "esq" | "dir"; pacotes: PacoteId[] };
 
 /** Pontos do Raio-X sobre a foto (x e y em % da imagem) e em quais pacotes cada cuidado entra. */
 export const pontos: Ponto[] = [
-  { id: "orelhas", nome: "Orelhas", texto: "Limpeza com algodão e solução própria, sem cotonete.", x: 57.5, y: 22, pacotes: ["banho-tosa", "spa"] },
-  { id: "olhos", nome: "Olhos", texto: "Contorno limpo com gaze e soro, sem shampoo por perto.", x: 45, y: 33, pacotes: ["spa"] },
-  { id: "dentes", nome: "Dentes", texto: "Escovação com pasta para cães e checagem da gengiva.", x: 44.6, y: 42, pacotes: ["spa"] },
-  { id: "pelagem", nome: "Pelagem", texto: "Shampoo pelo tipo de pelo e escovação até o subpelo.", x: 75, y: 44, pacotes: ["essencial", "banho-tosa", "spa"] },
-  { id: "patas", nome: "Patas", texto: "Pelos entre os dedos aparados e almofadas hidratadas.", x: 49, y: 89, pacotes: ["banho-tosa", "spa"] },
-  { id: "unhas", nome: "Unhas", texto: "Corte na medida, sem atingir a parte viva.", x: 88, y: 87, pacotes: ["essencial", "banho-tosa", "spa"] },
+  { id: "orelhas", nome: "Orelhas", texto: "Limpeza com algodão e solução própria, sem cotonete.", x: 57.5, y: 22, lado: "dir", pacotes: ["banho-tosa", "spa"] },
+  { id: "olhos", nome: "Olhos", texto: "Contorno limpo com gaze e soro, sem shampoo por perto.", x: 45, y: 33, lado: "esq", pacotes: ["spa"] },
+  { id: "dentes", nome: "Dentes", texto: "Escovação com pasta para cães e checagem da gengiva.", x: 44.6, y: 42, lado: "esq", pacotes: ["spa"] },
+  { id: "pelagem", nome: "Pelagem", texto: "Shampoo pelo tipo de pelo e escovação até o subpelo.", x: 80, y: 52, lado: "esq", pacotes: ["essencial", "banho-tosa", "spa"] },
+  { id: "patas", nome: "Patas", texto: "Pelos entre os dedos aparados e almofadas hidratadas.", x: 49, y: 89, lado: "dir", pacotes: ["banho-tosa", "spa"] },
+  { id: "unhas", nome: "Unhas", texto: "Corte na medida, sem atingir a parte viva.", x: 88, y: 87, lado: "esq", pacotes: ["essencial", "banho-tosa", "spa"] },
 ];
 
 /** A rede em números (inventados: a marca é fictícia). */

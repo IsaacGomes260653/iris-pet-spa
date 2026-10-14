@@ -34,7 +34,7 @@ export function RaioX() {
           {/* só os pontos do pacote escolhido aparecem na foto */}
           {inclusos.map((p) => {
             const ativo = aberto === p.id;
-            const aEsquerda = p.x > 60;
+            const aEsquerda = p.lado === "esq";
             return (
               <div key={p.id} className="absolute" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
                 <button
@@ -93,7 +93,7 @@ export function RaioX() {
                 role="switch"
                 aria-checked={raioX}
                 onClick={() => setRaioX((v) => !v)}
-                className="inline-flex min-h-11 items-center gap-3 font-mono text-[0.75rem] uppercase [font-stretch:87.5%]"
+                className="inline-flex min-h-11 shrink-0 items-center gap-3 font-mono text-[0.75rem] whitespace-nowrap uppercase [font-stretch:87.5%]"
               >
                 <span aria-hidden className={`relative h-6 w-11 rounded-full border border-papel/60 transition-colors ${raioX ? "bg-papel/90" : ""}`}>
                   <span className={`absolute top-0.5 left-0.5 size-[18px] rounded-full transition-transform ${raioX ? "translate-x-5 bg-agua-funda" : "bg-papel"}`} />

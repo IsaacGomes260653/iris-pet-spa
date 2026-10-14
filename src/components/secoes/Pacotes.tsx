@@ -43,7 +43,7 @@ export function Pacotes() {
       </h2>
 
       {/* abertura: as três fotos sobem em velocidades diferentes */}
-      <ul className="mt-14 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:-mx-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <ul className="mt-14 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:-mx-5 max-md:scroll-px-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
         {pacotes.map((p, i) => (
           <li key={p.id} className={`w-[72vw] shrink-0 snap-start md:w-auto ${i === 1 ? "md:mt-24" : i === 2 ? "md:mt-10" : ""}`}>
             <div className="relative aspect-[3/4] overflow-hidden rounded-[10px]">
@@ -62,10 +62,11 @@ export function Pacotes() {
 
       {/* ficha técnica */}
       <div className="mt-[10svh] md:mt-[14svh]">
-        <h3 className="text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Lado a lado</h3>
+        <Rotulo numero={indice.pacotes}>Ficha técnica</Rotulo>
+        <h3 className="mt-5 text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Lado a lado</h3>
 
         {/* desktop: tabela */}
-        <table className="mt-8 w-full table-fixed border-collapse text-left max-md:hidden">
+        <table className="mt-8 w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-[#fffdf9] text-left max-md:hidden">
           <caption className="sr-only">Comparativo dos pacotes de banho</caption>
           <colgroup>
             <col className="w-[220px]" />
@@ -92,7 +93,7 @@ export function Pacotes() {
                   {linha.item}
                 </th>
                 {linha.valores.map((v, i) => (
-                  <td key={i} className={`px-5 py-4 text-corpo ${i === 2 ? "bg-[#2e7a72]/[0.07]" : ""} ${linha.item === "A partir de" ? "font-serifa text-[1.75rem] font-extralight" : ""}`}>
+                  <td key={i} className={`px-5 py-4 text-corpo ${i === 2 ? "bg-[#e3efea]" : ""} ${linha.item === "A partir de" ? "font-serifa text-[1.75rem] font-extralight" : ""}`}>
                     {v}
                   </td>
                 ))}

@@ -14,11 +14,11 @@ export function noGlobo(lat: number, lng: number, raio = 1) {
 
 /**
  * Rotação (x, y) do globo que traz um ponto para a frente da câmera: o giro em Y o leva para o plano da câmera
- * e a inclinação em X o sobe a ~55° de elevação, o meio da calota que aparece acima do horizonte da tela.
+ * e a inclinação em X o sobe a ~42° de elevação, o meio da calota que aparece acima do horizonte da tela.
  */
 export function rotacaoPara(lat: number, lng: number) {
   const phi = ((lng + 180) / 360) * Math.PI * 2;
-  return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - 55) };
+  return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - 42) };
 }
 
 // marcador: anel pontilhado + patinha, desenhado uma vez num canvas
@@ -193,7 +193,7 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
       g.x = THREE.MathUtils.clamp(g.x + g.vx, -1.6, 0.6);
       g.vx *= 0.92;
       g.vy *= 0.92;
-      if (!g.mexeu && !quieto) g.y += dt * 0.04;
+      if (!g.mexeu && !quieto) g.y += dt * 0.012; // bem devagar: o Brasil continua à vista
     }
     globo.current.rotation.set(g.x, g.y, 0, "XYZ");
 
@@ -283,7 +283,7 @@ export default function Globo(props: Props) {
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ fov: 32, position: CAMERA[props.celular ? 1 : 0], near: 0.1, far: 20 }}
+      camera={{ fov: 32, position: CAMERA[props.celular ? 1 : 0], rotation: [0, 0, 0], near: 0.1, far: 20 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ touchAction: "pan-y" }}
       aria-hidden

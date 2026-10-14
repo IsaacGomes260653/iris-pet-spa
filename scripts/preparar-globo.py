@@ -13,8 +13,8 @@ ORIGEM = RAIZ / "media-src" / "globo" / "blue-marble-5400.jpg"
 DESTINO = RAIZ / "public" / "globo"
 
 # mar: do fundo para o raso, dentro da paleta do tema 3
-MAR_POS = np.array([0.0, 0.18, 0.4, 1.0])
-MAR_COR = np.array([[0x0F, 0x3A, 0x3B], [0x1D, 0x60, 0x5C], [0x2E, 0x8A, 0x7E], [0x8C, 0xC8, 0xB6]]) / 255
+MAR_POS = np.array([0.0, 0.3, 0.6, 1.0])
+MAR_COR = np.array([[0x18, 0x4E, 0x4B], [0x22, 0x6A, 0x63], [0x2E, 0x84, 0x78], [0x5F, 0xA5, 0x96]]) / 255
 
 
 def preparar():
@@ -25,11 +25,12 @@ def preparar():
     # o mar da Blue Marble é azul e escuro; a máscara é suavizada para a costa não serrilhar
     mar = ((b > r * 1.12) & (b > g * 0.98) & (lum < 0.5)).astype(np.float32)
     mar = np.asarray(Image.fromarray((mar * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32)[..., None] / 255
-    profundo = np.clip(lum / 0.32, 0, 1)
+    # batimetria mais suave: comprime o relevo do fundo do mar (a plataforma continental não vira contorno brilhante)
+    profundo = np.clip(lum / 0.32, 0, 1) ** 0.75 * 0.85
     agua = np.stack([np.interp(profundo, MAR_POS, MAR_COR[:, c]) for c in range(3)], -1)
     # terra: um pouco menos saturada e mais quente, para combinar com o verde-água
     cinza = lum[..., None]
-    terra = np.clip(cinza + 0.82 * (a - cinza), 0, 1) * np.array([1.03, 1.0, 0.94])
+    terra = np.clip(cinza + 0.78 * (a - cinza), 0, 1) ** 0.72 * np.array([1.04, 1.0, 0.9])  # florestas menos pretas, tom cáqui
     saida = terra * (1 - mar) + agua * mar
     img = Image.fromarray((np.clip(saida, 0, 1) * 255).astype(np.uint8))
     DESTINO.mkdir(parents=True, exist_ok=True)

@@ -6,7 +6,7 @@ import { Rotulo } from "./Rotulo";
 export function Clientes() {
   const [destaque, ...outros] = depoimentos;
   return (
-    <section id="clientes" data-tema="creme" aria-labelledby="titulo-clientes" className="relative z-10 px-5 py-[14svh] md:px-[6vw]">
+    <section id="clientes" data-tema="creme" aria-labelledby="titulo-clientes" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 px-5 py-[14svh] md:px-[6vw]">
       <Rotulo numero={indice.clientes}>Clientes</Rotulo>
       <h2 id="titulo-clientes" className="mt-6 max-w-[14ch] text-titulo">
         Quem volta, volta abanando.
@@ -39,8 +39,8 @@ export function Clientes() {
       {/* perguntas frequentes: details/summary nativos (teclado e leitor de tela sem esforço) */}
       <div className="mt-[14svh] grid gap-10 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         <div>
-          <Rotulo numero={indice.clientes}>Dúvidas</Rotulo>
-          <h3 className="mt-5 text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Perguntas frequentes</h3>
+          <Rotulo numero={indice.duvidas}>Dúvidas</Rotulo>
+          <h3 className="mt-6 text-titulo">Perguntas frequentes.</h3>
         </div>
         <div className="border-t border-tinta/12">
           {perguntas.map((q) => (

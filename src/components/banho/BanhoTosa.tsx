@@ -175,7 +175,9 @@ function Fixado() {
       tl.to(molduras.current[ultimo], { ...naFileira(ultimo), duration: 1, ease: "power2.inOut" }, fim);
       tl.to(titulo.current, { autoAlpha: 1, y: 0, duration: 0.6 }, fim + 0.5);
       tl.to({}, { duration: 0.6 });
-      tl.fromTo(tinta.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.2 }); // verde-água tinge e leva ao mapa
+      // a tinta verde-água sobe de baixo como uma cortina sólida (sem véu translúcido sobre o creme)
+      tl.set(tinta.current, { autoAlpha: 1 });
+      tl.fromTo(tinta.current, { clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)", duration: 1.2, ease: "power2.inOut" });
       tl.to({}, { duration: 2.1 }); // o título do mapa sobe por cima da tinta (a seção seguinte entra sobreposta)
 
       ScrollTrigger.create({

@@ -182,6 +182,7 @@ export function Passeio() {
   return (
     <section
       ref={secao}
+      id="passeio"
       data-tema="amanhecer"
       aria-labelledby="titulo-hero"
       className={`relative ${quieto ? "h-[320svh]" : "h-[620svh] max-md:h-[540svh]"}`}
@@ -277,7 +278,7 @@ export function Passeio() {
         {/* durante o passeio, agendar continua a um toque */}
         <div
           inert={fase !== "passeio"}
-          className={`absolute top-5 right-5 transition-opacity duration-500 md:top-6 md:right-8 ${fase === "passeio" ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`absolute top-5 right-[6.75rem] transition-opacity duration-500 md:top-6 md:right-[9rem] ${fase === "passeio" ? "opacity-100" : "pointer-events-none opacity-0"}`}
         >
           <Botao href="#agendar" compacto>Agendar</Botao>
         </div>

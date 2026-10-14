@@ -258,7 +258,7 @@ function Fixado() {
         </ol>
 
         {/* indicador do vídeo cheio + pausa (movimento automático precisa poder parar) */}
-        <div className={`absolute top-6 right-6 z-40 flex items-center gap-4 transition-opacity duration-200 ${ativo >= 0 ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+        <div className={`absolute top-6 right-[9rem] z-40 flex items-center gap-4 transition-opacity duration-200 ${ativo >= 0 ? "opacity-100" : "pointer-events-none opacity-0"}`}>
           <p className="flex items-center gap-1.5 font-mono text-rotulo text-papel [font-stretch:87.5%] [text-shadow:0_1px_8px_rgb(0_0_0/0.4)]" aria-live="polite">
             {passos.map((p, i) => (
               <span key={p.id} aria-hidden className={`h-0.5 w-6 rounded-full transition-colors ${i === ativo ? "bg-papel" : "bg-papel/35"}`} />
@@ -309,7 +309,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
         Carinho do começo ao fim.
       </h2>
       {/* pausa no canto enquanto há vídeo na tela */}
-      <div className={`fixed top-3 right-3 z-30 transition-opacity duration-300 ${comVideo ? "opacity-100" : "pointer-events-none opacity-0"}`} inert={!comVideo}>
+      <div className={`fixed right-6 bottom-4 z-30 transition-opacity duration-300 ${comVideo ? "opacity-100" : "pointer-events-none opacity-0"}`} inert={!comVideo}>
         <BotaoPausa pausado={pausado} alternar={() => setPausado((v) => !v)} curto />
       </div>
       <div>

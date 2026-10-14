@@ -205,7 +205,7 @@ function Fixado() {
   }, [ativo, pausado]);
 
   return (
-    <section ref={secao} id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[75svh] h-[600svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.5)_22svh,rgb(251_246_238/0.9)_44svh,#fbf6ee_62svh)]">
+    <section ref={secao} id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[85svh] h-[600svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.5)_22svh,rgb(251_246_238/0.9)_44svh,#fbf6ee_62svh)]">
       <div ref={palco} className="sticky top-0 h-svh overflow-hidden bg-[linear-gradient(180deg,rgb(251_246_238/0)_0%,#fbf6ee_30%,#fbf6ee_45%,#fde7d2_78%,#dff1e4_100%)]">
         <h2
           ref={titulo}
@@ -295,7 +295,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
   }, [pausado]);
 
   return (
-    <section id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[40svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.6)_12svh,#fbf6ee_30svh)] px-5 pt-[32svh]">
+    <section id="banho-e-tosa" data-tema="creme" aria-labelledby="titulo-banho" className="relative z-10 -mt-[70svh] bg-[linear-gradient(rgb(251_246_238/0),rgb(251_246_238/0.6)_12svh,#fbf6ee_30svh)] px-5 pt-[36svh]">
       <h2 id="titulo-banho" className="text-center text-[2.25rem] leading-[1.05] md:text-display">
         Banho em minutos.
         <br />

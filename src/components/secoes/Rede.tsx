@@ -49,7 +49,7 @@ function Contador({ valor, casas = 0 }: { valor: number; casas?: number }) {
 
 export function Rede() {
   return (
-    <section id="rede" data-tema="agua" aria-labelledby="titulo-rede" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 flex flex-col gap-14 bg-[linear-gradient(#1d5554,#1d5554_80%,rgb(29_85_84/0))] px-5 pt-[8svh] pb-[16svh] text-papel md:gap-20 md:px-[6vw]">
+    <section id="rede" data-tema="agua" aria-labelledby="titulo-rede" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 flex flex-col gap-14 bg-[linear-gradient(in_oklch,#1d5554,#1d5554_62%,#2e7a72_74%,#9fcfc2_86%,rgb(223_241_228/0))] px-5 pt-[8svh] pb-[36svh] text-papel md:gap-20 md:px-[6vw]">
       <div>
       <Rotulo numero={indice.rede} claro>
         A rede

@@ -58,6 +58,6 @@ Vídeos do [Pexels](https://www.pexels.com) sob a [Licença Pexels](https://www.
 
 [Phosphor Icons](https://phosphoricons.com) (licença MIT), pelo pacote `@phosphor-icons/react`.
 
-## Pendentes
+## Som
 
-Áudio do botão SOM (Fase 6). A origem entra aqui quando o arquivo chegar.
+`public/audio/parque.{ogg,mp3}`: [forest March 7am 180408_1258](https://freesound.org/people/klankbeeld/sounds/424611/), de [klankbeeld](https://freesound.org/people/klankbeeld/), no Freesound, sob a licença [Creative Commons Atribuição 4.0](https://creativecommons.org/licenses/by/4.0/) (encontrado pelo [Openverse](https://openverse.org)). Usamos 60 segundos, com entrada e saída suaves e volume normalizado. Só toca quando a pessoa liga o botão SOM.

@@ -286,14 +286,14 @@ function Empilhado({ quieto }: { quieto: boolean }) {
       (entradas) => {
         for (const e of entradas) {
           const v = e.target as HTMLVideoElement;
-          if (e.isIntersecting) visiveis.add(v);
+          if (e.intersectionRatio > 0) visiveis.add(v);
           else visiveis.delete(v);
-          if (e.isIntersecting && !pausado) v.play().catch(() => {});
+          if (e.intersectionRatio >= 0.5 && !pausado) v.play().catch(() => {});
           else v.pause();
         }
         setComVideo(visiveis.size > 0);
       },
-      { threshold: 0.5 },
+      { threshold: [0, 0.5] },
     );
     videos.current.forEach((v) => v && io.observe(v));
     return () => io.disconnect();
@@ -317,7 +317,7 @@ function Empilhado({ quieto }: { quieto: boolean }) {
           {passos.map((p, i) => (
             <li key={p.id}>
               {/* o título do passo fica preso no alto enquanto o vídeo e os detalhes passam */}
-              <h3 className="sticky top-0 z-10 -mx-5 bg-creme px-5 pt-[4.25rem] pb-3 text-[1.75rem] leading-[1.1] after:absolute after:inset-x-0 after:top-full after:h-6 after:bg-[linear-gradient(#fbf6ee,rgb(251_246_238/0))]">{p.frase}</h3>
+              <h3 className="sticky top-0 z-10 -mx-5 bg-creme px-5 pt-[4.25rem] pb-3 text-[1.75rem] leading-[1.1] shadow-[0_1px_0_rgb(34_37_43/0.08)]">{p.frase}</h3>
               <div className="relative mt-2 aspect-[4/5] overflow-hidden rounded-[10px] bg-ardosia">
                 <Video passo={p} refVideo={(v) => void (videos.current[i] = v)} />
                 <Etiqueta className="absolute top-0 right-0">{p.rotulo}</Etiqueta>

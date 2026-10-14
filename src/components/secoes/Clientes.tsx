@@ -38,7 +38,10 @@ export function Clientes() {
 
       {/* perguntas frequentes: details/summary nativos (teclado e leitor de tela sem esforço) */}
       <div className="mt-[14svh] grid gap-10 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-        <h3 className="text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Perguntas frequentes</h3>
+        <div>
+          <Rotulo numero={indice.clientes}>Dúvidas</Rotulo>
+          <h3 className="mt-5 text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Perguntas frequentes</h3>
+        </div>
         <div className="border-t border-tinta/12">
           {perguntas.map((q) => (
             <details key={q.p} className="group border-b border-tinta/12">

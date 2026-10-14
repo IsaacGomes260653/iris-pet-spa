@@ -29,3 +29,16 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 ## Pendentes (download manual)
 
 Vídeos (banho, tosa, finalização), áudio do botão SOM e a foto POV da faixa de pedestres: ver `docs/assets.md`. A origem de cada um entra aqui quando o arquivo chegar.
+
+## Render 3D (branch passeio-render)
+
+Arquivos usados por `render/cena.py`; ficam fora do Git, em `media-src/`.
+
+| Arquivo | Autor | Origem e licença |
+|---|---|---|
+| `media-src/modelos/lobo-cinza.glb` (ajuste 2 em diante) | rhcreations | [Grey Wolf (Rigged and Animated)](https://sketchfab.com/models/56de4df672654ed599777d2980bf0f53), Sketchfab, CC BY 4.0 (baixado pelo conjunto Objaverse) |
+| `media-src/modelos/lobo-original.glb` (teste e ajuste 1) | OBIDOV ABDURAZZOQ | Sketchfab, CC BY 4.0 |
+| `media-src/render/misty_dawn_4k.hdr` | Greg Zaal | [Poly Haven](https://polyhaven.com/a/misty_dawn), CC0 |
+| `media-src/render/park_dirt_*.jpg` | Christopher Melani | [Poly Haven](https://polyhaven.com/a/park_dirt), CC0 |
+
+O pelo, o capim, a coleira, a guia e a névoa são gerados pelo próprio script.

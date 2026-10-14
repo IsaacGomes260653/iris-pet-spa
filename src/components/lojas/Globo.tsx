@@ -21,20 +21,31 @@ export function rotacaoPara(lat: number, lng: number) {
   return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - 42) };
 }
 
-// marcador: anel pontilhado + patinha, desenhado uma vez num canvas
-function texturaMarcador(cor: string) {
+/** Um marcador no globo: uma unidade sozinha ou um grupo de unidades vizinhas (com a contagem). */
+export type Grupo = { id: string; lat: number; lng: number; membros: Loja[] };
+
+// marcadores desenhados uma vez em canvas: anel pontilhado + patinha, anel cheio (escolhido) ou anel + número (grupo)
+function textura(desenho: (g: CanvasRenderingContext2D) => void) {
   const c = document.createElement("canvas");
   c.width = c.height = 128;
   const g = c.getContext("2d")!;
-  g.strokeStyle = cor;
-  g.fillStyle = cor;
-  g.lineWidth = 5;
-  g.setLineDash([2, 9]);
+  g.strokeStyle = g.fillStyle = "#ffffff";
   g.lineCap = "round";
+  desenho(g);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+function anel(g: CanvasRenderingContext2D, cheio: boolean) {
+  g.lineWidth = cheio ? 7 : 5;
+  g.setLineDash(cheio ? [] : [2, 9]);
   g.beginPath();
   g.arc(64, 64, 52, 0, Math.PI * 2);
   g.stroke();
-  // patinha: almofada + 4 dedos
+  g.setLineDash([]);
+}
+function patinha(g: CanvasRenderingContext2D) {
   g.beginPath();
   g.ellipse(64, 74, 13, 11, 0, 0, Math.PI * 2);
   g.fill();
@@ -43,10 +54,6 @@ function texturaMarcador(cor: string) {
     g.ellipse(x, y, 5.5, 7, 0, 0, Math.PI * 2);
     g.fill();
   }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
 }
 
 const atmosferaVert = `
@@ -68,47 +75,94 @@ void main() {
   gl_FragColor = vec4(cor, pow(perto, 3.0) * 0.55);
 }`;
 
-// rota pontilhada que anda: descarta trechos alternados pela distância ao longo da linha
+// rota em tubo fino com tracejado que anda (uv.x vai de 0 a 1 ao longo do caminho)
 const rotaVert = `
-attribute float lineDistance;
-varying float vDist;
+varying float vU;
 void main() {
-  vDist = lineDistance;
+  vU = uv.x;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
 const rotaFrag = `
-varying float vDist;
+varying float vU;
 uniform float tempo;
+uniform float tracos;
 uniform float opacidade;
 void main() {
-  if (fract(vDist * 60.0 - tempo) > 0.45) discard;
+  if (fract(vU * tracos - tempo) > 0.5) discard;
   gl_FragColor = vec4(1.0, 1.0, 1.0, opacidade);
 }`;
 
 type Props = {
-  lojas: Loja[];
-  visiveis: Set<string>;
+  grupos: Grupo[];
+  ativos: Set<string>;
   rotas: [Loja, Loja][];
-  mostrarRotas: boolean;
+  rotasFortes: boolean;
   selecionada: Loja | null;
   aoEscolher: (l: Loja) => void;
+  aoEscolherGrupo: (g: Grupo) => void;
   quieto: boolean;
   celular: boolean;
 };
 
-function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, quieto, celular }: Props) {
+// câmera olhando reto para -Z, abaixada para o topo do globo ficar perto do alto da área (desktop, celular)
+const CAMERA: [number, number, number][] = [
+  [0, -0.54, 2.1],
+  [0, -0.78, 3.2],
+];
+
+function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoEscolherGrupo, quieto, celular }: Props) {
   const globo = useRef<THREE.Group>(null);
   const marcadores = useRef<(THREE.Sprite | null)[]>([]);
-  const escalas = useRef(lojas.map(() => 1));
-  const rotaMat = useRef<THREE.ShaderMaterial>(null);
+  const estado = useRef(grupos.map(() => ({ opacidade: 1, escala: 1 })));
+  const rotaMats = useRef<(THREE.ShaderMaterial | null)[]>([]);
+  const viajantes = useRef<(THREE.Sprite | null)[]>([]);
   // a textura chega depois do primeiro quadro; até lá o globo fica no verde-escuro do material
-  const textura = useMemo(() => {
+  const terra = useMemo(() => {
     const t = new THREE.TextureLoader().load(celular ? "/globo/terra-2048.webp" : "/globo/terra-4096.webp");
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 8;
     return t;
   }, [celular]);
-  const marca = useMemo(() => texturaMarcador("#ffffff"), []);
+  const texSolta = useMemo(
+    () =>
+      textura((g) => {
+        anel(g, false);
+        patinha(g);
+      }),
+    [],
+  );
+  const texEscolhida = useMemo(
+    () =>
+      textura((g) => {
+        anel(g, true);
+        patinha(g);
+      }),
+    [],
+  );
+  const texPonto = useMemo(
+    () =>
+      textura((g) => {
+        g.beginPath();
+        g.arc(64, 64, 40, 0, Math.PI * 2);
+        g.fill();
+      }),
+    [],
+  );
+  const texGrupos = useMemo(() => {
+    const m = new Map<number, THREE.CanvasTexture>();
+    for (const gr of grupos) {
+      const n = gr.membros.length;
+      if (n > 1 && !m.has(n))
+        m.set(n, textura((g) => {
+          anel(g, false);
+          g.font = "500 46px ui-monospace, monospace";
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          g.fillText(String(n), 64, 67);
+        }));
+    }
+    return m;
+  }, [grupos]);
   const { gl, camera } = useThree();
 
   // estado da rotação: alvo, velocidade (inércia) e se a pessoa já mexeu (aí a rotação automática para)
@@ -142,7 +196,8 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
       if (!e.ctrlKey) return;
       e.preventDefault();
       g.mexeu = true;
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.004, CAMERA[celular ? 1 : 0][2] * 0.85, CAMERA[celular ? 1 : 0][2] * 1.15);
+      const z = CAMERA[celular ? 1 : 0][2];
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.004, z * 0.85, z * 1.15);
     };
     el.addEventListener("pointerdown", desce);
     el.addEventListener("pointermove", move);
@@ -163,30 +218,30 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
     if (selecionada) giro.current.alvo = rotacaoPara(selecionada.lat, selecionada.lng);
   }, [selecionada]);
 
-  const geoRotas = useMemo(
+  // arcos de grande círculo, um pouco acima da superfície
+  const caminhos = useMemo(
     () =>
       rotas.map(([a, b]) => {
         const pa = noGlobo(a.lat, a.lng);
         const pb = noGlobo(b.lat, b.lng);
-        const pts = Array.from({ length: 33 }, (_, i) => {
-          const t = i / 32;
-          return pa.clone().lerp(pb, t).normalize().multiplyScalar(1.004 + Math.sin(Math.PI * t) * 0.03);
+        const pts = Array.from({ length: 41 }, (_, i) => {
+          const t = i / 40;
+          return pa.clone().lerp(pb, t).normalize().multiplyScalar(1.004 + Math.sin(Math.PI * t) * 0.025);
         });
-        const linha = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts));
-        linha.computeLineDistances();
-        return linha.geometry;
+        const curva = new THREE.CatmullRomCurve3(pts);
+        return { curva, geo: new THREE.TubeGeometry(curva, 48, celular ? 0.0026 : 0.0018, 5, false), tracos: Math.max(4, Math.round(curva.getLength() / 0.014)) };
       }),
-    [rotas],
+    [rotas, celular],
   );
 
   useFrame((_, dt) => {
     const g = giro.current;
     if (!globo.current) return;
     if (g.alvo) {
-      g.x += (g.alvo.x - g.x) * Math.min(1, dt * 3);
+      g.x += (g.alvo.x - g.x) * Math.min(1, dt * 3.5);
       // pelo caminho mais curto
       const d = Math.atan2(Math.sin(g.alvo.y - g.y), Math.cos(g.alvo.y - g.y));
-      g.y += d * Math.min(1, dt * 3);
+      g.y += d * Math.min(1, dt * 3.5);
       if (Math.abs(d) < 0.001 && Math.abs(g.alvo.x - g.x) < 0.001) g.alvo = null;
     } else if (!g.arrastando) {
       g.y += g.vy;
@@ -198,21 +253,36 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
     globo.current.rotation.set(g.x, g.y, 0, "XYZ");
 
     const t = performance.now() / 1000;
+    const base = celular ? 0.075 : 0.055;
     marcadores.current.forEach((m, i) => {
       if (!m) return;
-      const alvo = visiveis.has(lojas[i].id) ? 1 : 0;
-      escalas.current[i] += (alvo - escalas.current[i]) * Math.min(1, dt * 6);
-      const pulso = quieto ? 1 : 1 + Math.sin(t * 2.2 + i * 0.7) * 0.08;
-      const destaque = selecionada?.id === lojas[i].id ? 1.5 : 1;
-      const s = (celular ? 0.075 : 0.055) * escalas.current[i] * pulso * destaque;
+      const gr = grupos[i];
+      const e = estado.current[i];
+      const ativo = gr.membros.some((l) => ativos.has(l.id));
+      const escolhido = gr.membros.length === 1 && selecionada?.id === gr.membros[0].id;
+      // fora do filtro a unidade não some: fica a 20%, para o mapa continuar inteiro
+      e.opacidade += ((ativo ? 1 : 0.2) - e.opacidade) * Math.min(1, dt * 6);
+      e.escala += ((escolhido ? 1.6 : gr.membros.length > 1 ? 1.15 : 1) - e.escala) * Math.min(1, dt * 6);
+      const pulso = quieto || !ativo ? 1 : 1 + Math.sin(t * 2.2 + i * 0.7) * 0.06;
+      const s = base * e.escala * pulso;
       m.scale.set(s, s, s);
-      m.visible = escalas.current[i] > 0.02;
+      const mat = m.material as THREE.SpriteMaterial;
+      mat.opacity = e.opacidade;
+      if (gr.membros.length === 1) mat.map = escolhido ? texEscolhida : texSolta;
     });
-    if (rotaMat.current) {
-      rotaMat.current.uniforms.tempo.value = quieto ? 0 : t * 1.2;
-      const o = rotaMat.current.uniforms.opacidade;
-      o.value += ((mostrarRotas ? 0.85 : 0) - o.value) * Math.min(1, dt * 5);
-    }
+    rotaMats.current.forEach((mat) => {
+      if (!mat) return;
+      mat.uniforms.tempo.value = quieto ? 0 : t * 0.9;
+      mat.uniforms.opacidade.value += ((rotasFortes ? 0.95 : 0.3) - mat.uniforms.opacidade.value) * Math.min(1, dt * 5);
+    });
+    // um ponto percorre cada rota, como um carro do Táxi Dog
+    viajantes.current.forEach((v, i) => {
+      if (!v) return;
+      const u = quieto ? 0.5 : (t * 0.08 + i * 0.37) % 1;
+      v.position.copy(caminhos[i].curva.getPointAt(u));
+      const s = (celular ? 0.03 : 0.022) * (rotasFortes ? 1 : 0);
+      v.scale.set(s, s, s);
+    });
   });
 
   return (
@@ -223,36 +293,42 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
         <group ref={globo}>
           <mesh>
             <sphereGeometry args={[1, 128, 96]} />
-            <meshStandardMaterial map={textura} color="#ffffff" roughness={0.92} metalness={0} />
+            <meshStandardMaterial map={terra} color="#ffffff" roughness={0.92} metalness={0} />
           </mesh>
-          {lojas.map((l, i) => (
+          {grupos.map((gr, i) => (
             <sprite
-              key={l.id}
+              key={gr.id}
               ref={(s) => void (marcadores.current[i] = s)}
-              position={noGlobo(l.lat, l.lng, 1.012)}
+              position={noGlobo(gr.lat, gr.lng, 1.012)}
+              renderOrder={2}
               onClick={(e) => {
                 e.stopPropagation();
-                if (visiveis.has(l.id)) aoEscolher(l);
+                if (!gr.membros.some((l) => ativos.has(l.id))) return;
+                if (gr.membros.length === 1) aoEscolher(gr.membros[0]);
+                else aoEscolherGrupo(gr);
               }}
               onPointerOver={() => (document.body.style.cursor = "pointer")}
               onPointerOut={() => (document.body.style.cursor = "")}
             >
-              <spriteMaterial map={marca} transparent depthWrite={false} sizeAttenuation />
+              <spriteMaterial map={gr.membros.length > 1 ? texGrupos.get(gr.membros.length) : texSolta} transparent depthWrite={false} />
             </sprite>
           ))}
-          {geoRotas.map((geo, i) => (
-            <line key={i}>
-              <primitive object={geo} attach="geometry" />
-              <shaderMaterial
-                ref={i === 0 ? rotaMat : undefined}
-                attach="material"
-                vertexShader={rotaVert}
-                fragmentShader={rotaFrag}
-                transparent
-                depthWrite={false}
-                uniforms={i === 0 ? { tempo: { value: 0 }, opacidade: { value: 0.85 } } : undefined}
-              />
-            </line>
+          {caminhos.map((c, i) => (
+            <group key={i}>
+              <mesh geometry={c.geo} renderOrder={1}>
+                <shaderMaterial
+                  ref={(m) => void (rotaMats.current[i] = m)}
+                  vertexShader={rotaVert}
+                  fragmentShader={rotaFrag}
+                  uniforms={{ tempo: { value: 0 }, tracos: { value: c.tracos }, opacidade: { value: 0.95 } }}
+                  transparent
+                  depthWrite={false}
+                />
+              </mesh>
+              <sprite ref={(s) => void (viajantes.current[i] = s)} renderOrder={3}>
+                <spriteMaterial map={texPonto} transparent depthWrite={false} />
+              </sprite>
+            </group>
           ))}
         </group>
         {/* brilho da atmosfera */}
@@ -272,12 +348,6 @@ function Cena({ lojas, visiveis, rotas, mostrarRotas, selecionada, aoEscolher, q
     </>
   );
 }
-
-// câmera olhando reto para -Z, abaixada para o topo do globo ficar perto do alto da área (desktop, celular)
-const CAMERA: [number, number, number][] = [
-  [0, -0.54, 2.1],
-  [0, -0.78, 3.2],
-];
 
 export default function Globo(props: Props) {
   return (

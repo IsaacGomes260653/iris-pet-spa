@@ -52,6 +52,8 @@ export function Passeio() {
   const etiquetas = useRef<(HTMLSpanElement | null)[]>([]);
   const passo = useRef<HTMLDivElement>(null);
   const cao = useRef<HTMLDivElement>(null);
+  const maoRef = useRef<HTMLDivElement>(null);
+  const veu = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
@@ -98,14 +100,20 @@ export function Passeio() {
         c.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
       });
 
-      // saída: a cachorra sai primeiro, para baixo; depois a frase da chegada sobe e some, antes da névoa creme
-      if (cao.current && fim.current && !quieto) {
-        const s1 = suave(0.9, 0.95, p);
-        cao.current.style.transform = `translateX(-50%) translateY(${(s1 * 30).toFixed(2)}svh)`;
-        cao.current.style.opacity = String(1 - s1);
+      // chegada: a cachorra entra na loja (encolhe rumo à soleira e some) e a mão solta a guia;
+      // depois a frase sobe e some e um véu creme sobe e cobre a fachada inteira, sem emenda
+      if (cao.current && maoRef.current && fim.current && veu.current && !quieto) {
+        const anda = suave(0.82, 0.92, p);
+        cao.current.style.transform = `translateX(-50%) translateY(${(-6 * anda).toFixed(2)}svh) scale(${(1 - 0.4 * anda).toFixed(3)})`;
+        cao.current.style.opacity = String(1 - suave(0.88, 0.94, p));
+        const solta = suave(0.86, 0.92, p);
+        maoRef.current.style.transform = `translateX(-52%) translateY(${(solta * 70).toFixed(1)}%)`;
+        maoRef.current.style.opacity = String(1 - solta);
         const s2 = suave(0.94, 0.98, p);
         fim.current.style.transform = `translateY(${(-40 * s2).toFixed(1)}px)`;
         fim.current.style.opacity = String(1 - s2);
+        const v = suave(0.9, 0.98, p);
+        veu.current.style.transform = `translateY(${(100 - 160 * v).toFixed(2)}svh)`;
       }
 
       // cards: nascem pequenos e desfocados no ponto de fuga, crescem nítidos ao lado da cachorra (inteiros na tela)
@@ -197,13 +205,11 @@ export function Passeio() {
               className="h-full w-auto origin-bottom saturate-[0.85] drop-shadow-[-1px_-1px_0_rgb(236_203_189/0.35)] motion-safe:animate-[respira_3.6s_ease-in-out_infinite]"
             />
           </div>
-          {/* a mão que segura a guia, na base da tela: o ponto de vista é o de quem passeia */}
-          <Image
-            src={mao}
-            alt=""
-            sizes="320px"
-            className="absolute bottom-[calc(12svh-90px)] left-1/2 h-[220px] w-auto max-w-none -translate-x-[52%] max-md:h-[170px] max-md:bottom-[calc(12svh-70px)]"
-          />
+        </div>
+
+        {/* a mão que segura a guia, na base da tela: o ponto de vista é o de quem passeia */}
+        <div ref={maoRef} className="pointer-events-none absolute -bottom-[90px] left-1/2 h-[220px] max-md:-bottom-[70px] max-md:h-[170px]" style={{ transform: "translateX(-52%)" }}>
+          <Image src={mao} alt="" sizes="320px" className="h-full w-auto max-w-none" />
         </div>
 
         {/* chão escuro na base: a guia e a cachorra saem da tela como a proa */}
@@ -282,7 +288,7 @@ export function Passeio() {
         {/* chegada: a frase sobre as vitrines escuras, com um véu atrás; o botão bem acima da cabeça dela */}
         <div
           inert={fase !== "chegada"}
-          className={`isolate absolute inset-x-0 top-[23svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida max-md:top-[31svh] motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"}`}
+          className={`isolate absolute inset-x-0 top-[30svh] flex flex-col items-center px-5 text-center transition-[opacity,translate] duration-1000 ease-saida max-md:top-[31svh] motion-reduce:translate-y-0 ${fase === "chegada" ? "opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"}`}
         >
           <div ref={fim} className="flex flex-col items-center">
             <div aria-hidden className="absolute inset-x-0 -inset-y-[10svh] -z-10 bg-[radial-gradient(ellipse_50%_50%_at_50%_45%,rgb(16_20_30/0.3),rgb(16_20_30/0))]" />
@@ -292,6 +298,14 @@ export function Passeio() {
             </div>
           </div>
         </div>
+
+        {/* véu creme que sobe no fim: a fachada some por inteiro antes da seção de banho e tosa */}
+        <div
+          ref={veu}
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[160svh] bg-[linear-gradient(0deg,#fbf6ee_0%,#fbf6ee_62%,rgb(251_246_238/0.7)_78%,rgb(251_246_238/0)_100%)]"
+          style={{ transform: "translateY(100svh)" }}
+        />
 
         <p className="sr-only">
           Pelo caminho aparecem os serviços e produtos da Íris: banho, tosa, spa, rações, petiscos, brinquedos, camas, coleiras e

@@ -282,7 +282,7 @@ export function Passeio() {
         {/* frases: só a do cenário atual em destaque */}
         <ol
           aria-label="O que a Íris faz pelo caminho"
-          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-light transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.25)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-light transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.35)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
         >
           {frases.map((f, i) => (
             <li key={f} aria-current={i === cena ? "step" : undefined} className={`transition-opacity duration-500 ${i === cena ? "opacity-100" : "opacity-55"}`}>

@@ -25,8 +25,9 @@ export function Som() {
     setLigado(true);
     // entra devagar, sem susto
     const inicio = performance.now();
-    const subir = (agora: number) => {
-      const t = Math.min(1, (agora - inicio) / 1200);
+    const subir = () => {
+      // o carimbo do requestAnimationFrame pode vir antes de `inicio`: volume negativo lança erro
+      const t = Math.min(1, Math.max(0, (performance.now() - inicio) / 1200));
       a.volume = 0.45 * t;
       if (t < 1 && !a.paused) requestAnimationFrame(subir);
     };

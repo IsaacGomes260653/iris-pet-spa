@@ -18,6 +18,12 @@ import { Logo } from "@/components/ui";
 export default function Home() {
   return (
     <main>
+      <a
+        href="#banho-e-tosa"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-1/2 focus:z-50 focus:-translate-x-1/2 focus:rounded-md focus:bg-papel focus:px-4 focus:py-3 focus:font-mono focus:text-[0.8125rem] focus:uppercase focus:text-tinta"
+      >
+        Pular a abertura
+      </a>
       <Link href="/" aria-label="Íris Pet Spa, início" className="logo-tema fixed top-6 left-6 z-20 md:top-7 md:left-8">
         <Logo />
       </Link>

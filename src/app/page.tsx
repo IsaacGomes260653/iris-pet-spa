@@ -11,8 +11,14 @@ export default function Home() {
       </Link>
       <Passeio />
       <BanhoTosa />
-      {/* começo da Fase 4: a tinta verde-água desemboca aqui (o globo das lojas entra nesta seção) */}
-      <section id="lojas" data-tema="agua" aria-labelledby="titulo-lojas" className="relative z-10 bg-agua px-5 pt-[14svh] pb-[24svh] text-papel md:px-[6vw]">
+      {/* começo da Fase 4: no desktop entra sobreposta à tinta verde-água do banho (topo transparente), então o
+          título do mapa sobe por cima dela sem tela vazia; no celular segue a faixa em degradê */}
+      <section
+        id="lojas"
+        data-tema="agua"
+        aria-labelledby="titulo-lojas"
+        className="relative z-10 bg-[linear-gradient(#2e7a72,#1d5554)] px-5 pt-[14svh] pb-[24svh] text-papel md:px-[6vw] md:motion-safe:-mt-[80svh] md:motion-safe:bg-[linear-gradient(rgb(29_85_84/0)_0,rgb(29_85_84/0)_80svh,#1d5554_80svh)] md:motion-safe:pt-[12svh]"
+      >
         <h2 id="titulo-lojas" className="max-w-[10ch] text-titulo">
           Patinha após patinha
         </h2>

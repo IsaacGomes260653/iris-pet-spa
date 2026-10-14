@@ -176,6 +176,7 @@ function Fixado() {
       tl.to(titulo.current, { autoAlpha: 1, y: 0, duration: 0.6 }, fim + 0.5);
       tl.to({}, { duration: 0.6 });
       tl.fromTo(tinta.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.2 }); // verde-água tinge e leva ao mapa
+      tl.to({}, { duration: 2.1 }); // o título do mapa sobe por cima da tinta (a seção seguinte entra sobreposta)
 
       ScrollTrigger.create({
         trigger: secao.current,
@@ -262,7 +263,7 @@ function Fixado() {
           <BotaoPausa pausado={pausado} alternar={() => setPausado((v) => !v)} />
         </div>
 
-        <div ref={tinta} aria-hidden className="invisible pointer-events-none absolute inset-0 z-50 bg-agua opacity-0" />
+        <div ref={tinta} aria-hidden className="invisible pointer-events-none absolute inset-0 z-50 bg-[linear-gradient(180deg,#2e7a72,#1d5554)] opacity-0" />
       </div>
     </section>
   );

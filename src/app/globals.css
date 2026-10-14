@@ -131,11 +131,11 @@
 
 /* fundos dos temas (camada fixa; ver FundoTema) */
 .grad-amanhecer {
-  background: linear-gradient(180deg, #b9bed4 0%, #d3c4d3 26%, #eccbbd 50%, #93a3b5 76%, #2c394a 100%);
+  background-image: linear-gradient(180deg, #b9bed4 0%, #d3c4d3 26%, #eccbbd 50%, #93a3b5 76%, #2c394a 100%);
 }
 .grad-creme {
-  background: linear-gradient(180deg, #fbf6ee 0%, #fbf6ee 50%, #fde7d2 80%, #dff1e4 96%, #f4faf6 100%);
+  background-image: linear-gradient(180deg, #fbf6ee 0%, #fbf6ee 50%, #fde7d2 80%, #dff1e4 96%, #f4faf6 100%);
 }
 .grad-agua {
-  background: linear-gradient(180deg, #2e7a72 0%, #1d5554 45%, #123b3d 75%, #0c2829 100%);
+  background-image: linear-gradient(180deg, #2e7a72 0%, #1d5554 45%, #123b3d 75%, #0c2829 100%);
 }

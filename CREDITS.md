@@ -37,7 +37,7 @@ Arquivos usados por `render/cena.py`; ficam fora do Git, em `media-src/`.
 | Arquivo | Autor | Origem e licença |
 |---|---|---|
 | `media-src/modelos/lobo-cinza.glb` (ajuste 2 em diante) | rhcreations | [Grey Wolf (Rigged and Animated)](https://sketchfab.com/models/56de4df672654ed599777d2980bf0f53), Sketchfab, CC BY 4.0 (baixado pelo conjunto Objaverse) |
-| `media-src/modelos/lobo-original.glb` (teste e ajuste 1) | OBIDOV ABDURAZZOQ | Sketchfab, CC BY 4.0 |
+| `media-src/modelos/lobo-original.glb` (teste e ajuste 1) | [OBIDOV ABDURAZZOQ](https://sketchfab.com/OBIDOVABDURAZZOQ) | ["Wolf"](https://sketchfab.com/3d-models/wolf-146817d85ce2447490c4fe9f0bbf6116), Sketchfab, CC BY 4.0 |
 | `media-src/render/misty_dawn_4k.hdr` | Greg Zaal | [Poly Haven](https://polyhaven.com/a/misty_dawn), CC0 |
 | `media-src/render/park_dirt_*.jpg` | Christopher Melani | [Poly Haven](https://polyhaven.com/a/park_dirt), CC0 |
 

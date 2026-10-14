@@ -22,8 +22,9 @@ export const indice = {
   rede: "06",
   especialistas: "07",
   clientes: "08",
-  guia: "09",
-  agendar: "10",
+  duvidas: "09",
+  guia: "10",
+  agendar: "11",
 } as const;
 
 export type PacoteId = "essencial" | "banho-tosa" | "spa";
@@ -52,7 +53,7 @@ export type Ponto = { id: string; nome: string; texto: string; x: number; y: num
 export const pontos: Ponto[] = [
   { id: "orelhas", nome: "Orelhas", texto: "Limpeza com algodão e solução própria, sem cotonete.", x: 57.5, y: 22, pacotes: ["banho-tosa", "spa"] },
   { id: "olhos", nome: "Olhos", texto: "Contorno limpo com gaze e soro, sem shampoo por perto.", x: 45, y: 33, pacotes: ["spa"] },
-  { id: "dentes", nome: "Dentes", texto: "Escovação com pasta para cães e checagem da gengiva.", x: 44.6, y: 43, pacotes: ["spa"] },
+  { id: "dentes", nome: "Dentes", texto: "Escovação com pasta para cães e checagem da gengiva.", x: 44.6, y: 42, pacotes: ["spa"] },
   { id: "pelagem", nome: "Pelagem", texto: "Shampoo pelo tipo de pelo e escovação até o subpelo.", x: 75, y: 44, pacotes: ["essencial", "banho-tosa", "spa"] },
   { id: "patas", nome: "Patas", texto: "Pelos entre os dedos aparados e almofadas hidratadas.", x: 49, y: 89, pacotes: ["banho-tosa", "spa"] },
   { id: "unhas", nome: "Unhas", texto: "Corte na medida, sem atingir a parte viva.", x: 88, y: 87, pacotes: ["essencial", "banho-tosa", "spa"] },

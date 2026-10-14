@@ -14,10 +14,10 @@ export function RaioX() {
   const nomePacote = pacotes.find((p) => p.id === pacote)!.nome;
 
   return (
-    <section id="raio-x" data-tema="agua" aria-labelledby="titulo-raio-x" className="relative z-10 px-5 py-[16svh] text-papel md:px-[6vw]">
+    <section id="raio-x" data-tema="agua" aria-labelledby="titulo-raio-x" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 bg-[linear-gradient(rgb(46_122_114/0),#2e7a72_14svh,#1d5554)] px-5 py-[16svh] text-papel md:px-[6vw]">
       {/* celular: título e controles, depois a foto presa no alto e a lista passando; desktop: foto à esquerda, o resto à direita */}
       <div className="flex flex-col gap-10 md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-start md:gap-[6vw]">
-        <div className="sticky top-16 z-10 order-2 mx-auto aspect-[2/3] h-[55svh] overflow-hidden rounded-[14px] bg-abismo md:top-[8svh] md:order-none md:h-auto md:w-full md:max-w-[520px]">
+        <div className="sticky top-16 z-10 order-2 aspect-[2/3] h-[55svh] self-start overflow-hidden rounded-[14px] bg-abismo md:top-[8svh] md:order-none md:h-[min(780px,calc(100svh-9rem))] md:w-auto">
           <Image src={fotoRaioX} alt="Pastora-alemã preta de pé, de frente, num gramado." fill sizes="(max-width: 768px) 60vw, 40vw" className="object-cover" />
           {/* a radiografia: silhueta clara sobre fundo escuro, revelada por uma varredura de cima para baixo */}
           <div
@@ -42,7 +42,7 @@ export function RaioX() {
                   onClick={() => setAberto(ativo ? null : p.id)}
                   aria-expanded={ativo}
                   aria-label={p.nome}
-                  className="relative grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full"
+                  className="absolute top-0 left-0 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full"
                 >
                   {!raioX && <span aria-hidden className="absolute inset-1 animate-ping rounded-full bg-papel/30 motion-reduce:hidden" />}
                   <span className="relative grid size-7 place-items-center rounded-full border border-papel bg-papel text-tinta">
@@ -73,7 +73,7 @@ export function RaioX() {
             <p className="mt-6 max-w-[42ch] text-lead text-papel-suave">Escolha o pacote e veja, ponto por ponto, o que a equipe cuida em cada banho.</p>
 
             {/* seletor de pacote + chave do raio-x */}
-            <div className="mt-8 flex flex-wrap items-center gap-4 md:mt-10">
+            <div className="mt-8 flex flex-nowrap items-center gap-3 md:mt-10 md:gap-4">
               <div role="radiogroup" aria-label="Pacote" className="flex gap-1 rounded-[14px] bg-papel p-1">
                 {pacotes.map((p) => (
                   <button

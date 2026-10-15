@@ -29,10 +29,10 @@ Por toda a página: índice lateral segmentado com o marcador ▶, o botão **SO
 
 | | Performance | Acessibilidade | Boas práticas | SEO |
 |---|---|---|---|---|
-| Desktop | 99 | 100 | 100 | 100 |
-| Celular | 83 | 100 | 100 | 100 |
+| Desktop | 98 | 100 | 100 | 100 |
+| Celular | 87 | 100 | 100 | 100 |
 
-No celular, o LCP medido na execução é de 0,9 s; a nota de performance é puxada pela estimativa do Lighthouse com CPU 4× mais lenta (o JavaScript das animações e do 3D).
+Como foi medido: Lighthouse 12 na versão de produção (`next start`) servida localmente. No celular, com o perfil padrão (rede 4G lenta e CPU 4× mais lenta simuladas), a nota é a mediana de 6 execuções (LCP de 4,0 s e TBT de 75 ms); no desktop, a mediana de 3.
 
 ## Tecnologias
 

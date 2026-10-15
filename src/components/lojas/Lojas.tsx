@@ -286,7 +286,8 @@ export function Lojas() {
           <div className="relative min-h-0 flex-1">
             <div className="max-h-full overflow-y-auto px-6 pb-10">
               {naLista.length === 0 && <p className="mt-6 text-corpo text-tinta-suave">Ainda não chegamos aí. Tente uma cidade vizinha.</p>}
-              {regioes.map((r) => {
+              {/* as ~60 linhas só existem com a lista aberta: fora do HTML inicial e da hidratação */}
+              {listaAberta && regioes.map((r) => {
                 const daRegiao = naLista.filter((l) => l.regiao === r);
                 if (!daRegiao.length) return null;
                 return (

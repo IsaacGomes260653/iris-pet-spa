@@ -1,6 +1,5 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
 import {
   Clock,
   Drop,
@@ -18,14 +17,11 @@ import {
   Towel,
   type Icon,
 } from "@phosphor-icons/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAnimacaoPerto } from "@/components/useAnimacaoPerto";
 import { useMidia } from "@/components/useMidia";
 import { Etiqueta } from "@/components/ui";
 import { passos, type Passo } from "@/content/servicos";
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const ICONES: Record<Passo["detalhes"][number]["icone"], Icon> = {
   gota: Drop,
@@ -135,8 +131,8 @@ function Fixado() {
   const [ativo, setAtivo] = useState(-1);
   const [pausado, setPausado] = useState(false);
 
-  useGSAP(
-    () => {
+  const montar = useCallback<Parameters<typeof useAnimacaoPerto>[1]>(
+    (gsap, ScrollTrigger) => {
       // posição e tamanho da tela cheia em relação ao lugar do card na fileira (recalculados a cada refresh)
       const caixa = (i: number) => {
         const c = palco.current!.getBoundingClientRect();
@@ -198,8 +194,9 @@ function Fixado() {
         setAtivo(janelas.findIndex(([a, b]) => tempo >= a && tempo < b));
       });
     },
-    { scope: secao },
+    [],
   );
+  useAnimacaoPerto(secao, montar);
 
   // só o vídeo aberto toca; o resto fica parado no poster
   useEffect(() => {

@@ -1,15 +1,11 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useAnimacaoPerto } from "@/components/useAnimacaoPerto";
 import { Etiqueta } from "@/components/ui";
 import { ficha, indice, pacotes } from "@/content/secoes";
 import { Rotulo } from "./Rotulo";
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 // cabeçalhos neutros; só o pacote mais completo ganha o verde-água
 const cabecalho = ["bg-papel", "bg-papel", "bg-[linear-gradient(160deg,#2e7a72,#1d5554)]"];
@@ -22,18 +18,13 @@ export function Pacotes() {
   const fotos = useRef<(HTMLDivElement | null)[]>([]);
   const [aba, setAba] = useState(1);
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        fotos.current.forEach((f, i) => {
-          if (!f) return;
-          gsap.fromTo(f, { yPercent: deslocamento[i] }, { yPercent: -deslocamento[i], ease: "none", scrollTrigger: { trigger: f.parentElement, start: "top bottom", end: "bottom top", scrub: true } });
-        });
-      });
-    },
-    { scope: secao },
-  );
+  const montar = useCallback<Parameters<typeof useAnimacaoPerto>[1]>((gsap) => {
+    fotos.current.forEach((f, i) => {
+      if (!f) return;
+      gsap.fromTo(f, { yPercent: deslocamento[i] }, { yPercent: -deslocamento[i], ease: "none", scrollTrigger: { trigger: f.parentElement, start: "top bottom", end: "bottom top", scrub: true } });
+    });
+  }, []);
+  useAnimacaoPerto(secao, montar);
 
   return (
     <section ref={secao} id="pacotes" data-tema="creme" aria-labelledby="titulo-pacotes" className="relative z-10 px-5 pt-[18svh] pb-[16svh] md:px-[6vw]">

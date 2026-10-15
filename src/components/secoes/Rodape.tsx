@@ -25,12 +25,22 @@ const links = [
 
 /** Rodapé com o easter egg: a rolagem medida em patinhas e a velocidade em latidos por segundo. */
 export function Rodape() {
+  const raiz = useRef<HTMLElement>(null);
   const distancia = useRef<HTMLSpanElement>(null);
   const velocidade = useRef<HTMLSpanElement>(null);
   const frase = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
+    // a distância conta a página inteira: um ouvinte passivo só soma
     let total = 0;
+    let ySomado = scrollY;
+    const somar = () => {
+      total += Math.abs(scrollY - ySomado);
+      ySomado = scrollY;
+    };
+    addEventListener("scroll", somar, { passive: true });
+
+    // o mostrador (e a média da velocidade) só roda quadro a quadro com o rodapé perto da tela
     let ultimoY = scrollY;
     let ultimoT = performance.now();
     let latidos = 0;
@@ -38,7 +48,6 @@ export function Rodape() {
     const quadro = (agora: number) => {
       const dy = Math.abs(scrollY - ultimoY);
       const dt = Math.max(1, agora - ultimoT) / 1000;
-      total += dy;
       // velocidade em m/s vira "latidos por segundo" (5 latidos a cada m/s), com média para não tremer
       latidos += ((dy * METROS_POR_PX) / dt * 5 - latidos) * 0.08;
       ultimoY = scrollY;
@@ -48,12 +57,26 @@ export function Rodape() {
       if (frase.current) frase.current.textContent = frases.find(([limite]) => latidos < limite)![1];
       raf = requestAnimationFrame(quadro);
     };
-    raf = requestAnimationFrame(quadro);
-    return () => cancelAnimationFrame(raf);
+    const io = new IntersectionObserver(
+      ([e]) => {
+        cancelAnimationFrame(raf);
+        if (!e.isIntersecting) return;
+        ultimoY = scrollY;
+        ultimoT = performance.now();
+        raf = requestAnimationFrame(quadro);
+      },
+      { rootMargin: "50% 0px" },
+    );
+    io.observe(raiz.current!);
+    return () => {
+      removeEventListener("scroll", somar);
+      io.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
-    <footer data-tema="agua" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 overflow-hidden bg-[linear-gradient(#0c2829,#0a2122)] px-5 pt-[12svh] pb-8 text-papel md:px-[6vw]">
+    <footer ref={raiz} data-tema="agua" className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 overflow-hidden bg-[linear-gradient(#0c2829,#0a2122)] px-5 pt-[12svh] pb-8 text-papel md:px-[6vw]">
       <div className="grid gap-12 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         {/* o easter egg: decorativo, fora da leitura de tela */}
         <div aria-hidden className="grid grid-cols-2 gap-6">

@@ -30,7 +30,7 @@ export default function Home() {
       <Som />
       <BarraProgresso />
       <Passeio />
-      {/* abaixo da dobra: limites de Suspense deixam o React hidratar em partes, sem uma tarefa longa só */}
+      {/* abaixo da dobra, um limite de Suspense por seção: o React hidrata cada uma numa tarefa curta, sem uma tarefa longa só */}
       <Suspense>
         <BanhoTosa />
       </Suspense>
@@ -40,14 +40,26 @@ export default function Home() {
       </Suspense>
       <Suspense>
         <Pacotes />
+      </Suspense>
+      <Suspense>
         <RaioX />
+      </Suspense>
+      <Suspense>
         <Rede />
       </Suspense>
       <Suspense>
         <Especialistas />
+      </Suspense>
+      <Suspense>
         <Clientes />
+      </Suspense>
+      <Suspense>
         <Guia />
+      </Suspense>
+      <Suspense>
         <Agendar />
+      </Suspense>
+      <Suspense>
         <Rodape />
       </Suspense>
     </main>

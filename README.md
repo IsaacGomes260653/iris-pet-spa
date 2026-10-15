@@ -25,6 +25,7 @@ Por toda a página: índice lateral segmentado com o marcador ▶, o botão **SO
 - `prefers-reduced-motion` respeitado em todas as seções: sem zoom, sem rotação do globo, vídeos parados e seções empilhadas.
 - Pausa para os vídeos e para o som; link "Pular a abertura"; foco visível em duas camadas; o globo tem uma lista equivalente navegável por teclado.
 - Mídia otimizada: AVIF/WebP responsivos, vídeos em MP4 (H.264) e WebM com versões para celular, posters que só carregam perto da seção, globo carregado só quando a seção se aproxima.
+- JavaScript sob demanda: o GSAP só é baixado perto das seções animadas, e a lista de unidades só é montada quando aberta. A rolagem suave (Lenis) só vale para mouse e trackpad; em telas de toque fica a rolagem nativa.
 - Lighthouse (build de produção, local):
 
 | | Performance | Acessibilidade | Boas práticas | SEO |

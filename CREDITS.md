@@ -40,6 +40,22 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 - `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Robert Bye listada acima. Em `scripts/preparar-passeio.py` a pessoa sentada no banco foi retirada (a vitrine da direita é a da esquerda espelhada), o nome do toldo virou "Íris Pet Spa" (fontes Literata e Martian Mono, licença SIL Open Font) e o sol duro foi suavizado.
 - `src/assets/passeio/fundo-3-trilha.jpg` e `fundo-4-gramado.jpg`: recortadas no próprio Unsplash para o caminho ficar no centro, atrás da cachorra.
 
+## O passeio (render 3D)
+
+Os quadros em `public/passeio/` foram renderizados no Blender (Cycles) por `render/parque.py` e montados por `render/montar.py`. Os arquivos-fonte ficam fora do Git, em `media-src/`.
+
+| Elemento | Autor | Origem e licença |
+|---|---|---|
+| A cachorra (malha, esqueleto e caminhada) | rhcreations | [Grey Wolf (Rigged and Animated)](https://sketchfab.com/models/56de4df672654ed599777d2980bf0f53), Sketchfab, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), baixado pelo conjunto [Objaverse](https://huggingface.co/datasets/allenai/objaverse). Modificado: recolorido de preto com marrom nas patas, corpo alargado, pelo gerado no Blender, respiração, coleira e guia. |
+| Jacarandás | Rico Cilliers | [Jacaranda Tree](https://polyhaven.com/a/jacaranda_tree), Poly Haven, CC0 (folhas tingidas de lilás para a florada) |
+| Grama, samambaia, pervinca, dente-de-leão, arbusto, vaso e jardineira | Poly Haven | [grass_medium_02](https://polyhaven.com/a/grass_medium_02), [fern_02](https://polyhaven.com/a/fern_02), [periwinkle_plant](https://polyhaven.com/a/periwinkle_plant), [dandelion_01](https://polyhaven.com/a/dandelion_01), [shrub_02](https://polyhaven.com/a/shrub_02), [potted_plant_02](https://polyhaven.com/a/potted_plant_02), [planter_box_01](https://polyhaven.com/a/planter_box_01), CC0 |
+| Texturas do chão | Poly Haven | [flower_scattered_gravel](https://polyhaven.com/a/flower_scattered_gravel), [grass_ground](https://polyhaven.com/a/grass_ground), [brick_pavement_02](https://polyhaven.com/a/brick_pavement_02), CC0 |
+| Céu de amanhecer (HDRI) | Greg Zaal | [Misty Dawn](https://polyhaven.com/a/misty_dawn), Poly Haven, CC0 |
+| Interior das vitrines | [Egor Komarov](https://unsplash.com/@egorkomarov?utm_source=iris_pet_spa&utm_medium=referral) | [naIUWj9HoZg](https://unsplash.com/photos/assorted-clothes-on-white-steel-rack-naIUWj9HoZg?utm_source=iris_pet_spa&utm_medium=referral), Unsplash |
+| Letreiro da loja | — | fontes Literata e Martian Mono (SIL Open Font License) |
+
+A loja, os postes e a névoa foram modelados no próprio script.
+
 ## Vídeos
 
 Vídeos do [Pexels](https://www.pexels.com) sob a [Licença Pexels](https://www.pexels.com/license/) (uso livre, inclusive comercial, sem exigência de atribuição; atribuímos mesmo assim). Foram cortados, levemente gradeados e recodificados em `scripts/videos.sh` (MP4 H.264 e WebM, versões para celular em 4:5 e posters); os originais ficam fora do Git, em `media-src/videos/`.

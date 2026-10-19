@@ -275,8 +275,8 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       if (!g.mexeu && !quieto) g.y += dt * 0.012; // bem devagar: o Brasil continua à vista
     }
     globo.current.rotation.set(g.x, g.y, 0, "XYZ");
-    // com uma unidade escolhida, a câmera se aproxima (1,35×) e separa os marcadores vizinhos
-    const alvoZ = (distBase.current / (selecionada ? 1.35 : 1)) * zoomPessoa.current;
+    // o zoom fica só com a pessoa (ctrl + roda): aproximar sozinho cortaria o globo na borda do canvas
+    const alvoZ = distBase.current * zoomPessoa.current;
     const cam = estado3d.camera;
     cam.position.z += (alvoZ - cam.position.z) * (quieto ? 1 : Math.min(1, dt * 4));
 

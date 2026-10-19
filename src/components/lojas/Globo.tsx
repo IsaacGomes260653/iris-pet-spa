@@ -299,7 +299,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       mat.opacity = e.opacidade * frente;
       m.visible = frente > 0.01;
       if (gr.membros.length === 1) mat.map = escolhido ? texEscolhida : texSolta;
-      else mat.map = texGrupos.get(ativo ? acesos : gr.membros.length) ?? null;
+      else mat.map = escolhido ? texEscolhida : (texGrupos.get(ativo ? acesos : gr.membros.length) ?? null);
     });
     rotaMats.current.forEach((mat) => {
       if (!mat) return;

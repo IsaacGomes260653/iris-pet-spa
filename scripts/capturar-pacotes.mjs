@@ -12,7 +12,7 @@ const irPara = async (p, seletor, bloco = "start") => {
   await p.evaluate(([s, b]) => document.querySelector(s).scrollIntoView({ block: b, behavior: "instant" }), [seletor, bloco]);
   await p.waitForTimeout(900);
 };
-const transformada = (p, k) => p.evaluate((k) => getComputedStyle(document.querySelectorAll("#pacotes ul > li > div:first-child")[k]).transform, k);
+const transformada = (p, k) => p.evaluate((k) => { const m = document.querySelectorAll("#pacotes ul > li > div:first-child")[k]; return [getComputedStyle(m).transform, getComputedStyle(m.firstElementChild.firstElementChild).transform].join(" | "); }, k);
 
 // desktop
 {
@@ -52,7 +52,7 @@ const transformada = (p, k) => p.evaluate((k) => getComputedStyle(document.query
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await p.waitForTimeout(800);
   console.log("solto", await transformada(p, 0));
-  await p.locator("#pacotes summary").nth(0).click();
+  await p.locator("#pacotes summary:visible").first().click();
   await p.waitForTimeout(700);
   await irPara(p, "#pacotes ul", "start");
   await p.screenshot({ path: `${saida}/celular-02-detalhes.png`, fullPage: false });

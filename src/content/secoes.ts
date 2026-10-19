@@ -87,7 +87,7 @@ export const pacotes: Pacote[] = [
     duracao: "3 h",
     precos: { P: 219, M: 259, G: 319 },
     indicado: "Pele sensível, pelo longo ou duplo e datas especiais",
-    frequencia: "Uma vez por mês",
+    frequencia: "A cada 30 dias",
     adicionais: [{ nome: "Ozonioterapia", preco: 60 }, { nome: "Cromoterapia", preco: 40 }, { nome: "Ensaio de fotos", preco: 50 }],
   },
 ];

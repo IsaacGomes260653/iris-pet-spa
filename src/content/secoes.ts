@@ -2,7 +2,12 @@ import guia from "@/assets/fotos/foto-guia.jpg";
 import banhoTosa from "@/assets/fotos/foto-pacote-banho-tosa.jpg";
 import essencial from "@/assets/fotos/foto-pacote-essencial.jpg";
 import spa from "@/assets/fotos/foto-pacote-spa.jpg";
-import raioX from "@/assets/fotos/foto-raio-x.jpg";
+import bTosaAntes from "@/assets/antes-depois/banho-tosa-antes.jpg";
+import bTosaDepois from "@/assets/antes-depois/banho-tosa-depois.jpg";
+import essAntes from "@/assets/antes-depois/essencial-antes.jpg";
+import essDepois from "@/assets/antes-depois/essencial-depois.jpg";
+import spaAntes from "@/assets/antes-depois/spa-antes.jpg";
+import spaDepois from "@/assets/antes-depois/spa-depois.jpg";
 import esp1 from "@/assets/fotos/foto-especialista-1.jpg";
 import esp2 from "@/assets/fotos/foto-especialista-2.jpg";
 import esp3 from "@/assets/fotos/foto-especialista-3.jpg";
@@ -10,7 +15,7 @@ import esp4 from "@/assets/fotos/foto-especialista-4.jpg";
 import esp5 from "@/assets/fotos/foto-especialista-5.jpg";
 import esp6 from "@/assets/fotos/foto-especialista-6.jpg";
 
-export { guia as fotoGuia, raioX as fotoRaioX };
+export { guia as fotoGuia };
 
 /** Índice das seções (numeração no estilo da referência e, depois, na barra de progresso). */
 export const indice = {
@@ -18,7 +23,7 @@ export const indice = {
   banho: "02",
   lojas: "03",
   pacotes: "04",
-  raioX: "05",
+  antesDepois: "05",
   rede: "06",
   especialistas: "07",
   clientes: "08",
@@ -104,18 +109,39 @@ export const ficha: { item: string; valores: [string, string, string] }[] = [
   { item: "A partir de", valores: ["R$ 69", "R$ 129", "R$ 219"] },
 ];
 
-// `lado`: de que lado do ponto fica a etiqueta (escolhido para nenhuma encostar na outra)
-export type Ponto = { id: string; nome: string; texto: string; x: number; y: number; lado: "esq" | "dir"; pacotes: PacoteId[] };
-
-/** Pontos do Raio-X sobre a foto (x e y em % da imagem) e em quais pacotes cada cuidado entra. */
-export const pontos: Ponto[] = [
-  { id: "orelhas", nome: "Orelhas", texto: "Limpeza com algodão e solução própria, sem cotonete.", x: 57.5, y: 22, lado: "dir", pacotes: ["banho-tosa", "spa"] },
-  { id: "olhos", nome: "Olhos", texto: "Contorno limpo com gaze e soro, sem shampoo por perto.", x: 45, y: 33, lado: "esq", pacotes: ["spa"] },
-  { id: "dentes", nome: "Dentes", texto: "Escovação com pasta para cães e checagem da gengiva.", x: 44.6, y: 42, lado: "esq", pacotes: ["spa"] },
-  { id: "pelagem", nome: "Pelagem", texto: "Shampoo pelo tipo de pelo e escovação até o subpelo.", x: 80, y: 52, lado: "esq", pacotes: ["essencial", "banho-tosa", "spa"] },
-  { id: "patas", nome: "Patas", texto: "Pelos entre os dedos aparados e almofadas hidratadas.", x: 49, y: 89, lado: "dir", pacotes: ["banho-tosa", "spa"] },
-  { id: "unhas", nome: "Unhas", texto: "Corte na medida, sem atingir a parte viva.", x: 88, y: 87, lado: "esq", pacotes: ["essencial", "banho-tosa", "spa"] },
-];
+/**
+ * Antes e depois de cada pacote: fotos reais do MESMO cão (Flickr, CC BY 2.0), recortadas e alinhadas em
+ * scripts/preparar-antes-depois.py. `feito` é a lista que acompanha o slider, na ordem do atendimento.
+ */
+export const antesDepois: Record<
+  PacoteId,
+  { antes: typeof essAntes; depois: typeof essAntes; cao: string; feito: string[]; autor: string; pagina: string }
+> = {
+  essencial: {
+    antes: essAntes,
+    depois: essDepois,
+    cao: "Springer spaniel preto e branco",
+    feito: ["Banho com shampoo neutro", "Secagem e escovação até o subpelo", "Pelos das patas e das orelhas acertados", "Unhas cortadas na medida"],
+    autor: "dwolfgra",
+    pagina: "https://www.flickr.com/photos/87965047@N00/2858404410",
+  },
+  "banho-tosa": {
+    antes: bTosaAntes,
+    depois: bTosaDepois,
+    cao: "Poodle mestiço de pelo claro",
+    feito: ["Banho com shampoo para pelo encaracolado", "Tosa no corpo todo, na tesoura e na máquina", "Rosto e olhos livres do pelo", "Secagem com escova e lenço no pescoço"],
+    autor: "funkblast",
+    pagina: "https://www.flickr.com/photos/92799036@N00/16937812322",
+  },
+  spa: {
+    antes: spaAntes,
+    depois: spaDepois,
+    cao: "Shih-tzu preto",
+    feito: ["Banho dermatológico e máscara nutritiva", "Desembaraço fio a fio", "Tosa na tesoura com rosto aberto", "Secagem lenta, perfume suave e lenço"],
+    autor: "kerotab",
+    pagina: "https://www.flickr.com/photos/73889777@N00/23227160071",
+  },
+};
 
 /** A rede em números (inventados: a marca é fictícia). */
 export const numeros: { valor: number; casas?: number; prefixo?: string; sufixo?: string; rotulo: string }[] = [

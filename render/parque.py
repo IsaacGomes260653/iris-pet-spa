@@ -630,11 +630,23 @@ cena.render.image_settings.file_format = "PNG"
 cena.render.image_settings.color_depth = "8"
 SAIDA.mkdir(parents=True, exist_ok=True)
 
+
+def pronto(caminho):
+    """Quadro já renderizado e inteiro (o PNG termina no bloco IEND): a produção retoma de onde parou."""
+    arq = Path(caminho)
+    if not arq.exists() or arq.stat().st_size < 1000:
+        return False
+    with open(arq, "rb") as f:
+        f.seek(-12, 2)
+        return f.read(12)[4:8] == b"IEND"
+
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
     for q in range(ini, fim + 1):
         posicionar_camera(camera_y(q))
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
+        if pronto(cena.render.filepath):
+            continue
         bpy.ops.render.render(write_still=True)
         print("QUADRO", q, flush=True)
 
@@ -987,6 +999,8 @@ if MODO == "cao":
             cena.frame_set(f)
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"andar-{f - ANDAR[0]:02d}.png")
+            if pronto(cena.render.filepath):
+                continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", f, flush=True)
     elif trecho == "parada":
@@ -1004,6 +1018,8 @@ if MODO == "cao":
             cab_.matrix_basis = base[cab_.name] @ Matrix.Rotation(math.radians(0.8) * fase, 4, "X")
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"parada-{k:02d}.png")
+            if pronto(cena.render.filepath):
+                continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", k, flush=True)
     elif trecho == "entrada":
@@ -1030,5 +1046,7 @@ if MODO == "cao":
             p0.handle_right = p0.co.lerp(nuca, 0.35) + Vector((0, 0, -0.32 * (1 - solta)))
             p1.handle_left = p0.co.lerp(nuca, 0.6) + Vector((0, 0, -0.18 * (1 - solta) + 0.05 * solta))
             cena.render.filepath = str(SAIDA / f"entrada-{q - Q_ENTRADA:02d}.png")
+            if pronto(cena.render.filepath):
+                continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", q, flush=True)

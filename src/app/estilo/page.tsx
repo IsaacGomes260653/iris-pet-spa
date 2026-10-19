@@ -57,7 +57,7 @@ const segmentos = [
   { nome: "Início e o passeio", cor: "bg-seg-passeio", peso: 6 },
   { nome: "Banho e tosa", cor: "bg-seg-banho", peso: 4 },
   { nome: "Lojas", cor: "bg-seg-lojas", peso: 2 },
-  { nome: "Pacotes e Raio-X", cor: "bg-seg-pacotes", peso: 4 },
+  { nome: "Pacotes e antes e depois", cor: "bg-seg-pacotes", peso: 4 },
   { nome: "A rede", cor: "bg-seg-rede", peso: 1 },
   { nome: "Especialistas e clientes", cor: "bg-seg-pessoas", peso: 2 },
   { nome: "Agendar", cor: "bg-seg-agendar", peso: 1 },

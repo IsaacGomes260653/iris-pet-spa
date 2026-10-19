@@ -17,7 +17,7 @@ const frases: [number, string][] = [
 const links = [
   ["Pacotes", "#pacotes"],
   ["Lojas", "#lojas"],
-  ["Raio-X", "#raio-x"],
+  ["Antes e depois", "#antes-e-depois"],
   ["Especialistas", "#especialistas"],
   ["Guia de cuidados", "#guia"],
   ["Agendar", "#agendar"],

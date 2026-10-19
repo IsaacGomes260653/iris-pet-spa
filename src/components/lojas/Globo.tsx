@@ -72,7 +72,9 @@ uniform vec3 cor;
 void main() {
   // vista pelo lado de dentro: mais forte junto à borda do globo, some na borda de fora
   float perto = clamp(abs(dot(vNormal, vVista)) / 0.42, 0.0, 1.0);
-  gl_FragColor = vec4(cor, pow(perto, 3.0) * 0.55);
+  // o lado do sol (alto, à esquerda) brilha; o lado da noite fica com ~20%
+  float sol = mix(0.2, 1.0, clamp(dot(-vNormal, normalize(vec3(-0.55, 0.45, 0.7))) * 0.5 + 0.5, 0.0, 1.0));
+  gl_FragColor = vec4(cor, pow(perto, 3.0) * 0.6 * sol);
 }`;
 
 // rota em tubo fino com tracejado que anda (uv.x vai de 0 a 1 ao longo do caminho)
@@ -251,7 +253,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
           return pa.clone().lerp(pb, t).normalize().multiplyScalar(1.004 + Math.sin(Math.PI * t) * 0.025);
         });
         const curva = new THREE.CatmullRomCurve3(pts);
-        return { curva, geo: new THREE.TubeGeometry(curva, 48, celular ? 0.0026 : 0.0018, 5, false), tracos: Math.max(4, Math.round(curva.getLength() / 0.014)) };
+        return { curva, geo: new THREE.TubeGeometry(curva, 48, celular ? 0.0034 : 0.0026, 5, false), tracos: Math.max(4, Math.round(curva.getLength() / 0.014)) };
       }),
     [rotas, celular],
   );
@@ -275,7 +277,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     globo.current.rotation.set(g.x, g.y, 0, "XYZ");
 
     const t = performance.now() / 1000;
-    const base = celular ? 0.075 : 0.055;
+    const base = celular ? 0.09 : 0.072;
     marcadores.current.forEach((m, i) => {
       if (!m) return;
       const gr = grupos[i];
@@ -326,7 +328,19 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
         <group ref={globo}>
           <mesh>
             <sphereGeometry args={[1, 128, 96]} />
-            <meshStandardMaterial map={terra} color="#ffffff" roughness={0.92} metalness={0} />
+            <meshStandardMaterial
+              map={terra}
+              color="#ffffff"
+              roughness={0.92}
+              metalness={0}
+              onBeforeCompile={(s) => {
+                // o gelo da Antártida não puxa o olho para longe do Brasil: mais escuro e esverdeado
+                s.fragmentShader = s.fragmentShader.replace(
+                  "#include <map_fragment>",
+                  "#include <map_fragment>\nfloat polo = smoothstep(0.17, 0.06, vMapUv.y);\ndiffuseColor.rgb *= mix(vec3(1.0), vec3(0.58, 0.72, 0.68), polo);",
+                );
+              }}
+            />
           </mesh>
           {grupos.map((gr, i) => (
             <sprite

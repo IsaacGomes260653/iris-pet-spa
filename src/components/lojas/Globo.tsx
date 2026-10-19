@@ -14,9 +14,9 @@ export function noGlobo(lat: number, lng: number, raio = 1) {
 
 /**
  * Rotação (x, y) do globo que traz um ponto para a frente da câmera: o giro em Y o leva para o plano da câmera
- * e a inclinação em X o sobe a ~42° de elevação, o meio da calota que aparece acima do horizonte da tela.
+ * e a inclinação em X o sobe alguns graus acima do centro do disco.
  */
-export function rotacaoPara(lat: number, lng: number, elevacao = 42) {
+export function rotacaoPara(lat: number, lng: number, elevacao = 6) {
   const phi = ((lng + 180) / 360) * Math.PI * 2;
   return { y: Math.PI / 2 - phi, x: THREE.MathUtils.degToRad(lat - elevacao) };
 }
@@ -104,11 +104,15 @@ type Props = {
   celular: boolean;
 };
 
-// câmera olhando reto para -Z, abaixada para o topo do globo ficar perto do alto da área (desktop, celular)
-const CAMERA: [number, number, number][] = [
-  [0, -0.54, 2.1],
-  [0, -0.6, 2.4],
-];
+const FOV = 32;
+const RAIO_VISTO = 1.16; // o globo, a atmosfera e uma folga para os marcadores da borda
+
+/** Distância da câmera que mostra o globo inteiro na área, em qualquer proporção (paisagem ou retrato). */
+function distancia(aspecto: number) {
+  const v = THREE.MathUtils.degToRad(FOV / 2);
+  const h = Math.atan(Math.tan(v) * aspecto);
+  return RAIO_VISTO / Math.sin(Math.min(v, h));
+}
 
 function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoEscolherGrupo, quieto, celular }: Props) {
   const globo = useRef<THREE.Group>(null);
@@ -172,8 +176,15 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     }
     return m;
   }, [grupos]);
-  const { gl, camera } = useThree();
-  const aux = useMemo(() => ({ ponto: new THREE.Vector3(), centro: new THREE.Vector3(0, -1.08, 0), normal: new THREE.Vector3(), vista: new THREE.Vector3() }), []);
+  const { gl, camera, size } = useThree();
+  const aux = useMemo(() => ({ ponto: new THREE.Vector3(), centro: new THREE.Vector3(0, 0, 0), normal: new THREE.Vector3(), vista: new THREE.Vector3() }), []);
+  const distBase = useRef(4);
+
+  // o globo inteiro cabe na área: a distância da câmera acompanha o tamanho dela
+  useEffect(() => {
+    distBase.current = distancia(size.width / size.height);
+    camera.position.set(0, 0, distBase.current);
+  }, [camera, size.width, size.height]);
 
   // estado da rotação: alvo, velocidade (inércia) e se a pessoa já mexeu (aí a rotação automática para)
   const giro = useRef({ ...rotacaoPara(-14, -51), vx: 0, vy: 0, mexeu: false, arrastando: false, px: 0, py: 0, alvo: null as null | { x: number; y: number } });
@@ -206,8 +217,8 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       if (!e.ctrlKey) return;
       e.preventDefault();
       g.mexeu = true;
-      const z = CAMERA[celular ? 1 : 0][2];
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.004, z * 0.85, z * 1.15);
+      const z = distBase.current;
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.004, z * 0.8, z * 1.1);
     };
     el.addEventListener("pointerdown", desce);
     el.addEventListener("pointermove", move);
@@ -221,12 +232,12 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       el.removeEventListener("pointercancel", sobe);
       el.removeEventListener("wheel", roda);
     };
-  }, [gl, camera, celular]);
+  }, [gl, camera]);
 
   // escolher uma unidade (no marcador ou na lista) gira o globo até ela
   useEffect(() => {
-    // no celular a folha do card cobre a base: a unidade sobe mais na calota
-    if (selecionada) giro.current.alvo = rotacaoPara(selecionada.lat, selecionada.lng, celular ? 58 : 42);
+    // no celular a folha do card cobre a metade de baixo: a unidade sobe para a metade de cima do disco
+    if (selecionada) giro.current.alvo = rotacaoPara(selecionada.lat, selecionada.lng, celular ? 30 : 6);
   }, [selecionada, celular]);
 
   // arcos de grande círculo, um pouco acima da superfície
@@ -311,7 +322,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     <>
       <ambientLight intensity={1.4} />
       <directionalLight position={[-3, 3, 4]} intensity={2.2} color="#fff4e8" />
-      <group position={[0, -1.08, 0]}>
+      <group>
         <group ref={globo}>
           <mesh>
             <sphereGeometry args={[1, 128, 96]} />
@@ -375,7 +386,7 @@ export default function Globo(props: Props) {
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ fov: 32, position: CAMERA[props.celular ? 1 : 0], rotation: [0, 0, 0], near: 0.1, far: 20 }}
+      camera={{ fov: FOV, position: [0, 0, 4], rotation: [0, 0, 0], near: 0.1, far: 20 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ touchAction: "pan-y" }}
       aria-hidden

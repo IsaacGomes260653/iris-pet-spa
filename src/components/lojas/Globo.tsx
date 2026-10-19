@@ -107,7 +107,7 @@ type Props = {
 };
 
 const FOV = 32;
-const RAIO_VISTO = 1.16; // o globo, a atmosfera e uma folga para os marcadores da borda
+const RAIO_VISTO = 1.12; // o globo, a atmosfera e uma folga para os marcadores da borda
 
 /** Distância da câmera que mostra o globo inteiro na área, em qualquer proporção (paisagem ou retrato). */
 function distancia(aspecto: number) {
@@ -181,6 +181,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
   const { gl, camera, size } = useThree();
   const aux = useMemo(() => ({ ponto: new THREE.Vector3(), centro: new THREE.Vector3(0, 0, 0), normal: new THREE.Vector3(), vista: new THREE.Vector3() }), []);
   const distBase = useRef(4);
+  const zoomPessoa = useRef(1); // ctrl + roda ou pinça
 
   // o globo inteiro cabe na área: a distância da câmera acompanha o tamanho dela
   useEffect(() => {
@@ -189,7 +190,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
   }, [camera, size.width, size.height]);
 
   // estado da rotação: alvo, velocidade (inércia) e se a pessoa já mexeu (aí a rotação automática para)
-  const giro = useRef({ ...rotacaoPara(-14, -51), vx: 0, vy: 0, mexeu: false, arrastando: false, px: 0, py: 0, alvo: null as null | { x: number; y: number } });
+  const giro = useRef({ ...rotacaoPara(-6, -52), vx: 0, vy: 0, mexeu: false, arrastando: false, px: 0, py: 0, alvo: null as null | { x: number; y: number } });
 
   useEffect(() => {
     const el = gl.domElement;
@@ -219,8 +220,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       if (!e.ctrlKey) return;
       e.preventDefault();
       g.mexeu = true;
-      const z = distBase.current;
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.004, z * 0.8, z * 1.1);
+      zoomPessoa.current = THREE.MathUtils.clamp(zoomPessoa.current + e.deltaY * 0.002, 0.8, 1.1);
     };
     el.addEventListener("pointerdown", desce);
     el.addEventListener("pointermove", move);
@@ -258,7 +258,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
     [rotas, celular],
   );
 
-  useFrame((_, dt) => {
+  useFrame((estado3d, dt) => {
     const g = giro.current;
     if (!globo.current) return;
     if (g.alvo) {
@@ -275,6 +275,10 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       if (!g.mexeu && !quieto) g.y += dt * 0.012; // bem devagar: o Brasil continua à vista
     }
     globo.current.rotation.set(g.x, g.y, 0, "XYZ");
+    // com uma unidade escolhida, a câmera se aproxima (1,35×) e separa os marcadores vizinhos
+    const alvoZ = (distBase.current / (selecionada ? 1.35 : 1)) * zoomPessoa.current;
+    const cam = estado3d.camera;
+    cam.position.z += (alvoZ - cam.position.z) * (quieto ? 1 : Math.min(1, dt * 4));
 
     const t = performance.now() / 1000;
     const base = celular ? 0.09 : 0.072;
@@ -301,7 +305,8 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
       mat.opacity = e.opacidade * frente;
       m.visible = frente > 0.01;
       if (gr.membros.length === 1) mat.map = escolhido ? texEscolhida : texSolta;
-      else mat.map = escolhido ? texEscolhida : (texGrupos.get(ativo ? acesos : gr.membros.length) ?? null);
+      // um grupo com uma só unidade acesa no filtro vira patinha, não "1"
+      else mat.map = escolhido ? texEscolhida : ativo && acesos === 1 ? texSolta : (texGrupos.get(ativo ? acesos : gr.membros.length) ?? null);
     });
     rotaMats.current.forEach((mat) => {
       if (!mat) return;
@@ -337,7 +342,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
                 // o gelo da Antártida não puxa o olho para longe do Brasil: mais escuro e esverdeado
                 s.fragmentShader = s.fragmentShader.replace(
                   "#include <map_fragment>",
-                  "#include <map_fragment>\nfloat polo = smoothstep(0.17, 0.06, vMapUv.y);\ndiffuseColor.rgb *= mix(vec3(1.0), vec3(0.58, 0.72, 0.68), polo);",
+                  "#include <map_fragment>\nfloat polo = smoothstep(0.17, 0.06, vMapUv.y);\ndiffuseColor.rgb *= mix(vec3(1.0), vec3(0.5, 0.6, 0.57), polo);",
                 );
               }}
             />

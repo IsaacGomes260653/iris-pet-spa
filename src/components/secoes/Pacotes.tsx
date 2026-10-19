@@ -108,9 +108,9 @@ function Detalhes({ p }: { p: Pacote }) {
     <div className="grid gap-8 md:grid-cols-3 md:gap-10">
       <div>
         <h4 className={rotulo}>Inclui</h4>
-        <ul className="mt-3 grid gap-2">
+        <ul className="mt-1">
           {p.inclui.map((item) => (
-            <li key={item} className="flex gap-2 text-[0.9375rem] leading-snug">
+            <li key={item} className="flex gap-2 border-b border-tinta/12 py-2 text-[0.9375rem] leading-snug">
               <Check size={16} weight="bold" aria-hidden className="mt-0.5 shrink-0 text-agua-funda" />
               {item}
             </li>
@@ -142,7 +142,7 @@ function Detalhes({ p }: { p: Pacote }) {
           {p.adicionais.map((a) => (
             <li key={a.nome} className={linha}>
               <span className="text-[0.9375rem]">{a.nome}</span>
-              <span className="font-mono text-[0.8125rem] whitespace-nowrap text-tinta-suave">+{real(a.preco)}</span>
+              <span className="font-serifa text-[1.25rem] font-extralight whitespace-nowrap">+ {real(a.preco)}</span>
             </li>
           ))}
         </ul>
@@ -157,19 +157,24 @@ function CartaoPacote({
   i,
   foto,
   aberto,
+  outroAberto,
   aoAbrir,
 }: {
   p: Pacote;
   i: number;
   foto: (el: HTMLDivElement | null) => void;
   aberto: boolean;
+  outroAberto: boolean;
   aoAbrir: () => void;
 }) {
   const moldura = useRef<HTMLDivElement>(null);
   const zoom = useRef<HTMLDivElement>(null);
   useInclinacao(moldura, zoom, aberto);
   return (
-    <li data-pacote={i} className={`group w-[76vw] shrink-0 snap-start md:w-auto ${i === 1 ? "md:mt-12" : i === 2 ? "md:mt-6" : ""}`}>
+    <li
+      data-pacote={i}
+      className={`group w-[76vw] shrink-0 snap-start transition-opacity duration-300 md:w-auto ${i === 1 ? "md:mt-12" : i === 2 ? "md:mt-6" : ""} ${outroAberto ? "md:opacity-55" : ""}`}
+    >
       <div ref={moldura} className="relative aspect-[3/4] overflow-hidden rounded-[10px] will-change-transform">
         <div ref={foto} className="absolute inset-x-0 -top-[8%] h-[116%]">
           <div ref={zoom} className="absolute inset-0 will-change-transform">
@@ -216,6 +221,21 @@ export function Pacotes() {
   // um pacote "ativo" para tudo: o card dos detalhes, o card visível no carrossel do celular e a aba da ficha
   const [ativo, setAtivo] = useState(1);
   const [aberto, setAberto] = useState(false);
+  const painel = useRef<HTMLDivElement>(null);
+
+  // ao abrir, o painel entra na tela se tiver ficado lá embaixo (sem animação para quem prefere menos movimento)
+  useEffect(() => {
+    const el = painel.current;
+    if (!aberto || !el) return;
+    const id = setTimeout(() => {
+      const topo = el.getBoundingClientRect().top;
+      if (topo > innerHeight * 0.75) {
+        const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        scrollTo({ top: scrollY + topo - innerHeight * 0.15, behavior: quieto ? "auto" : "smooth" });
+      }
+    }, 80);
+    return () => clearTimeout(id);
+  }, [aberto, ativo]);
 
   const montar = useCallback<Parameters<typeof useAnimacaoPerto>[1]>((gsap) => {
     fotos.current.forEach((f, i) => {
@@ -248,7 +268,7 @@ export function Pacotes() {
       </h2>
 
       {/* abertura: as três fotos sobem em velocidades diferentes e respondem ao cursor */}
-      <ul ref={trilho} className="mt-14 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:-mx-5 max-md:scroll-px-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <ul ref={trilho} className="mt-14 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_left,transparent_0,#000_32px)] max-md:-mx-5 max-md:scroll-px-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
         {pacotes.map((pac, i) => (
           <CartaoPacote
             key={pac.id}
@@ -256,6 +276,7 @@ export function Pacotes() {
             i={i}
             foto={(el) => void (fotos.current[i] = el)}
             aberto={aberto && ativo === i}
+            outroAberto={aberto && ativo !== i}
             aoAbrir={() => {
               setAberto(!(aberto && ativo === i));
               setAtivo(i);
@@ -273,14 +294,12 @@ export function Pacotes() {
         className={`grid transition-[grid-template-rows] duration-500 ease-saida motion-reduce:transition-none ${aberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
-          <div className="mt-6 border-t border-tinta/15 pt-5 pb-2">
-            <div className="flex items-baseline justify-between gap-4">
-              <p className="font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</p>
-              <p className={rotulo}>
-                {ativo + 1} / {pacotes.length}
-              </p>
-            </div>
-            <div className="mt-5">
+          <div ref={painel} className="mt-3 border-t border-tinta/15 pt-4 pb-2 md:mt-6 md:pt-5">
+            <p className="font-serifa text-[1.75rem] leading-tight font-extralight max-md:hidden">{p.nome}</p>
+            <p className={`${rotulo} md:hidden`}>
+              {p.curto} · {ativo + 1} / {pacotes.length}
+            </p>
+            <div className="mt-4 md:mt-5">
               <Detalhes p={p} />
             </div>
           </div>

@@ -10,7 +10,7 @@ Site de uma rede de petshop (banho, tosa, spa, loja e Táxi Dog) contado como um
 2. **Banho e tosa:** seção fixada em que cada vídeo (banho, tosa e finalização) cresce até a tela inteira, com os detalhes de cada passo, indicador e botão de pausa.
 3. **Lojas:** globo 3D (React Three Fiber, textura NASA Blue Marble) com 62 unidades fictícias em cidades reais, filtros em pílula, rotas do Táxi Dog, card da unidade e uma lista acessível com busca.
 4. **Pacotes:** comparativo em ficha técnica.
-5. **Raio-X do cuidado:** pontos na foto que mudam conforme o pacote, e uma chave que revela a "radiografia".
+5. **Antes e depois:** um slider (arrastável e acessível por teclado) compara fotos reais do mesmo cão antes e depois de cada pacote, com a lista do que foi feito acendendo conforme o depois aparece.
 6. **A rede em números:** contadores animados.
 7. **Especialistas:** carrossel arrastável.
 8. **Clientes e dúvidas:** depoimentos e perguntas frequentes.

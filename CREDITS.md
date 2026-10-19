@@ -31,7 +31,6 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 | `src/assets/fotos/foto-pacote-banho-tosa.jpg` | [Ashlee Marie](https://unsplash.com/@ashleew?utm_source=iris_pet_spa&utm_medium=referral) | [0MLgAD3IebU](https://unsplash.com/photos/a-black-dog-is-sitting-in-the-grass-0MLgAD3IebU?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/fotos/foto-pacote-essencial.jpg` | [Ashlee Marie](https://unsplash.com/@ashleew?utm_source=iris_pet_spa&utm_medium=referral) | [be-8H48XJWE](https://unsplash.com/photos/a-black-dog-with-a-sad-look-on-his-face-be-8H48XJWE?utm_source=iris_pet_spa&utm_medium=referral) |
 | `src/assets/fotos/foto-pacote-spa.jpg` | [Max Kleinen](https://unsplash.com/@hirmin?utm_source=iris_pet_spa&utm_medium=referral) | [Jr_DkO3Ow14](https://unsplash.com/photos/black-and-tan-belgian-dog-Jr_DkO3Ow14?utm_source=iris_pet_spa&utm_medium=referral) |
-| `src/assets/fotos/foto-raio-x.jpg` | [Ashlee Marie](https://unsplash.com/@ashleew?utm_source=iris_pet_spa&utm_medium=referral) | [76LinUFNxT4](https://unsplash.com/photos/a-small-black-dog-standing-in-a-grassy-field-76LinUFNxT4?utm_source=iris_pet_spa&utm_medium=referral) |
 
 ## Montagens
 
@@ -39,6 +38,16 @@ Os downloads foram registrados pela API do Unsplash. Todas receberam a correçã
 - `src/assets/passeio/mao.png`: a mão com a alça da guia foi recortada da foto de Harrison Kugler (alça pelo `rembg`, pele por cor), girada e recebeu a luz de amanhecer em `scripts/preparar-passeio.py`.
 - `src/assets/passeio/fundo-5-loja.jpg`: a fachada é a foto de Robert Bye listada acima. Em `scripts/preparar-passeio.py` a pessoa sentada no banco foi retirada (a vitrine da direita é a da esquerda espelhada), o nome do toldo virou "Íris Pet Spa" (fontes Literata e Martian Mono, licença SIL Open Font) e o sol duro foi suavizado.
 - `src/assets/passeio/fundo-3-trilha.jpg` e `fundo-4-gramado.jpg`: recortadas no próprio Unsplash para o caminho ficar no centro, atrás da cachorra.
+
+## Antes e depois
+
+Fotos reais do mesmo cão, publicadas no Flickr sob [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) (encontradas pelo [Openverse](https://openverse.org)). Em `scripts/preparar-antes-depois.py` foram separadas (as do poodle e do shih-tzu vinham lado a lado num quadro só), recortadas em 4:5 com a cabeça na mesma posição e receberam a correção de cor do site, igual para o antes e o depois de cada par. Os originais ficam fora do Git, em `media-src/antes-depois/`.
+
+| Arquivos | Foto de | Página original |
+|---|---|---|
+| `src/assets/antes-depois/essencial-{antes,depois}.jpg` | [dwolfgra](https://www.flickr.com/photos/87965047@N00) | ["aggie before haircut"](https://www.flickr.com/photos/87965047@N00/2858404410) e ["aggie after haircut"](https://www.flickr.com/photos/87965047@N00/2858405542) |
+| `src/assets/antes-depois/banho-tosa-{antes,depois}.jpg` | [funkblast](https://www.flickr.com/photos/92799036@N00) | ["Grooming Before and After"](https://www.flickr.com/photos/92799036@N00/16937812322) |
+| `src/assets/antes-depois/spa-{antes,depois}.jpg` | [kerotab](https://www.flickr.com/photos/73889777@N00) | ["Before and after. I can see her eyes now!"](https://www.flickr.com/photos/73889777@N00/23227160071) |
 
 ## O passeio (render 3D)
 

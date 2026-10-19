@@ -28,15 +28,17 @@ const transformada = (p, k) => p.evaluate((k) => { const m = document.querySelec
     console.log("transform", f[1], await transformada(p, 1));
     await p.screenshot({ path: `${saida}/desktop-0${k + 2}-cursor-${f[1]}.png` });
   }
-  await p.locator("#pacotes summary").nth(1).click();
+  await p.locator("#pacotes ul button").nth(1).click();
   await p.waitForTimeout(700);
   await p.mouse.move(10, 10);
   await p.waitForTimeout(700);
   await irPara(p, "#pacotes ul", "start");
   await p.screenshot({ path: `${saida}/desktop-05-detalhes.png` });
+  await irPara(p, "#detalhes-pacote", "center");
+  await p.screenshot({ path: `${saida}/desktop-06-painel.png` });
   await p.close();
 }
-// celular: toque inclina; detalhes abertos no carrossel
+// celular: toque inclina; detalhes abertos no painel abaixo do carrossel
 {
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
   const p = await ctx.newPage();
@@ -52,7 +54,7 @@ const transformada = (p, k) => p.evaluate((k) => { const m = document.querySelec
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await p.waitForTimeout(800);
   console.log("solto", await transformada(p, 0));
-  await p.locator("#pacotes summary:visible").first().click();
+  await p.locator("#pacotes ul button").first().click();
   await p.waitForTimeout(700);
   await irPara(p, "#pacotes ul", "start");
   await p.screenshot({ path: `${saida}/celular-02-detalhes.png`, fullPage: false });

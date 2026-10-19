@@ -29,10 +29,67 @@ export const indice = {
 
 export type PacoteId = "essencial" | "banho-tosa" | "spa";
 
-export const pacotes: { id: PacoteId; nome: string; curto: string; frase: string; foto: typeof essencial; alt: string }[] = [
-  { id: "essencial", nome: "Banho Essencial", curto: "Essencial", frase: "O básico muito bem feito.", foto: essencial, alt: "Pastora-alemã preta sentada, olhando para a câmera, sobre fundo claro." },
-  { id: "banho-tosa", nome: "Banho & Tosa", curto: "Banho & Tosa", frase: "Limpo, cheiroso e no corte certo.", foto: banhoTosa, alt: "Pastor-alemão preto sorrindo, deitado entre flores amarelas." },
-  { id: "spa", nome: "Spa Premium", curto: "Spa", frase: "Uma tarde inteira só para ele.", foto: spa, alt: "Pastor-alemão de pelo longo, escuro e brilhante, em retrato sobre fundo escuro." },
+export type Porte = "P" | "M" | "G";
+
+/** Um pacote e os detalhes que abrem no card (valores fictícios: a marca é fictícia). */
+export type Pacote = {
+  id: PacoteId;
+  nome: string;
+  curto: string;
+  frase: string;
+  foto: typeof essencial;
+  alt: string;
+  inclui: string[];
+  duracao: string;
+  precos: Record<Porte, number>;
+  indicado: string;
+  frequencia: string;
+  adicionais: { nome: string; preco: number }[];
+};
+
+export const pacotes: Pacote[] = [
+  {
+    id: "essencial",
+    nome: "Banho Essencial",
+    curto: "Essencial",
+    frase: "O básico muito bem feito.",
+    foto: essencial,
+    alt: "Pastora-alemã preta sentada, olhando para a câmera, sobre fundo claro.",
+    inclui: ["Banho com shampoo neutro hipoalergênico", "Secagem com toalha e secador silencioso", "Escovação que tira o pelo morto", "Corte de unhas e higiene"],
+    duracao: "1 h",
+    precos: { P: 69, M: 89, G: 119 },
+    indicado: "Pelo curto e a rotina entre uma tosa e outra",
+    frequencia: "A cada 15 dias",
+    adicionais: [{ nome: "Hidratação leve", preco: 25 }, { nome: "Limpeza de ouvidos", preco: 15 }, { nome: "Táxi Dog", preco: 30 }],
+  },
+  {
+    id: "banho-tosa",
+    nome: "Banho & Tosa",
+    curto: "Banho & Tosa",
+    frase: "Limpo, cheiroso e no corte certo.",
+    foto: banhoTosa,
+    alt: "Pastor-alemão preto sorrindo, deitado entre flores amarelas.",
+    inclui: ["Banho com shampoo pelo tipo de pelo", "Tosa padrão da raça ou na tesoura", "Secagem com soprador morno e escova", "Unhas, ouvidos e higiene", "Perfume suave e lenço"],
+    duracao: "2 h",
+    precos: { P: 129, M: 159, G: 199 },
+    indicado: "Todas as raças, sobretudo pelo médio e longo",
+    frequencia: "A cada 30 a 45 dias",
+    adicionais: [{ nome: "Hidratação", preco: 35 }, { nome: "Escovação de dentes", preco: 20 }, { nome: "Táxi Dog", preco: 30 }],
+  },
+  {
+    id: "spa",
+    nome: "Spa Premium",
+    curto: "Spa",
+    frase: "Uma tarde inteira só para ele.",
+    foto: spa,
+    alt: "Pastor-alemão de pelo longo, escuro e brilhante, em retrato sobre fundo escuro.",
+    inclui: ["Banho dermatológico e condicionador", "Máscara nutritiva com tempo de pausa", "Secagem lenta, fio a fio", "Tosa na tesoura com acabamento à mão", "Dentes escovados e massagem", "Táxi Dog de ida e volta"],
+    duracao: "3 h",
+    precos: { P: 219, M: 259, G: 319 },
+    indicado: "Pele sensível, pelo longo ou duplo e datas especiais",
+    frequencia: "Uma vez por mês",
+    adicionais: [{ nome: "Ozonioterapia", preco: 60 }, { nome: "Cromoterapia", preco: 40 }, { nome: "Ensaio de fotos", preco: 50 }],
+  },
 ];
 
 /** A ficha técnica: uma linha por item, uma coluna por pacote (mesma ordem de `pacotes`). */

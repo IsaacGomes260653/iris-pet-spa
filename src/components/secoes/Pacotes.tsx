@@ -98,13 +98,17 @@ function useInclinacao(moldura: RefObject<HTMLElement | null>, zoom: RefObject<H
   }, [moldura, zoom, desligado]);
 }
 
-/** Tudo o que o pacote inclui: lista, preço por porte, duração, indicação, frequência e adicionais. */
+/** Frequência curta para a etiqueta do hover: "cada 30–45 dias". */
+const curta = (p: Pacote) => `${p.duracao} · ${p.frequencia.replace("A cada ", "cada ").replace(" a ", "–")}`;
+
+/** Tudo o que o pacote inclui, em três colunas no desktop: o que inclui | preço por porte e rotina | adicionais. */
 function Detalhes({ p }: { p: Pacote }) {
+  const linha = "flex items-baseline justify-between gap-3 border-b border-tinta/12 py-2";
   return (
-    <div className="grid gap-5 pt-2 pb-4">
+    <div className="grid gap-8 md:grid-cols-3 md:gap-10">
       <div>
         <h4 className={rotulo}>Inclui</h4>
-        <ul className="mt-2 grid gap-1.5">
+        <ul className="mt-3 grid gap-2">
           {p.inclui.map((item) => (
             <li key={item} className="flex gap-2 text-[0.9375rem] leading-snug">
               <Check size={16} weight="bold" aria-hidden className="mt-0.5 shrink-0 text-agua-funda" />
@@ -114,30 +118,31 @@ function Detalhes({ p }: { p: Pacote }) {
         </ul>
       </div>
       <div>
-        <h4 className={rotulo}>Desde, por porte</h4>
-        <dl className="mt-2 grid grid-cols-3 gap-px overflow-hidden rounded-[10px] bg-tinta/12">
+        <h4 className={rotulo}>Por porte</h4>
+        <dl className="mt-1">
           {(["P", "M", "G"] as const).map((porte) => (
-            <div key={porte} className="bg-papel px-3 py-2">
-              <dt className={rotulo}>Porte {porte}</dt>
+            <div key={porte} className={linha}>
+              <dt className="text-[0.9375rem]">Porte {porte}</dt>
               <dd className="font-serifa text-[1.25rem] font-extralight whitespace-nowrap">{real(p.precos[porte])}</dd>
             </div>
           ))}
         </dl>
+        <dl className="mt-5 grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2 text-[0.9375rem] leading-snug">
+          <dt className={rotulo}>Duração média</dt>
+          <dd>{p.duracao}</dd>
+          <dt className={rotulo}>Indicado para</dt>
+          <dd>{p.indicado}</dd>
+          <dt className={rotulo}>Frequência</dt>
+          <dd>{p.frequencia}</dd>
+        </dl>
       </div>
-      <dl className="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2 text-[0.9375rem] leading-snug">
-        <dt className={rotulo}>Duração média</dt>
-        <dd>{p.duracao}</dd>
-        <dt className={rotulo}>Indicado para</dt>
-        <dd>{p.indicado}</dd>
-        <dt className={rotulo}>Frequência</dt>
-        <dd>{p.frequencia}</dd>
-      </dl>
       <div>
         <h4 className={rotulo}>Adicionais</h4>
-        <ul className="mt-2 flex flex-wrap gap-1.5">
+        <ul className="mt-1">
           {p.adicionais.map((a) => (
-            <li key={a.nome} className="border border-tinta/15 px-2.5 py-1 text-[0.875rem]">
-              {a.nome} <span className="text-tinta-suave">+{real(a.preco)}</span>
+            <li key={a.nome} className={linha}>
+              <span className="text-[0.9375rem]">{a.nome}</span>
+              <span className="font-mono text-[0.8125rem] whitespace-nowrap text-tinta-suave">+{real(a.preco)}</span>
             </li>
           ))}
         </ul>
@@ -146,23 +151,22 @@ function Detalhes({ p }: { p: Pacote }) {
   );
 }
 
-function Acordeao({ p, aberto, aoMudar, rotuloResumo = "Ver detalhes" }: { p: Pacote; aberto: boolean; aoMudar: (aberto: boolean) => void; rotuloResumo?: string }) {
-  return (
-    <details name="pacote" open={aberto} onToggle={(e) => aoMudar(e.currentTarget.open)} className="detalhes-pacote group/detalhes mt-3 border-t border-tinta/15">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between font-mono text-[0.75rem] uppercase [font-stretch:87.5%] [&::-webkit-details-marker]:hidden">
-        {rotuloResumo}
-        <Plus size={16} aria-hidden className="transition-transform duration-300 group-open/detalhes:rotate-45" />
-      </summary>
-      <Detalhes p={p} />
-    </details>
-  );
-}
-
-/** Um pacote: foto com o efeito de cursor, o resumo ao passar o mouse e (no desktop) os detalhes num acordeão. */
-function CartaoPacote({ p, i, foto }: { p: Pacote; i: number; foto: (el: HTMLDivElement | null) => void }) {
+/** Um pacote: foto com o efeito de cursor, a etiqueta do hover e o botão que abre os detalhes abaixo das fotos. */
+function CartaoPacote({
+  p,
+  i,
+  foto,
+  aberto,
+  aoAbrir,
+}: {
+  p: Pacote;
+  i: number;
+  foto: (el: HTMLDivElement | null) => void;
+  aberto: boolean;
+  aoAbrir: () => void;
+}) {
   const moldura = useRef<HTMLDivElement>(null);
   const zoom = useRef<HTMLDivElement>(null);
-  const [aberto, setAberto] = useState(false);
   useInclinacao(moldura, zoom, aberto);
   return (
     <li data-pacote={i} className={`group w-[76vw] shrink-0 snap-start md:w-auto ${i === 1 ? "md:mt-12" : i === 2 ? "md:mt-6" : ""}`}>
@@ -173,15 +177,15 @@ function CartaoPacote({ p, i, foto }: { p: Pacote; i: number; foto: (el: HTMLDiv
           </div>
         </div>
         <Etiqueta className="absolute top-0 right-0 max-md:text-[0.6875rem]">{p.nome}</Etiqueta>
-        {/* resumo ao passar o mouse: uma etiqueta de canto vivo, como a do nome (o preço já está logo abaixo) */}
+        {/* ao passar o mouse: duração e frequência numa etiqueta de canto vivo (o preço já está logo abaixo) */}
         <p
           aria-hidden
-          className="pointer-events-none absolute bottom-0 left-0 hidden translate-y-1 bg-papel px-3 py-2 font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] whitespace-nowrap text-tinta opacity-0 transition-[opacity,translate] duration-300 ease-saida [@media(hover:hover)]:block [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100"
+          className="pointer-events-none absolute bottom-3 left-3 hidden translate-y-1 bg-papel px-3 py-2 font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] whitespace-nowrap text-tinta opacity-0 transition-[opacity,translate] duration-300 ease-saida [@media(hover:hover)]:block [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100"
         >
-          {p.duracao} · {p.frequencia.replace("A cada ", "a cada ")} · P {real(p.precos.P)} – G {real(p.precos.G)}
+          {curta(p)}
         </p>
       </div>
-      <div className="mt-4 flex items-baseline justify-between gap-3">
+      <div className="mt-4 flex min-h-[4.5rem] items-baseline justify-between gap-3">
         <p className="text-corpo">
           <span className="font-medium">{p.nome}</span>
           <span className="block text-tinta-suave">{p.frase}</span>
@@ -191,34 +195,17 @@ function CartaoPacote({ p, i, foto }: { p: Pacote; i: number; foto: (el: HTMLDiv
           <span className="font-serifa text-[1.5rem] leading-none font-extralight whitespace-nowrap">{real(p.precos.P)}</span>
         </p>
       </div>
-      <div className="max-md:hidden">
-        <Acordeao p={p} aberto={aberto} aoMudar={setAberto} />
-      </div>
+      <button
+        type="button"
+        onClick={aoAbrir}
+        aria-expanded={aberto}
+        aria-controls="detalhes-pacote"
+        className="mt-2 flex min-h-11 w-full items-center justify-between border-t border-tinta/15 font-mono text-[0.75rem] uppercase [font-stretch:87.5%]"
+      >
+        {aberto ? "Fechar detalhes" : "Ver detalhes"}
+        <Plus size={16} aria-hidden className={`transition-transform duration-300 ${aberto ? "rotate-45" : ""}`} />
+      </button>
     </li>
-  );
-}
-
-/** Celular: um painel só, de largura total, abaixo do carrossel, com os detalhes do card que está na tela. */
-function DetalhesCelular({ trilho }: { trilho: RefObject<HTMLUListElement | null> }) {
-  const [ativo, setAtivo] = useState(0);
-  const [aberto, setAberto] = useState(false);
-  useEffect(() => {
-    const ul = trilho.current;
-    if (!ul) return;
-    const io = new IntersectionObserver(
-      (es) => {
-        for (const e of es) if (e.isIntersecting) setAtivo(Number((e.target as HTMLElement).dataset.pacote));
-      },
-      { root: ul, threshold: 0.6 },
-    );
-    ul.querySelectorAll("[data-pacote]").forEach((li) => io.observe(li));
-    return () => io.disconnect();
-  }, [trilho]);
-  const p = pacotes[ativo];
-  return (
-    <div className="mt-4 md:hidden">
-      <Acordeao p={p} aberto={aberto} aoMudar={setAberto} rotuloResumo={`Detalhes · ${p.curto}`} />
-    </div>
   );
 }
 
@@ -226,7 +213,9 @@ export function Pacotes() {
   const secao = useRef<HTMLElement>(null);
   const fotos = useRef<(HTMLDivElement | null)[]>([]);
   const trilho = useRef<HTMLUListElement>(null);
-  const [aba, setAba] = useState(1);
+  // um pacote "ativo" para tudo: o card dos detalhes, o card visível no carrossel do celular e a aba da ficha
+  const [ativo, setAtivo] = useState(1);
+  const [aberto, setAberto] = useState(false);
 
   const montar = useCallback<Parameters<typeof useAnimacaoPerto>[1]>((gsap) => {
     fotos.current.forEach((f, i) => {
@@ -236,6 +225,21 @@ export function Pacotes() {
   }, []);
   useAnimacaoPerto(secao, montar);
 
+  // celular: o card que está na tela vira o ativo (o painel e a aba acompanham o deslize)
+  useEffect(() => {
+    const ul = trilho.current;
+    if (!ul || !matchMedia("(max-width: 768px)").matches) return;
+    const io = new IntersectionObserver(
+      (es) => {
+        for (const e of es) if (e.isIntersecting) setAtivo(Number((e.target as HTMLElement).dataset.pacote));
+      },
+      { root: ul, threshold: 0.6 },
+    );
+    ul.querySelectorAll("[data-pacote]").forEach((li) => io.observe(li));
+    return () => io.disconnect();
+  }, []);
+
+  const p = pacotes[ativo];
   return (
     <section ref={secao} id="pacotes" data-tema="creme" aria-labelledby="titulo-pacotes" className="relative z-10 px-5 pt-[18svh] pb-[16svh] md:px-[6vw]">
       <Rotulo numero={indice.pacotes}>Pacotes</Rotulo>
@@ -245,14 +249,46 @@ export function Pacotes() {
 
       {/* abertura: as três fotos sobem em velocidades diferentes e respondem ao cursor */}
       <ul ref={trilho} className="mt-14 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] max-md:-mx-5 max-md:scroll-px-5 max-md:px-5 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
-        {pacotes.map((p, i) => (
-          <CartaoPacote key={p.id} p={p} i={i} foto={(el) => void (fotos.current[i] = el)} />
+        {pacotes.map((pac, i) => (
+          <CartaoPacote
+            key={pac.id}
+            p={pac}
+            i={i}
+            foto={(el) => void (fotos.current[i] = el)}
+            aberto={aberto && ativo === i}
+            aoAbrir={() => {
+              setAberto(!(aberto && ativo === i));
+              setAtivo(i);
+            }}
+          />
         ))}
       </ul>
-      <DetalhesCelular trilho={trilho} />
+
+      {/* os detalhes: um painel só, de largura total, abaixo das fotos (a altura anima ao abrir) */}
+      <div
+        id="detalhes-pacote"
+        role="region"
+        aria-label={`Detalhes do ${p.nome}`}
+        inert={!aberto}
+        className={`grid transition-[grid-template-rows] duration-500 ease-saida motion-reduce:transition-none ${aberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-6 border-t border-tinta/15 pt-5 pb-2">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</p>
+              <p className={rotulo}>
+                {ativo + 1} / {pacotes.length}
+              </p>
+            </div>
+            <div className="mt-5">
+              <Detalhes p={p} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ficha técnica */}
-      <div className="mt-[10svh] md:mt-[14svh]">
+      <div className="mt-[6svh] md:mt-[14svh]">
         <Rotulo numero={indice.pacotes}>Ficha técnica</Rotulo>
         <h3 className="mt-5 text-[clamp(2rem,3.4vw,3.25rem)] leading-[1.05]">Lado a lado</h3>
 
@@ -301,17 +337,17 @@ export function Pacotes() {
                 key={p.id}
                 role="tab"
                 id={`aba-${p.id}`}
-                aria-selected={aba === i}
+                aria-selected={ativo === i}
                 aria-controls={`painel-${p.id}`}
-                onClick={() => setAba(i)}
-                className={`min-h-11 flex-1 rounded-md px-1 font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] ${aba === i ? "bg-[#0c2829] text-creme" : "text-tinta"}`}
+                onClick={() => setAtivo(i)}
+                className={`min-h-11 flex-1 rounded-md px-1 font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] ${ativo === i ? "bg-[#0c2829] text-creme" : "text-tinta"}`}
               >
                 {p.curto}
               </button>
             ))}
           </div>
           {pacotes.map((p, i) => (
-            <div key={p.id} role="tabpanel" id={`painel-${p.id}`} aria-labelledby={`aba-${p.id}`} hidden={aba !== i} className="mt-4">
+            <div key={p.id} role="tabpanel" id={`painel-${p.id}`} aria-labelledby={`aba-${p.id}`} hidden={ativo !== i} className="mt-4">
               <div className={`${cabecalho[i]} ${textoCabecalho[i]} rounded-[10px] border border-tinta/10 p-5`}>
                 <p className="font-serifa text-[1.75rem] leading-tight font-extralight">{p.nome}</p>
                 <p className="mt-1 text-[0.9375rem] opacity-85">{p.frase}</p>

@@ -136,23 +136,3 @@
 .grad-agua {
   background-image: linear-gradient(180deg, #2e7a72 0%, #1d5554 45%, #123b3d 75%, #0c2829 100%);
 }
-
-/* detalhes dos pacotes: a altura anima ao abrir e fechar (sem animação para quem prefere menos movimento) */
-.detalhes-pacote {
-  interpolate-size: allow-keywords;
-}
-.detalhes-pacote::details-content {
-  block-size: 0;
-  overflow: hidden;
-  transition:
-    block-size 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    content-visibility 0.4s allow-discrete;
-}
-.detalhes-pacote[open]::details-content {
-  block-size: auto;
-}
-@media (prefers-reduced-motion: reduce) {
-  .detalhes-pacote::details-content {
-    transition: none;
-  }
-}

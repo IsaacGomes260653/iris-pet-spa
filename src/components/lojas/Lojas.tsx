@@ -137,10 +137,10 @@ export function Lojas() {
 
         {/* o globo inteiro: à direita do texto no desktop; no celular, entre o texto e os filtros */}
         <div
-          className="absolute bottom-[15svh] left-1/2 aspect-square w-[min(calc(100vw-48px),48svh)] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[63vw] md:w-[min(92svh,58vw)] md:-translate-y-1/2"
+          className="absolute bottom-[15svh] left-1/2 aspect-square w-[min(calc(100vw-32px),50svh)] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[63vw] md:w-[min(86svh,56vw)] md:-translate-y-1/2"
         >
           {/* brilho difuso atrás do globo: ele se funde com o fundo verde-água, como numa névoa */}
-          <div aria-hidden className="pointer-events-none absolute -inset-[22%] bg-[radial-gradient(closest-side,rgb(143_209_190/0.22),rgb(143_209_190/0.08)_62%,rgb(143_209_190/0))]" />
+          <div aria-hidden className="pointer-events-none absolute -inset-x-[24%] -inset-y-[7%] bg-[radial-gradient(closest-side,rgb(143_209_190/0.22),rgb(143_209_190/0.08)_62%,rgb(143_209_190/0))]" />
           {perto && (
             <Globo
               grupos={grupos}

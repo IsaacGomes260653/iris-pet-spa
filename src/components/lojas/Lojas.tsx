@@ -118,9 +118,9 @@ export function Lojas() {
       aria-labelledby="titulo-lojas"
       className="relative z-10 overflow-hidden bg-[linear-gradient(#2e7a72,#1d5554)] text-papel md:motion-safe:-mt-[80svh] md:motion-safe:bg-none"
     >
-      <div className="relative h-[100svh] min-h-[640px]">
-        <div className="relative z-10 px-5 pt-[14svh] md:px-[6vw] md:pt-[12svh]">
-          <h2 id="titulo-lojas" className="text-[clamp(3rem,7.6vw,7.5rem)] leading-[0.95] tracking-[-0.02em] max-md:text-balance">
+      <div className="relative h-[100svh] min-h-[700px]">
+        <div className="relative z-10 px-5 pt-[12svh] md:max-w-[46vw] md:px-[6vw] md:pt-[12svh]">
+          <h2 id="titulo-lojas" className="text-[clamp(3rem,6.4vw,7rem)] leading-[0.95] tracking-[-0.02em] max-md:text-balance">
             Patinha após patinha
           </h2>
           <p className="mt-7 max-w-[34ch] text-[1.125rem] leading-[1.45] text-papel-suave md:text-[1.375rem]">
@@ -135,8 +135,8 @@ export function Lojas() {
           </button>
         </div>
 
-        {/* o globo ocupa a metade de baixo, como um horizonte */}
-        <div className="absolute inset-x-0 bottom-0 h-[64%] max-md:h-[58%]">
+        {/* o globo inteiro: à direita do texto no desktop; no celular, entre o texto e os filtros */}
+        <div className="absolute bottom-[15svh] left-1/2 aspect-square w-[min(96vw,48svh)] -translate-x-1/2 md:top-1/2 md:right-[3vw] md:bottom-auto md:left-auto md:w-[min(86svh,52vw)] md:translate-x-0 md:-translate-y-1/2">
           {perto && (
             <Globo
               grupos={grupos}
@@ -155,7 +155,7 @@ export function Lojas() {
         {/* filtros em pílula, com a contagem do que está aceso */}
         <div
           inert={listaAberta || (celular && !!selecionada)}
-          className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:bottom-8 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
+          className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:right-auto md:bottom-[9svh] md:left-[6vw] md:items-start md:px-0 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
         >
           <p className="rounded-md bg-[#0c2829]/90 px-2 py-1 font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel" aria-live="polite">
             {filtro === "todas" ? `${lojas.length} unidades` : `${filtradas.length} unidades com ${rotuloFiltro}`}
@@ -180,7 +180,7 @@ export function Lojas() {
           <article
             aria-live="polite"
             aria-labelledby="loja-nome"
-            className="absolute right-[6vw] bottom-32 z-20 w-[360px] rounded-[14px] bg-papel p-6 text-tinta shadow-[0_24px_60px_-24px_rgb(12_40_41/0.7)] max-md:inset-x-0 max-md:right-0 max-md:bottom-0 max-md:max-h-[42svh] max-md:w-auto max-md:overflow-y-auto max-md:rounded-b-none max-md:p-5"
+            className="absolute bottom-[calc(9svh+6.5rem)] left-[6vw] z-20 w-[360px] rounded-[14px] bg-papel p-6 text-tinta shadow-[0_24px_60px_-24px_rgb(12_40_41/0.7)] max-md:inset-x-0 max-md:bottom-0 max-md:left-0 max-md:max-h-[42svh] max-md:w-auto max-md:overflow-y-auto max-md:rounded-b-none max-md:p-5"
           >
             <button
               type="button"

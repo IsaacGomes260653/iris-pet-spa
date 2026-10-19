@@ -136,7 +136,11 @@ export function Lojas() {
         </div>
 
         {/* o globo inteiro: à direita do texto no desktop; no celular, entre o texto e os filtros */}
-        <div className="absolute bottom-[15svh] left-1/2 aspect-square w-[min(96vw,48svh)] -translate-x-1/2 md:top-1/2 md:right-[3vw] md:bottom-auto md:left-auto md:w-[min(86svh,52vw)] md:translate-x-0 md:-translate-y-1/2">
+        <div
+          className="absolute bottom-[15svh] left-1/2 aspect-square w-[min(calc(100vw-48px),48svh)] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[63vw] md:w-[min(92svh,58vw)] md:-translate-y-1/2"
+        >
+          {/* brilho difuso atrás do globo: ele se funde com o fundo verde-água, como numa névoa */}
+          <div aria-hidden className="pointer-events-none absolute -inset-[22%] bg-[radial-gradient(closest-side,rgb(143_209_190/0.22),rgb(143_209_190/0.08)_62%,rgb(143_209_190/0))]" />
           {perto && (
             <Globo
               grupos={grupos}
@@ -155,9 +159,9 @@ export function Lojas() {
         {/* filtros em pílula, com a contagem do que está aceso */}
         <div
           inert={listaAberta || (celular && !!selecionada)}
-          className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:right-auto md:bottom-[9svh] md:left-[6vw] md:items-start md:px-0 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
+          className={`absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-4 transition-opacity md:right-auto md:bottom-8 md:left-[63vw] md:-translate-x-1/2 md:px-0 ${listaAberta || (celular && selecionada) ? "pointer-events-none opacity-0" : ""}`}
         >
-          <p className="rounded-md bg-[#0c2829]/90 px-2 py-1 font-mono text-rotulo uppercase [font-stretch:87.5%] text-papel" aria-live="polite">
+          <p className="bg-papel px-2 py-1 font-mono text-rotulo uppercase [font-stretch:87.5%] text-[#0c2829]" aria-live="polite">
             {filtro === "todas" ? `${lojas.length} unidades` : `${filtradas.length} unidades com ${rotuloFiltro}`}
           </p>
           <div role="group" aria-label="Filtrar unidades por serviço" className="flex max-w-full gap-1 overflow-x-auto rounded-[14px] bg-papel p-1 shadow-[0_10px_30px_-12px_rgb(12_40_41/0.6)]">
@@ -180,7 +184,7 @@ export function Lojas() {
           <article
             aria-live="polite"
             aria-labelledby="loja-nome"
-            className="absolute bottom-[calc(9svh+6.5rem)] left-[6vw] z-20 w-[360px] rounded-[14px] bg-papel p-6 text-tinta shadow-[0_24px_60px_-24px_rgb(12_40_41/0.7)] max-md:inset-x-0 max-md:bottom-0 max-md:left-0 max-md:max-h-[42svh] max-md:w-auto max-md:overflow-y-auto max-md:rounded-b-none max-md:p-5"
+            className="absolute bottom-[9svh] left-[6vw] z-20 w-[360px] rounded-[14px] bg-papel p-6 text-tinta shadow-[0_24px_60px_-24px_rgb(12_40_41/0.7)] max-md:inset-x-0 max-md:bottom-0 max-md:left-0 max-md:max-h-[42svh] max-md:w-auto max-md:overflow-y-auto max-md:rounded-b-none max-md:p-5"
           >
             <button
               type="button"
@@ -265,7 +269,7 @@ export function Lojas() {
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Ex.: Recife"
-                className="min-h-11 w-full rounded-md border border-tinta/25 bg-papel pr-12 pl-3 text-corpo [&::-webkit-search-cancel-button]:appearance-none"
+                className="min-h-11 w-full rounded-md border border-tinta/25 bg-papel pr-12 pl-3 text-corpo focus-visible:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d5554] [&::-webkit-search-cancel-button]:appearance-none"
               />
               {busca && (
                 <button

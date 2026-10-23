@@ -4,6 +4,8 @@
 
 Site de uma rede de petshop (banho, tosa, spa, loja e Táxi Dog) contado como um passeio ao amanhecer em primeira pessoa, com rolagem cinematográfica. A experiência de rolagem foi inspirada no site da Seasats; todo o código, os textos e a mídia são próprios ou de fontes com licença livre.
 
+![Seção das lojas do Íris Pet Spa: o título "Patinha após patinha" ao lado de um globo 3D com as unidades no Brasil, rotas do Táxi Dog e filtros em pílula](.github/screenshot.png)
+
 ## O que tem
 
 1. **O passeio:** em primeira pessoa, a mão segura a guia e uma cachorra preta anda à frente enquanto o mundo troca entre ponte, alameda, trilha e gramado com neblina. Frases e cards de serviços passam pela câmera; no fim ela entra na loja Íris.
@@ -69,3 +71,7 @@ As branches de experimento ficam publicadas para mostrar o caminho até a abertu
 ## Créditos
 
 Fotos, vídeos, textura e som: ver [`CREDITS.md`](CREDITS.md). Fontes: Literata, Hanken Grotesk e Martian Mono (SIL Open Font License). Ícones: Phosphor (MIT).
+
+## Licença
+
+O código está sob a licença [MIT](LICENSE). Fotos, vídeos, textura e som não entram nela: cada arquivo segue a licença da sua origem, listada em [`CREDITS.md`](CREDITS.md).

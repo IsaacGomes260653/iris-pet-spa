@@ -49,11 +49,26 @@ for (const [nome, w, h] of [["desktop", 1440, 900], ["largo", 2560, 1080], ["bai
 {
   const p = await nav.newPage({ viewport: { width: 1440, height: 900 } });
   await p.goto(url, { waitUntil: "networkidle" });
-  await fim(p);
-  for (const [k, ms] of [80, 250, 450, 900].entries()) {
-    await p.waitForTimeout(k === 0 ? ms : ms - [80, 250, 450, 900][k - 1]);
-    await p.screenshot({ path: `${saida}/entrada-${k + 1}-${ms}ms.png`, clip: { x: 0, y: 380, width: 1440, height: 520 } });
+  // para antes do rodapé e marca o instante em que a primeira letra começa a subir
+  await p.evaluate(() => document.querySelector("#agendar").scrollIntoView());
+  await p.waitForTimeout(1500);
+  await p.evaluate(() => {
+    new MutationObserver((ms, o) => {
+      if (ms.some((m) => m.target.getAttribute("style")?.includes("translateY(0px)"))) {
+        window.__subiu = performance.now();
+        o.disconnect();
+      }
+    }).observe(document.querySelector("footer"), { subtree: true, attributes: true, attributeFilter: ["style"] });
+  });
+  for (let k = 0; k < 8; k++) {
+    const ms = await p.evaluate(() => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      return window.__subiu ? Math.round(performance.now() - window.__subiu) : -1;
+    });
+    await p.screenshot({ path: `${saida}/entrada-${k + 1}-${ms}ms.png` });
+    await p.waitForTimeout(120);
   }
+  await fim(p);
   // o recorte da brincadeira: a caixa do SVG da silhueta (o primeiro do rodapé sem <text>)
   const cena = await p.evaluate(() => {
     const r = [...document.querySelectorAll("footer svg")].find((s) => !s.querySelector("text")).getBoundingClientRect();
@@ -65,13 +80,25 @@ for (const [nome, w, h] of [["desktop", 1440, 900], ["largo", 2560, 1080], ["bai
   }
   await p.close();
 }
-// movimento reduzido: nome inteiro e silhueta parada
+// celular: a faixa da brincadeira acima do nome, ao longo do loop
 {
-  const p = await nav.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
+  const p = await nav.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await p.goto(url, { waitUntil: "networkidle" });
+  await fim(p);
+  await p.waitForTimeout(1200);
+  for (let k = 0; k < 10; k++) {
+    await p.waitForTimeout(800);
+    await p.screenshot({ path: `${saida}/celular-brincadeira-${String(k).padStart(2, "0")}.png` });
+  }
+  await p.close();
+}
+// movimento reduzido: nome inteiro e silhueta parada
+for (const [nome, w, h] of [["reduzido", 1440, 900], ["reduzido-celular", 390, 844]]) {
+  const p = await nav.newPage({ viewport: { width: w, height: h }, reducedMotion: "reduce" });
   await p.goto(url, { waitUntil: "networkidle" });
   await fim(p);
   await p.waitForTimeout(1500);
-  await p.screenshot({ path: `${saida}/reduzido.png` });
+  await p.screenshot({ path: `${saida}/${nome}.png` });
   await p.close();
 }
 await nav.close();

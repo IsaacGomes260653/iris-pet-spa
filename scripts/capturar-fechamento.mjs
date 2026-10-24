@@ -16,13 +16,14 @@ for (const [nome, opcoes] of [
   const ctx = await nav.newContext(opcoes);
   const p = await ctx.newPage();
   await p.goto(url, { waitUntil: "networkidle" });
-  // da metade da seção de cima até o rodapé, em passos (o GSAP acompanha a rolagem)
-  const pontos = [-0.35, 0, 0.35, 0.7, 1.05];
+  // entrando, o palco fixo do começo ao fim (f = fração da parte fixa) e a passagem para o rodapé
+  const pontos = [-0.6, 0, 0.5, 1, 1.4];
   for (const [k, f] of pontos.entries()) {
     await p.evaluate((f) => {
       const s = document.querySelector("#agendar");
       const topo = s.getBoundingClientRect().top + scrollY;
-      scrollTo(0, topo + f * s.offsetHeight - innerHeight * 0.1);
+      const fixa = s.offsetHeight - innerHeight;
+      scrollTo(0, f < 0 ? topo + f * innerHeight : f <= 1 ? topo + f * fixa : topo + fixa + (f - 1) * innerHeight);
     }, f);
     await p.waitForTimeout(1200);
     await p.screenshot({ path: `${saida}/${nome}-0${k + 1}-${f}.png` });

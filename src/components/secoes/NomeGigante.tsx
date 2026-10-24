@@ -68,10 +68,11 @@ export function NomeGigante() {
 
   const letra = "font-serifa font-extralight";
   return (
-    <div ref={palco} aria-hidden className="relative mt-[6svh] select-none lg:flex lg:items-end lg:gap-[3vw]">
+    <div ref={palco} aria-hidden className="relative mt-[6svh] select-none lg:flex lg:items-end lg:gap-[6vw]">
       {/* a brincadeira, numa cor de sombra: ao lado do nome no desktop, com os pés na linha de base; acima, no celular */}
       <Brincadeira
         compacta={!largo}
+        ativa={visivel || quieto}
         className="mb-[2svh] block h-[clamp(72px,22vw,140px)] w-full text-[#1d4140] lg:order-last lg:mb-[0.4svh] lg:h-auto lg:max-h-[42svh] lg:min-w-0 lg:flex-1"
       />
       <svg

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMidia } from "@/components/useMidia";
 import { Botao, Etiqueta } from "@/components/ui";
 import { altCachorra, cachorra, cards, cenas, mao } from "@/content/midia";
+import { DURACAO, quadroDoCard, roteiro, suave, type Palco } from "./cards";
 
 // uma frase por cenário: a frase troca no meio do crossfade, junto com o mundo
 const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.", "A loja com tudo que ele ama.", "O Táxi Dog que busca e leva."];
@@ -13,25 +14,7 @@ const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.
 const TRECHO = 0.2;
 const TROCA = 0.1; // fração final de cada trecho em que a cena seguinte entra
 
-/**
- * Cards por cenário: [cenário, início dentro do trecho, lado, card]. O primeiro de cada cenário é o da frase ativa;
- * as janelas se sobrepõem, então no desktop há sempre um card perto e outro chegando. No celular, só o principal.
- */
-const roteiro: [number, number, -1 | 1, number][] = [
-  [0, 0, 1, 0], [0, 0.4, -1, 2],
-  [1, 0, -1, 1], [1, 0.4, 1, 7],
-  [2, 0, 1, 3], [2, 0.2, -1, 4], [2, 0.4, 1, 5],
-  [3, 0, -1, 8], [3, 0.2, 1, 6],
-];
-const DURACAO = 0.8; // do card nascer no ponto de fuga até sair pela borda, em fração do trecho
-const DENTRO = 0.88; // até aqui o card fica inteiro na tela; só no fim sai pela borda
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const limitar = (t: number) => Math.min(1, Math.max(0, t));
-const suave = (a: number, b: number, x: number) => {
-  const t = limitar((x - a) / (b - a));
-  return t * t * (3 - 2 * t);
-};
 
 export function Passeio() {
   const secao = useRef<HTMLElement>(null);
@@ -56,6 +39,27 @@ export function Passeio() {
     let raf = 0;
     let pAnterior = -1;
     let ritmo = 0; // fase do passo da cachorra, avança com a rolagem
+    // o palco dos cards: medido no carregamento e quando a janela muda, nunca durante a rolagem
+    let palco: Palco | null = null;
+    let larguras: number[] = []; // largura e altura de cada etiqueta
+    let alturas: number[] = [];
+    const medir = () => {
+      const foto = fotos.current.find(Boolean);
+      if (!foto || !cao.current) return;
+      // Array.from (e não map): no celular a lista de refs tem buracos, e o map os pularia
+      larguras = Array.from(etiquetas.current, (e) => e?.offsetWidth ?? 0);
+      alturas = Array.from(etiquetas.current, (e) => e?.offsetHeight ?? 0);
+      const listaFim = lista.current ? lista.current.offsetTop + lista.current.offsetHeight : 0;
+      palco = {
+        w: innerWidth,
+        h: innerHeight,
+        cardW: foto.offsetWidth,
+        cardH: foto.offsetHeight,
+        topo: listaFim + 12 + Math.max(...alturas),
+        caoTopo: cao.current.offsetTop,
+        caoMeia: cao.current.offsetWidth * 0.4 + 12, // o recorte tem folga transparente dos lados
+      };
+    };
     const ler = () => {
       raf = 0;
       const el = secao.current;
@@ -108,59 +112,47 @@ export function Passeio() {
         veu.current.style.transform = `translateY(${(100 - 160 * v).toFixed(2)}svh)`;
       }
 
-      // cards: nascem pequenos e desfocados no ponto de fuga, crescem nítidos ao lado da cachorra (inteiros na tela)
-      // e só no fim do trajeto saem pela borda. Só a foto escala; a etiqueta fica no tamanho real, sem borrar
+      // cards: tudo vem de `quadroDoCard`, uma função contínua da rolagem (ver cards.ts). Só a foto escala; a etiqueta
+      // fica no tamanho real, presa ao canto de cima da foto, e o desfoque fica só na imagem, dentro da moldura nítida
       cartoes.current.forEach((c, k) => {
         const f = fotos.current[k];
         const e = etiquetas.current[k];
-        if (!c || !f) return;
+        if (!c || !f || !palco) return;
         const [i, inicio, lado] = roteiro[k];
         const u = (p - (i + inicio) * TRECHO) / (DURACAO * TRECHO);
-        if (quieto || u <= 0 || u >= 1) {
+        const q = quieto ? null : quadroDoCard(u, lado, palco, larguras[k]);
+        if (!q) {
           c.style.visibility = "hidden";
           return;
         }
-        // nasce no horizonte, acima da cabeça da cachorra, e se abre para o lado enquanto cresce
-        let x, escala;
-        if (u < DENTRO) {
-          const v = u / DENTRO;
-          x = lerp(leve ? 4 : 6, leve ? 18 : 27, Math.pow(v, 1.3));
-          escala = lerp(0.35, leve ? 1.4 : 1.3, Math.pow(v, 1.6));
-        } else {
-          const v = (u - DENTRO) / (1 - DENTRO);
-          x = (leve ? 18 : 27) + v * v * 45;
-          escala = (leve ? 1.4 : 1.3) + v * 0.4;
-        }
-        const w = f.offsetWidth * escala;
-        const h = f.offsetHeight * escala;
-        // nunca por cima da lista de frases: a etiqueta fica sempre abaixo dela
-        const piso = (lista.current?.getBoundingClientRect().bottom ?? 0) + 12 + (e?.offsetHeight ?? 0) + h / 2;
-        const yPx = Math.max(innerHeight / 2 + ((leve ? lerp(-14, -6, u) : lerp(-20, 0, u)) * innerHeight) / 100, piso);
-        let xPx = (x * innerWidth) / 100;
-        // zona da cachorra (o terço do meio, abaixo de 48% da altura): nenhum card a cruza no desktop
-        if (!leve && yPx + h / 2 > innerHeight * 0.48) xPx = Math.max(xPx, innerWidth * 0.17 + w / 2);
-        const desfoque = u < 0.4 ? (1 - u / 0.4) * 2 : 0;
         c.style.visibility = "visible";
-        c.style.opacity = String(Math.min(suave(0, 0.12, u) * (0.7 + 0.3 * suave(0.1, 0.4, u)), 1 - suave(0.97, 1, u)));
-        c.style.transform = `translate(${(lado * xPx).toFixed(1)}px, ${(yPx - innerHeight / 2).toFixed(1)}px)`;
-        f.style.transform = `translate(-50%, -50%) scale(${escala.toFixed(4)})`;
-        // o desfoque de distância fica só na foto, dentro da moldura nítida
+        c.style.opacity = q.opacidade.toFixed(3);
+        c.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
+        f.style.transform = `translate(-50%, -50%) scale(${q.escala.toFixed(4)})`;
         const foto = f.firstElementChild as HTMLElement | null;
-        if (foto) foto.style.filter = desfoque > 0.05 ? `blur(${desfoque.toFixed(1)}px)` : "none";
+        if (foto) foto.style.filter = q.desfoque > 0.05 ? `blur(${q.desfoque.toFixed(1)}px)` : "none";
         if (e) {
-          // etiqueta presa ao canto superior direito da foto; no desktop só aparece quando cabe sobre ela
-          e.style.transform = `translate(${(w / 2 - e.offsetWidth).toFixed(1)}px, ${(-h / 2 - e.offsetHeight).toFixed(1)}px)`;
-          e.style.opacity = leve || w >= e.offsetWidth + 8 ? "1" : "0";
+          const w = palco.cardW * q.escala;
+          const h = palco.cardH * q.escala;
+          e.style.transform = `translate(${(w / 2 - larguras[k]).toFixed(1)}px, ${(-h / 2 - alturas[k]).toFixed(1)}px)`;
+          e.style.opacity = q.etiqueta.toFixed(3);
         }
       });
     };
     const aoRolar = () => (raf ||= requestAnimationFrame(ler));
+    const aoMudar = () => {
+      medir();
+      aoRolar();
+    };
+    medir();
     ler();
     addEventListener("scroll", aoRolar, { passive: true });
-    addEventListener("resize", aoRolar);
+    addEventListener("resize", aoMudar);
+    // as fontes mudam a altura da lista de frases e a largura das etiquetas
+    document.fonts.ready.then(aoMudar);
     return () => {
       removeEventListener("scroll", aoRolar);
-      removeEventListener("resize", aoRolar);
+      removeEventListener("resize", aoMudar);
       cancelAnimationFrame(raf);
     };
   }, [leve, quieto]);
@@ -244,6 +236,7 @@ export function Passeio() {
               <div
                 key={k}
                 ref={(el) => void (cartoes.current[k] = el)}
+                data-card={k}
                 className="absolute top-1/2 left-1/2 size-0 will-change-[transform,opacity]"
                 style={{ visibility: "hidden" }}
               >
@@ -253,7 +246,7 @@ export function Passeio() {
                 >
                   {resto && <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 65vw, 560px" className="object-cover" />}
                 </div>
-                <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 whitespace-nowrap transition-opacity duration-200">
+                <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 whitespace-nowrap">
                   <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>
                 </span>
               </div>

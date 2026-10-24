@@ -10,7 +10,7 @@ const nav = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
 const estado = (p) =>
   p.evaluate(() => {
     const r = document.querySelector("#antes-e-depois input[type=range]");
-    const feitos = [...document.querySelectorAll("#antes-e-depois ol li")].filter((li) => !li.className.includes("opacity-45")).length;
+    const feitos = [...document.querySelectorAll("#antes-e-depois ol li")].filter((li) => li.textContent.includes("(feito)")).length;
     return `valor ${r.value} · ${r.getAttribute("aria-valuetext")} · feitos ${feitos}`;
   });
 
@@ -37,7 +37,7 @@ for (const [nome, opcoes] of [
   console.log(nome, "End + 10 ←", await estado(p));
   await p.screenshot({ path: `${saida}/${nome}-03-antes.png` });
   // arrasto (mouse) ou toque: até 25% da largura
-  const caixa = await p.locator("#antes-e-depois figure > div").boundingBox();
+  const caixa = await p.locator("#antes-e-depois figure > div:first-child").boundingBox();
   const y = caixa.y + caixa.height / 2;
   if (nome === "desktop") {
     await p.mouse.move(caixa.x + caixa.width * 0.7, y);
@@ -51,11 +51,11 @@ for (const [nome, opcoes] of [
   console.log(nome, "arrasto/toque 25%", await estado(p));
   await p.screenshot({ path: `${saida}/${nome}-04-arrasto.png` });
   // outro pacote: volta ao meio e troca a lista
-  await p.locator("#antes-e-depois [role=radio]").nth(2).click();
+  await p.locator("#antes-e-depois [aria-pressed]").nth(2).click();
   await p.waitForTimeout(500);
   console.log(nome, "Spa", await estado(p));
   await p.screenshot({ path: `${saida}/${nome}-05-spa.png` });
-  await p.locator("#antes-e-depois [role=radio]").nth(0).click();
+  await p.locator("#antes-e-depois [aria-pressed]").nth(0).click();
   await p.waitForTimeout(500);
   await p.screenshot({ path: `${saida}/${nome}-06-essencial.png` });
   if (nome === "celular") {

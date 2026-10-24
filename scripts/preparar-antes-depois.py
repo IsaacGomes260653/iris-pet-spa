@@ -38,7 +38,8 @@ def metade(arq, lado):
 
 # (fonte, recorte 4:5 em pixels da fonte) para cada lado
 PARES = {
-    "essencial": {"antes": (lambda: Image.open(ORIGEM / "aggie-antes.jpg"), (410, 0, 1024, 768)), "depois": (lambda: Image.open(ORIGEM / "aggie-depois.jpg"), (165, 0, 779, 768))},
+    # o Aggie muda de pose (de lado / de frente): o olho fica no mesmo ponto do recorte (55% × 20%) nas duas fotos
+    "essencial": {"antes": (lambda: Image.open(ORIGEM / "aggie-antes.jpg"), (583, 246, 999, 766)), "depois": (lambda: Image.open(ORIGEM / "aggie-depois.jpg"), (83, 0, 541, 572))},
     "banho-tosa": {"antes": (lambda: metade("poodle-par.jpg", "antes"), (20, 170, 500, 770)), "depois": (lambda: metade("poodle-par.jpg", "depois"), (20, 140, 490, 728))},  # sem a borda branca do meio da montagem
     "spa": {"antes": (lambda: metade("shih-par.jpg", "antes"), (0, 164, 506, 796)), "depois": (lambda: metade("shih-par.jpg", "depois"), (6, 87, 433, 621))},
 }
@@ -46,7 +47,11 @@ PARES = {
 DESTINO.mkdir(parents=True, exist_ok=True)
 for pacote, lados in PARES.items():
     imgs = {lado: np.asarray(abrir().convert("RGB").crop(caixa).resize(SAIDA, Image.LANCZOS), dtype=np.float32) / 255 for lado, (abrir, caixa) in lados.items()}
-    # a mesma exposição para o antes e o depois: a diferença entre eles é do serviço, não da correção
+    # balanço de branco (mundo cinza, pela metade) e exposição iguais para o antes e o depois do par: a diferença
+    # entre eles é do serviço, não da correção
+    canais = np.mean([px.reshape(-1, 3).mean(0) for px in imgs.values()], 0)
+    ganho = 1 + 0.5 * (canais.mean() / canais - 1)
+    imgs = {lado: np.clip(px * ganho, 0, 1) for lado, px in imgs.items()}
     media = np.mean([(px @ np.array([0.2126, 0.7152, 0.0722])).mean() for px in imgs.values()])
     gama = np.log(0.46) / np.log(max(media, 1e-3))
     for lado, px in imgs.items():

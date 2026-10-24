@@ -6,35 +6,54 @@ import { Brincadeira } from "./Brincadeira";
 
 const NOME = Array.from("Íris");
 const FS = 1000; // tamanho da fonte em unidades do SVG; a caixa é medida nela
+const KERN_I = -20; // o "Í" com serifa abre um vão maior que o das outras letras: as seguintes chegam um pouco
+// caixa provisória (a medida na Literata 200), para o nome não saltar quando a fonte carregar
+const PROVISORIA = { caixa: "46.9 -947.5 1214.1 967.1", xs: [0, 284, 646, 886], base: 19.6 };
 
 /**
- * O nome gigante no fim do rodapé. É um SVG cuja caixa (viewBox) é medida na própria fonte depois que ela carrega, com
- * folga para o acento do "Í": cabe inteiro, em largura e em altura, em qualquer janela. As letras sobem uma a uma de
- * trás da linha de base quando o rodapé aparece; ao fundo, a silhueta da brincadeira com a bola.
+ * O nome gigante no fim do rodapé, um SVG cuja caixa é medida na própria fonte quando ela carrega (a tinta de verdade,
+ * com o acento do "Í"): cabe inteiro em qualquer janela. As letras sobem uma a uma de trás da linha de base quando o
+ * rodapé aparece. A brincadeira com a bola fica ao lado do nome no desktop e numa faixa acima dele no celular.
  */
 export function NomeGigante() {
   const palco = useRef<HTMLDivElement>(null);
   const inteiro = useRef<SVGTextElement>(null);
-  const [medida, setMedida] = useState<{ caixa: string; xs: number[]; base: number } | null>(null);
+  const [medida, setMedida] = useState(PROVISORIA);
+  const [pronta, setPronta] = useState(false);
   const [visivel, setVisivel] = useState(false);
   const quieto = useMidia("(prefers-reduced-motion: reduce)");
+  const largo = useMidia("(min-width: 1024px)");
 
   useEffect(() => {
     let vivo = true;
     document.fonts.ready.then(() => {
       const t = inteiro.current;
       if (!vivo || !t) return;
+      // a tinta das letras (o acento no alto, a curva do "s" embaixo) vem do canvas; a largura, do próprio SVG
+      const ctx = document.createElement("canvas").getContext("2d")!;
+      const estilo = getComputedStyle(t);
+      ctx.font = `${estilo.fontWeight} ${FS}px ${estilo.fontFamily}`;
+      const tinta = ctx.measureText("Íris");
       const b = t.getBBox();
-      // a caixa da fonte nem sempre cobre o acento: 6% a mais no alto; embaixo, só até um pouco abaixo da linha de base
-      const topo = b.y - b.height * 0.06;
-      const fundo = FS * 0.03;
-      const folga = FS * 0.02;
+      const topo = -tinta.actualBoundingBoxAscent - FS * 0.01;
+      const base = tinta.actualBoundingBoxDescent + FS * 0.004;
+      const esquerda = -tinta.actualBoundingBoxLeft;
+      const largura = b.x + b.width + KERN_I - esquerda;
       setMedida({
-        caixa: `${(b.x - folga).toFixed(1)} ${topo.toFixed(1)} ${(b.width + 2 * folga).toFixed(1)} ${(fundo - topo).toFixed(1)}`,
-        xs: NOME.map((_, i) => (i === 0 ? 0 : t.getSubStringLength(0, i))),
-        base: fundo,
+        caixa: `${esquerda.toFixed(1)} ${topo.toFixed(1)} ${largura.toFixed(1)} ${(base - topo).toFixed(1)}`,
+        xs: NOME.map((_, i) => (i === 0 ? 0 : t.getSubStringLength(0, i) + KERN_I)),
+        base,
       });
+      setPronta(true);
     });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  // só observa depois de medir: as letras já estão escondidas embaixo da linha, e a subida sempre acontece
+  useEffect(() => {
+    if (!pronta || !palco.current) return;
     const io = new IntersectionObserver(
       ([e]) => {
         if (!e.isIntersecting) return;
@@ -43,24 +62,24 @@ export function NomeGigante() {
       },
       { threshold: 0.35 },
     );
-    if (palco.current) io.observe(palco.current);
-    return () => {
-      vivo = false;
-      io.disconnect();
-    };
-  }, []);
+    io.observe(palco.current);
+    return () => io.disconnect();
+  }, [pronta]);
 
   const letra = "font-serifa font-extralight";
   return (
-    <div ref={palco} aria-hidden className="relative mt-[6svh] select-none">
-      {/* a brincadeira ao fundo, com os pés na mesma linha de base das letras, numa cor de sombra */}
-      <Brincadeira className="absolute inset-x-0 bottom-[1.5%] w-full text-[#164644]" />
+    <div ref={palco} aria-hidden className="relative mt-[6svh] select-none lg:flex lg:items-end lg:gap-[3vw]">
+      {/* a brincadeira, numa cor de sombra: ao lado do nome no desktop, com os pés na linha de base; acima, no celular */}
+      <Brincadeira
+        compacta={!largo}
+        className="mb-[2svh] block h-[clamp(72px,22vw,140px)] w-full text-[#1d4140] lg:order-last lg:mb-[0.4svh] lg:h-auto lg:max-h-[42svh] lg:min-w-0 lg:flex-1"
+      />
       <svg
-        viewBox={medida?.caixa ?? "-20 -980 1640 1010"}
-        preserveAspectRatio="xMidYMax meet"
-        className="relative block max-h-[82svh] w-full overflow-visible"
+        viewBox={medida.caixa}
+        preserveAspectRatio="xMinYMax meet"
+        className="block max-h-[82svh] w-full overflow-visible lg:h-[82svh] lg:w-auto lg:max-w-[62%] lg:shrink-0"
       >
-        {medida ? (
+        {pronta ? (
           <>
             <clipPath id="nome-gigante-base">
               {/* as letras nascem de trás da linha de base */}
@@ -87,7 +106,7 @@ export function NomeGigante() {
           </>
         ) : null}
         {/* o nome inteiro: serve para medir e é o que aparece antes da medida (e sem JavaScript) */}
-        <text ref={inteiro} x={0} y={0} fontSize={FS} letterSpacing="-0.045em" fill="currentColor" className={letra} opacity={medida ? 0 : 1}>
+        <text ref={inteiro} x={0} y={0} fontSize={FS} letterSpacing="-0.045em" fill="currentColor" className={letra} opacity={pronta ? 0 : 1}>
           Íris
         </text>
       </svg>

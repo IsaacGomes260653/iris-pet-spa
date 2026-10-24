@@ -115,13 +115,14 @@ export const ficha: { item: string; valores: [string, string, string] }[] = [
  */
 export const antesDepois: Record<
   PacoteId,
-  { antes: typeof essAntes; depois: typeof essAntes; cao: string; feito: string[]; autor: string; pagina: string }
+  { antes: typeof essAntes; depois: typeof essAntes; cao: string; feito: string[]; curto: string[]; autor: string; pagina: string }
 > = {
   essencial: {
     antes: essAntes,
     depois: essDepois,
     cao: "Springer spaniel preto e branco",
     feito: ["Banho com shampoo neutro", "Escovação que tira o subpelo solto", "Acabamento higiênico: patas, barriga e orelhas", "Unhas cortadas na medida"],
+    curto: ["Banho neutro", "Subpelo solto", "Acabamento higiênico", "Unhas na medida"],
     autor: "dwolfgra",
     pagina: "https://www.flickr.com/photos/87965047@N00/2858404410",
   },
@@ -130,6 +131,7 @@ export const antesDepois: Record<
     depois: bTosaDepois,
     cao: "Poodle mestiço de pelo claro",
     feito: ["Banho com shampoo para pelo encaracolado", "Tosa no corpo todo, na tesoura e na máquina", "Rosto e olhos livres do pelo", "Secagem com escova e lenço no pescoço"],
+    curto: ["Banho", "Tosa no corpo", "Rosto livre", "Secagem e lenço"],
     autor: "funkblast",
     pagina: "https://www.flickr.com/photos/92799036@N00/16937812322",
   },
@@ -138,6 +140,7 @@ export const antesDepois: Record<
     depois: spaDepois,
     cao: "Shih-tzu preto",
     feito: ["Banho dermatológico e máscara nutritiva", "Desembaraço fio a fio", "Tosa na tesoura com rosto aberto", "Secagem lenta, perfume suave e lenço"],
+    curto: ["Banho e máscara", "Desembaraço", "Rosto aberto", "Secagem e perfume"],
     autor: "kerotab",
     pagina: "https://www.flickr.com/photos/73889777@N00/23227160071",
   },

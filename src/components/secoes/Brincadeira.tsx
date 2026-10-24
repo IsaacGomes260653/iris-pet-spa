@@ -8,15 +8,16 @@ const CHAO = 248;
 const PESSOA_X = 150;
 const BOLA_R = 8;
 const QUADRIL = 94; // altura do quadril da pessoa; coxa 46 + canela 44 + sola
-const CAO_X = PESSOA_X + 120; // onde a cachorra espera, ao lado da pessoa
+const CAO_X = PESSOA_X + 150; // onde a cachorra espera, ao lado da pessoa (sem encostar nela)
+const CAO_X_COMPACTA = 340; // no celular a pessoa está fora do quadro: a cachorra espera inteira na faixa
 
 // pernas da cachorra: pivô, comprimentos de cima e de baixo, defasagem e amplitude do passo, e o ângulo parado
 // (as traseiras de pastora: coxa para a frente, jarrete para trás). Pares defasados: galope, não trote.
 const PERNAS = [
-  { id: "df", px: 34, py: -50, a: 24, b: 26, fase: 0.3 * Math.PI, amp: 34, frente: true, coxa: 0, jarrete: 0 }, // dianteira do fundo
-  { id: "tf", px: -40, py: -54, a: 26, b: 32, fase: 1.3 * Math.PI, amp: 30, frente: false, coxa: -22, jarrete: 44 }, // traseira do fundo
-  { id: "dp", px: 34, py: -50, a: 24, b: 26, fase: 0, amp: 34, frente: true, coxa: 0, jarrete: 0 }, // dianteira da frente
-  { id: "tp", px: -40, py: -54, a: 26, b: 32, fase: Math.PI, amp: 30, frente: false, coxa: -22, jarrete: 44 }, // traseira da frente
+  { id: "df", px: 34, py: -50, a: 24, b: 26, fase: 0.3 * Math.PI, amp: 48, frente: true, coxa: 0, jarrete: 0 }, // dianteira do fundo
+  { id: "tf", px: -40, py: -54, a: 26, b: 32, fase: 1.3 * Math.PI, amp: 44, frente: false, coxa: -22, jarrete: 44 }, // traseira do fundo
+  { id: "dp", px: 34, py: -50, a: 24, b: 26, fase: 0, amp: 48, frente: true, coxa: 0, jarrete: 0 }, // dianteira da frente
+  { id: "tp", px: -40, py: -54, a: 26, b: 32, fase: Math.PI, amp: 44, frente: false, coxa: -22, jarrete: 44 }, // traseira da frente
 ];
 // pernas da pessoa: quadril (x) e o ângulo parado; a da frente dá o passo do arremesso
 const PERNAS_PESSOA = [
@@ -44,10 +45,12 @@ type Estado = {
  * Silhueta ao lado do nome gigante, em loop: uma pessoa arremessa a bola, a cachorra corre, pega e traz de volta.
  * Tudo em SVG, numa cor só (uma sombra); o GSAP só é baixado quando o rodapé chega perto. `compacta` (celular) é uma
  * faixa mais baixa e mais curta: a pessoa fica fora do quadro, à esquerda, e só a cachorra aparece buscando a bola.
- * Com movimento reduzido, a cena fica parada (a cachorra em pé ao lado da pessoa, a bola na mão).
+ * `ativa` vem do nome gigante: a cena aparece e o loop começa depois que as letras sobem. Com movimento reduzido, a
+ * cena fica parada (a cachorra em pé ao lado da pessoa, a bola na mão).
  */
-export function Brincadeira({ className = "", compacta = false }: { className?: string; compacta?: boolean }) {
+export function Brincadeira({ className = "", compacta = false, ativa = false }: { className?: string; compacta?: boolean; ativa?: boolean }) {
   const svg = useRef<SVGSVGElement>(null);
+  const casa = compacta ? CAO_X_COMPACTA : CAO_X;
   // até onde a bola vai: no desktop a cena divide a linha com o nome, então a corrida é curta e as figuras, grandes
   const fim = compacta ? 1000 : 860;
 
@@ -55,13 +58,14 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
     (gsap, ScrollTrigger) => {
       const raiz = svg.current!;
       const pega = (sel: string) => raiz.querySelector<SVGGElement>(sel)!;
-      const pessoa = { braco: pega("[data-braco]"), antebraco: pega("[data-antebraco]"), tronco: pega("[data-tronco]") };
-      const pernasPessoa = PERNAS_PESSOA.map((p) => ({ ...p, coxa: pega(`[data-coxa='${p.id}']`), canela: pega(`[data-canela='${p.id}']`) }));
+      // no modo compacto a pessoa não é desenhada (só a mão dela conta, fora do quadro, para a bola)
+      const pessoa = compacta ? null : { braco: pega("[data-braco]"), antebraco: pega("[data-antebraco]"), tronco: pega("[data-tronco]") };
+      const pernasPessoa = compacta ? [] : PERNAS_PESSOA.map((p) => ({ ...p, coxa: pega(`[data-coxa='${p.id}']`), canela: pega(`[data-canela='${p.id}']`) }));
       const cao = { raiz: pega("[data-cao]"), corpo: pega("[data-corpo]"), cabeca: pega("[data-cabeca]"), rabo: pega("[data-rabo]") };
       const pernas = PERNAS.map((p) => ({ ...p, cima: pega(`[data-perna='${p.id}']`), baixo: pega(`[data-joelho='${p.id}']`) }));
       const bola = raiz.querySelector<SVGCircleElement>("[data-bola]")!;
 
-      const e: Estado = { braco: 10, antebraco: -10, tronco: 0, joelho: 0, passo: 0, caoX: CAO_X, lado: 1, corre: 0, cabeca: 0, abaixa: 0, bola: "mao", voo: 0, quique: 0 };
+      const e: Estado = { braco: 10, antebraco: -10, tronco: 0, joelho: 0, passo: 0, caoX: casa, lado: 1, corre: 0, cabeca: 0, abaixa: 0, bola: "mao", voo: 0, quique: 0 };
       let fase = 0;
       let rabo = 0;
 
@@ -95,7 +99,7 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
         // passo: a fase anda com a velocidade; parada, a cachorra fica em pé e o rabo abana
         fase += dt * (4 + 10 * e.corre) * (e.corre > 0.02 ? 1 : 0);
         rabo += dt * 9;
-        const sobe = -6 * e.corre * Math.abs(Math.sin(fase));
+        const sobe = -12 * e.corre * Math.abs(Math.sin(fase));
         cao.raiz.setAttribute("transform", `translate(${e.caoX.toFixed(1)} ${CHAO}) scale(${e.lado} 1)`);
         cao.corpo.setAttribute("transform", `translate(0 ${sobe.toFixed(2)}) rotate(${inclinacao().toFixed(2)} -40 -52)`);
         cao.cabeca.setAttribute("transform", `translate(66 -100) rotate(${(e.cabeca + 4 * e.corre * Math.sin(fase * 2)).toFixed(2)})`);
@@ -115,9 +119,11 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
           p.coxa.setAttribute("transform", `translate(${PESSOA_X + p.hx} ${(CHAO - QUADRIL + d).toFixed(2)}) rotate(${(p.base - 30 * e.joelho + (p.frente ? e.passo : 0)).toFixed(2)})`);
           p.canela.setAttribute("transform", `translate(0 46) rotate(${(60 * e.joelho).toFixed(2)})`);
         }
-        pessoa.tronco.setAttribute("transform", `translate(0 ${d.toFixed(2)}) rotate(${e.tronco.toFixed(2)} ${PESSOA_X} ${CHAO - 90})`);
-        pessoa.braco.setAttribute("transform", `translate(${PESSOA_X + 4} ${CHAO - 146}) rotate(${e.braco.toFixed(2)})`); // dentro do tronco
-        pessoa.antebraco.setAttribute("transform", `translate(0 30) rotate(${e.antebraco.toFixed(2)})`);
+        if (pessoa) {
+          pessoa.tronco.setAttribute("transform", `translate(0 ${d.toFixed(2)}) rotate(${e.tronco.toFixed(2)} ${PESSOA_X} ${CHAO - 90})`);
+          pessoa.braco.setAttribute("transform", `translate(${PESSOA_X + 4} ${CHAO - 146}) rotate(${e.braco.toFixed(2)})`); // dentro do tronco
+          pessoa.antebraco.setAttribute("transform", `translate(0 30) rotate(${e.antebraco.toFixed(2)})`);
+        }
 
         let b = mao();
         if (e.bola === "voo") {
@@ -139,7 +145,7 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
         e.bola = "voo";
       };
       const tl = gsap.timeline({ paused: true, repeat: -1, repeatDelay: 0.6, defaults: { ease: "power2.inOut" } });
-      tl.set(e, { bola: "mao", voo: 0, quique: 0, lado: 1, caoX: CAO_X })
+      tl.set(e, { bola: "mao", voo: 0, quique: 0, lado: 1, caoX: casa })
         // armar (o tronco vai para trás, a perna da frente avança) e arremessar (o tronco vem junto)
         .to(e, { braco: 160, antebraco: 30, tronco: -8, passo: -12, duration: 0.7 })
         .to(e, { braco: -110, antebraco: -20, tronco: 10, duration: 0.22, ease: "power3.in" })
@@ -162,12 +168,15 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
         .to(e, { caoX: CAO_X, duration: 2.0, ease: "power1.inOut" }, "<")
         .to(e, { corre: 0, duration: 0.45, ease: "power2.in" }, "<1.55")
         // entrega: a pessoa dobra os joelhos, se abaixa e pega a bola da boca dela; a cachorra se vira de novo
-        .to(e, { tronco: 26, joelho: 1, braco: -20, antebraco: -15, duration: 0.6 })
+        .to(e, { tronco: 18, joelho: 1, braco: -40, antebraco: -10, duration: 0.6 })
         .set(e, { bola: "mao" })
         .to(e, { tronco: 0, joelho: 0, braco: 10, antebraco: -10, duration: 0.6 })
         .set(e, { lado: 1 }, "<0.25");
+      // no celular, ela volta trotando para o meio da faixa (a entrega acontece na borda, que se apaga)
+      if (compacta) tl.to(e, { corre: 0.4, duration: 0.2 }).to(e, { caoX: casa, duration: 0.8, ease: "none" }, "<").to(e, { corre: 0, duration: 0.2 }, ">-0.2");
 
-      // só anda quando o rodapé está na tela; da primeira vez, espera as letras do nome terminarem de subir
+      // só anda quando o rodapé está na tela e depois que as letras subiram (+1,2 s do disparo); fora dela, pausa
+      if (!ativa) return () => gsap.ticker.remove(quadro);
       let primeira = true;
       ScrollTrigger.create({
         trigger: raiz,
@@ -178,13 +187,13 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
           else if (!primeira) tl.play();
           else {
             primeira = false;
-            gsap.delayedCall(1, () => void tl.play());
+            gsap.delayedCall(1.2, () => void tl.play());
           }
         },
       });
       return () => gsap.ticker.remove(quadro);
     },
-    [fim],
+    [fim, compacta, casa, ativa],
   );
   useAnimacaoPerto(svg, montar);
 
@@ -195,14 +204,20 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
       viewBox={compacta ? "205 96 700 164" : `115 0 ${fim - 215} 250`}
       preserveAspectRatio={compacta ? "xMidYMax meet" : "xMinYMax meet"}
       aria-hidden
-      className={className}
+      // aparece depois que as letras sobem; no celular, a borda esquerda (para onde ela leva a bola) se apaga
+      className={`${className} transition-[opacity,translate] delay-900 duration-700 motion-reduce:transition-none`}
+      style={{
+        opacity: ativa ? 1 : 0,
+        translate: ativa ? "0 0" : "0 12px",
+        maskImage: compacta ? "linear-gradient(90deg, transparent, #000 18%)" : undefined,
+      }}
       fill="currentColor"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* a pessoa, olhando para a direita: pernas com joelho, jaqueta, rabo de cavalo */}
-      {PERNAS_PESSOA.map((p) => (
+      {/* a pessoa, olhando para a direita: pernas com joelho, jaqueta, rabo de cavalo (fora do quadro no celular) */}
+      {!compacta && PERNAS_PESSOA.map((p) => (
         <g key={p.id} data-coxa={p.id} transform={`translate(${PESSOA_X + p.hx} ${CHAO - QUADRIL}) rotate(${p.base})`} strokeWidth={6}>
           <path d="M-8 -2 L8 -2 L6 46 L-6 46 Z" />
           <g data-canela={p.id} transform="translate(0 46)">
@@ -211,6 +226,7 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
           </g>
         </g>
       ))}
+      {!compacta && (
       <g data-tronco>
         <g transform={`translate(${PESSOA_X} ${CHAO})`}>
           <path d="M-14 -149 C-3 -156 10 -156 19 -148 L15 -97 C6 -91 -6 -91 -12 -95 Z" strokeWidth={6} />
@@ -230,10 +246,11 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
           </g>
         </g>
       </g>
+      )}
 
       {/* a cachorra (pastora): dorso caindo da cernelha para a garupa, peito fundo, pescoço cheio, focinho longo com o
           "stop" marcado, orelhas em pé, rabo peludo e baixo, quatro pernas articuladas */}
-      <g data-cao transform={`translate(${CAO_X} ${CHAO}) scale(1 1)`}>
+      <g data-cao transform={`translate(${casa} ${CHAO}) scale(1 1)`}>
         <g data-corpo>
           {PERNAS.slice(0, 2).map((p) => (
             <Perna key={p.id} {...p} />
@@ -249,8 +266,8 @@ export function Brincadeira({ className = "", compacta = false }: { className?: 
           <g data-cabeca transform="translate(66 -100) rotate(0)">
             <ellipse cx={1} cy={-1} rx={19} ry={14} stroke="none" />
             <path d="M10 -9 L30 -2 C34 0 34 6 31 9 L6 12 Z" strokeWidth={3} />
-            <path d="M-12 -8 L-8 -29 L3 -11 Z" strokeWidth={3} />
-            <path d="M-3 -10 L3 -30 L10 -9 Z" strokeWidth={3} />
+            <path d="M-12 -8 L-8 -24 L3 -11 Z" strokeWidth={3} />
+            <path d="M-3 -10 L3 -25 L10 -9 Z" strokeWidth={3} />
           </g>
           {PERNAS.slice(2).map((p) => (
             <Perna key={p.id} {...p} />

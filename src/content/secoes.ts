@@ -121,7 +121,7 @@ export const antesDepois: Record<
     antes: essAntes,
     depois: essDepois,
     cao: "Springer spaniel preto e branco",
-    feito: ["Banho com shampoo neutro", "Secagem e escovação até o subpelo", "Pelos das patas e das orelhas acertados", "Unhas cortadas na medida"],
+    feito: ["Banho com shampoo neutro", "Escovação que tira o subpelo solto", "Acabamento higiênico: patas, barriga e orelhas", "Unhas cortadas na medida"],
     autor: "dwolfgra",
     pagina: "https://www.flickr.com/photos/87965047@N00/2858404410",
   },

@@ -20,6 +20,9 @@ export function AntesDepois() {
   const [linha, setLinha] = useState(50); // posição da divisória, em % da largura (0 = tudo depois, 100 = tudo antes)
   const [animando, setAnimando] = useState(false); // só na troca de pacote e na dica: nunca durante o arrasto
   const [anuncio, setAnuncio] = useState("");
+  const [anterior, setAnterior] = useState<PacoteId | null>(null); // fica embaixo, inteiro, enquanto o novo par aparece
+  const interagiu = useRef(false);
+  const dicas = useRef<number[]>([]);
   const par = antesDepois[pacote];
   const nome = pacotes.find((p) => p.id === pacote)!.nome;
   const depois = 100 - linha;
@@ -30,8 +33,14 @@ export function AntesDepois() {
     setLinha(limitar(v));
   };
 
-  // arrasto: o ponto tocado vira a posição da linha (no iPhone o range nativo só obedece ao polegar)
-  const arrastar = useRef(false);
+  const marcarInteracao = () => {
+    interagiu.current = true;
+    dicas.current.forEach(clearTimeout); // a dica de entrada nunca puxa a linha contra a mão de ninguém
+  };
+
+  // arrasto: mouse arrasta na hora; no toque, só um gesto claramente horizontal arrasta (o vertical é a rolagem
+  // da página) e um toque parado posiciona a linha. No iPhone o range nativo só obedece ao polegar
+  const gesto = useRef<{ x: number; y: number; arrastando: boolean; toque: boolean } | null>(null);
   const naPosicao = (x: number) => {
     const r = quadro.current!.getBoundingClientRect();
     mover(((x - r.left) / r.width) * 100);
@@ -51,8 +60,10 @@ export function AntesDepois() {
           setAnimando(true);
           setLinha(v);
         };
+        if (interagiu.current) return;
         t1 = window.setTimeout(() => dica(38), 400);
         t2 = window.setTimeout(() => dica(50), 1100);
+        dicas.current = [t1, t2];
       },
       { threshold: 0.6 },
     );
@@ -66,12 +77,12 @@ export function AntesDepois() {
 
   // leitor de tela: "3 de 4 etapas à vista", depois que o arrasto assenta
   useEffect(() => {
-    const id = setTimeout(() => setAnuncio(`${feitos} de ${par.feito.length} etapas à vista`), 500);
+    const id = setTimeout(() => interagiu.current && setAnuncio(`${feitos} de ${par.feito.length} etapas à vista`), 500);
     return () => clearTimeout(id);
   }, [feitos, par.feito.length]);
 
   const transicao = animando ? "transition-[left,clip-path] duration-500 ease-saida motion-reduce:transition-none" : "";
-  const alca = `clamp(22px, ${linha}%, calc(100% - 22px))`;
+  const alca = `clamp(22px, ${linha}%, calc(100% - 22px))`; // só a alça fica dentro do quadro; a linha segue o corte
 
   return (
     <section
@@ -80,19 +91,41 @@ export function AntesDepois() {
       aria-labelledby="titulo-antes-depois"
       className="[content-visibility:auto] [contain-intrinsic-size:auto_900px] relative z-10 bg-[linear-gradient(rgb(46_122_114/0),#2e7a72_14svh,#1d5554)] px-5 py-[16svh] text-papel md:px-[6vw]"
     >
-      <div className="flex flex-col gap-10 md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-center md:gap-[6vw]">
+      {/* no celular a coluna inteira deixa folga para o ▶ da barra de progresso: tudo na mesma borda */}
+      <div className="flex flex-col gap-10 max-md:pr-3 md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-center md:gap-[6vw]">
         {/* o comparador */}
-        <figure className="order-2 max-md:pr-3 md:order-none">
+        <figure className="order-2 md:order-none">
           <div
             ref={quadro}
             onPointerDown={(e) => {
-              arrastar.current = true;
-              e.currentTarget.setPointerCapture(e.pointerId);
-              naPosicao(e.clientX);
+              marcarInteracao();
+              const toque = e.pointerType !== "mouse";
+              gesto.current = { x: e.clientX, y: e.clientY, arrastando: !toque, toque };
+              if (!toque) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                naPosicao(e.clientX);
+              }
             }}
-            onPointerMove={(e) => arrastar.current && naPosicao(e.clientX)}
-            onPointerUp={() => (arrastar.current = false)}
-            onPointerCancel={() => (arrastar.current = false)}
+            onPointerMove={(e) => {
+              const g = gesto.current;
+              if (!g) return;
+              if (!g.arrastando) {
+                const dx = Math.abs(e.clientX - g.x);
+                const dy = Math.abs(e.clientY - g.y);
+                if (dy > 8 && dy > dx) gesto.current = null; // é rolagem: a linha não mexe
+                else if (dx > 8) {
+                  g.arrastando = true;
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }
+              }
+              if (gesto.current?.arrastando) naPosicao(e.clientX);
+            }}
+            onPointerUp={(e) => {
+              const g = gesto.current;
+              if (g?.toque && !g.arrastando) naPosicao(e.clientX); // toque parado: a linha vai até o dedo
+              gesto.current = null;
+            }}
+            onPointerCancel={() => (gesto.current = null)}
             onDragStart={(e) => e.preventDefault()} // sem isso o navegador arrasta a própria foto e cancela o gesto
             className="group relative mx-auto aspect-[4/5] w-full max-w-[min(560px,calc((100svh-10rem)*0.8))] cursor-ew-resize touch-pan-y overflow-hidden rounded-[14px] bg-abismo select-none max-md:max-w-[min(100%,calc((100svh-15rem)*0.8))]"
           >
@@ -100,8 +133,9 @@ export function AntesDepois() {
             {pacotes.map((p) => {
               const ativo = p.id === pacote;
               const fotos = antesDepois[p.id];
+              const estado = ativo ? "z-[2] opacity-100 transition-opacity duration-300" : p.id === anterior ? "z-[1] opacity-100" : "z-0 opacity-0";
               return (
-                <div key={p.id} aria-hidden={!ativo} className={`absolute inset-0 transition-opacity duration-300 ${ativo ? "opacity-100" : "opacity-0"}`}>
+                <div key={p.id} aria-hidden={!ativo} className={`absolute inset-0 ${estado}`}>
                   <Image src={fotos.depois} alt={`${fotos.cao} depois do ${p.nome}.`} fill draggable={false} sizes="(max-width: 768px) 90vw, 560px" className="object-cover" />
                   <div className={`absolute inset-0 ${transicao}`} style={{ clipPath: `inset(0 ${100 - linha}% 0 0)` }}>
                     <Image src={fotos.antes} alt={`${fotos.cao} antes do ${p.nome}.`} fill draggable={false} sizes="(max-width: 768px) 90vw, 560px" className="object-cover" />
@@ -109,23 +143,29 @@ export function AntesDepois() {
                 </div>
               );
             })}
-            {/* a divisória e a alça (nunca saem do quadro) */}
-            <div aria-hidden className={`pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-papel shadow-[0_0_12px_rgb(0_0_0/0.35)] ${transicao}`} style={{ left: alca }}>
-              <span className="absolute top-1/2 left-1/2 grid size-11 -translate-x-1/2 -translate-y-1/2 grid-flow-col place-items-center rounded-full bg-papel text-tinta shadow-[0_6px_20px_-6px_rgb(0_0_0/0.5)] ring-agua-funda ring-offset-2 ring-offset-papel group-has-[:focus-visible]:ring-2">
-                <CaretLeft size={14} weight="bold" />
-                <CaretRight size={14} weight="bold" />
-              </span>
-            </div>
+            {/* a divisória acompanha o corte; a alça nunca sai do quadro */}
+            <div aria-hidden className={`pointer-events-none absolute inset-y-0 z-[3] w-0.5 -translate-x-1/2 bg-papel shadow-[0_0_12px_rgb(0_0_0/0.35)] ${transicao}`} style={{ left: `${linha}%` }} />
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute top-1/2 z-[3] grid size-11 -translate-x-1/2 -translate-y-1/2 grid-flow-col place-items-center rounded-full bg-papel text-tinta shadow-[0_6px_20px_-6px_rgb(0_0_0/0.5)] ring-agua-funda ring-offset-2 ring-offset-papel group-has-[:focus-visible]:ring-2 ${transicao}`}
+              style={{ left: alca }}
+            >
+              <CaretLeft size={14} weight="bold" />
+              <CaretRight size={14} weight="bold" />
+            </span>
             {/* etiquetas por cima da linha; cada uma some quando o seu lado sai da foto */}
-            <Etiqueta className={`absolute top-3 left-3 z-10 transition-opacity duration-200 ${linha < 15 ? "opacity-0" : ""}`}>Antes</Etiqueta>
-            <Etiqueta className={`absolute top-3 right-3 z-10 transition-opacity duration-200 ${linha > 85 ? "opacity-0" : ""}`}>Depois</Etiqueta>
+            <Etiqueta className={`absolute top-3 left-3 z-[4] transition-opacity duration-200 ${linha < 15 ? "opacity-0" : ""}`}>Antes</Etiqueta>
+            <Etiqueta className={`absolute top-3 right-3 z-[4] transition-opacity duration-200 ${linha > 85 ? "opacity-0" : ""}`}>Depois</Etiqueta>
             <input
               type="range"
               min={0}
               max={100}
               step={1}
               value={Math.round(linha)}
-              onChange={(e) => mover(Number(e.target.value))}
+              onChange={(e) => {
+                marcarInteracao();
+                mover(Number(e.target.value));
+              }}
               aria-label={`Comparar ${par.cao.toLowerCase()} antes e depois do ${nome}`}
               aria-valuetext={`${Math.round(linha)}% antes, ${Math.round(depois)}% depois`}
               className="pointer-events-none absolute inset-0 size-full appearance-none bg-transparent opacity-0"
@@ -139,7 +179,7 @@ export function AntesDepois() {
               ))}
             </span>
             <span className="truncate font-mono text-[0.6875rem] uppercase [font-stretch:87.5%]">
-              {feitos > 0 ? `0${feitos}/0${par.feito.length} · ${par.feito[feitos - 1]}` : "Arraste para ver o depois"}
+              {feitos > 0 ? `0${feitos}/0${par.feito.length} · ${par.curto[feitos - 1]}` : "Arraste para ver o depois"}
             </span>
           </div>
           <figcaption className="mx-auto mt-3 max-w-[min(560px,calc((100svh-10rem)*0.8))] font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] text-papel-suave max-md:max-w-[min(100%,calc((100svh-15rem)*0.8))]">
@@ -168,8 +208,12 @@ export function AntesDepois() {
                   type="button"
                   aria-pressed={pacote === p.id}
                   onClick={() => {
+                    if (p.id === pacote) return;
+                    marcarInteracao();
+                    setAnterior(pacote);
                     setPacote(p.id);
                     mover(50, true);
+                    window.setTimeout(() => setAnterior(null), 350);
                   }}
                   className={`min-h-11 rounded-md px-3 font-mono text-[0.6875rem] uppercase [font-stretch:87.5%] transition-colors md:min-h-9 md:text-[0.75rem] ${pacote === p.id ? "bg-[#0c2829] text-creme" : "text-tinta hover:bg-creme"}`}
                 >

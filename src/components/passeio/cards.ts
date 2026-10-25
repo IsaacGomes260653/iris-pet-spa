@@ -19,9 +19,9 @@ export const roteiroCelular: Trajeto[] = [
   [0, 0.15, 1, 0], [0, 0.5, -1, 2],
   [1, 0, -1, 1], [1, 0.45, 1, 7],
   [2, 0, 1, 4], [2, 0.45, -1, 5],
-  [3, 0, -1, 8], [3, 0.45, 1, 6],
+  [3, 0, -1, 8], [3, 0.2, 1, 6], // o último termina junto com o passeio, antes da chegada
 ];
-export const DURACAO_CELULAR = 0.6;
+export const DURACAO_CELULAR = 0.8;
 
 /** O que o card precisa saber da tela, medido uma vez por tamanho de janela (px). */
 export type Palco = {
@@ -77,9 +77,16 @@ export function quadroDoCard(u: number, lado: -1 | 1, palco: Palco, etiquetaW: n
   const livre = cardW / 2 + caoMeia / kc + 4;
   const cabe = w / 2 - 8 - cardW / 2;
   const lateral = Math.max(cardW / 2 + 8, Math.min(livre, cabe));
-  const x = lado * (lateral * k + Math.max(0, k - 1) ** 2 * w * 0.35);
+  // o empurrão da saída: 0,2 da tela, ou o que for preciso para a foto já estar fora da cachorra quando chegar à altura
+  // dela (no celular, a lateral é curta e é o empurrão que a tira da frente)
+  const falta = caoMeia + 4 - (lateral - cardW / 2) * kc;
+  const empurra = kc > 1.05 && falta > 0 ? Math.max(0.2, falta / ((kc - 1) ** 2 * w)) : 0.2;
+  const x = lado * (lateral * k + Math.max(0, k - 1) ** 2 * w * empurra);
   const y = topo + (FOLGA + cardH / 2) * k - h / 2;
-  const etiquetaEscala = Math.min(1.25, Math.max(0.75, k));
+  // a etiqueta cresce um pouco com a foto (no celular, no máximo o tamanho real)
+  const etiquetaEscala = Math.min(w < 768 ? 1 : 1.25, Math.max(0.75, k));
+  // quanto falta para a ponta de fora da etiqueta (no canto de dentro da foto) chegar à borda da tela
+  const sobra = w / 2 - (Math.abs(x) - (cardW * k) / 2 + etiquetaW * etiquetaEscala);
   return {
     x,
     y,
@@ -87,10 +94,10 @@ export function quadroDoCard(u: number, lado: -1 | 1, palco: Palco, etiquetaW: n
     // entra rápido e sai no fim; a distância é feita pela cor (névoa), não pela transparência
     opacidade: suave(0, 0.08, u) * (1 - suave(0.93, 1, u)),
     longe: 2.5 * (1 - suave(0.3, 0.6, k)),
-    perto: 3 * suave(2, 4, k),
+    perto: 3 * suave(1.3, 1.8, k), // começa antes de a foto sair, para a passagem se ver
     nevoa: 1 - suave(0.25, 0.7, k),
-    // aparece quando a foto já é quase tão larga quanto ela; some antes de a foto passar da borda
-    etiqueta: suave(etiquetaW * etiquetaEscala * 0.9, etiquetaW * etiquetaEscala + 8, cardW * k) * (1 - suave(1.5, 2, k)),
+    // aparece quando a foto já é quase tão larga quanto ela; some antes de a sua ponta chegar à borda da tela
+    etiqueta: suave(etiquetaW * etiquetaEscala * 0.9, etiquetaW * etiquetaEscala + 8, cardW * k) * suave(0, 24, sobra),
     etiquetaEscala,
   };
 }

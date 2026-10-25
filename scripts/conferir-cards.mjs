@@ -30,6 +30,8 @@ for (const [nome, palco] of Object.entries(palcos)) {
       // nunca na zona da cachorra
       if (palco.cao && base > palco.caoTopo && q.opacidade > 0.01)
         assert.ok(dentro >= palco.caoMeia - 0.5, `${nome}: cruza a cachorra (borda a ${dentro.toFixed(1)} px, u=${u})`);
+      // a etiqueta nunca aparece cortada pela borda da tela
+      if (q.etiqueta > 0.01) assert.ok(dentro + 150 * q.etiquetaEscala <= palco.w / 2, `${nome}: etiqueta cortada (u=${u})`);
       // sem saltos enquanto aparece (algum pedaço na tela): cada passo de 1/20000 da vida muda pouco
       const naTela = dentro < palco.w / 2 && topo < palco.h;
       if (antes && naTela) for (const c of Object.keys(LIMITE)) maior[c] = Math.max(maior[c], Math.abs(q[c] - antes[c]));

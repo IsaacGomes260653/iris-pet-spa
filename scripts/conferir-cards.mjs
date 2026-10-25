@@ -1,16 +1,16 @@
 // Confere os cards do passeio (src/components/passeio/cards.ts) sem navegador: em três palcos típicos, percorre a vida
 // de um card em passos finos e falha se algo saltar, se a foto subir sobre a lista de frases ou se entrar na zona da
-// cachorra (no desktop largo; em telas estreitas ou baixas vale a foto inteira na tela). node --no-warnings scripts/conferir-cards.mjs   (Node 23.6+ lê o .ts direto)
+// cachorra (no desktop largo e no celular; em telas baixas vale a foto inteira na tela). node --no-warnings scripts/conferir-cards.mjs   (Node 23.6+ lê o .ts direto)
 import assert from "node:assert/strict";
 import { quadroDoCard } from "../src/components/passeio/cards.ts";
 
 const palcos = {
   desktop: { w: 1440, h: 900, cardW: 420, cardH: 262.5, topo: 274, caoTopo: 468, caoMeia: 120, cao: true },
   baixo: { w: 1280, h: 600, cardW: 384, cardH: 240, topo: 252, caoTopo: 312, caoMeia: 90, cao: false },
-  celular: { w: 390, h: 844, cardW: 171.6, cardH: 107, topo: 233, caoTopo: 490, caoMeia: 95, cao: false },
+  celular: { w: 390, h: 844, cardW: 171.6, cardH: 107, topo: 233, caoTopo: 490, caoMeia: 95, cao: true },
 };
 const PASSOS = 20000;
-const LIMITE = { x: 8, y: 8, escala: 0.01, desfoque: 0.05, opacidade: 0.01, etiqueta: 0.02 };
+const LIMITE = { x: 8, y: 8, escala: 0.01, longe: 0.05, perto: 0.05, nevoa: 0.01, opacidade: 0.01, etiqueta: 0.02 };
 
 for (const [nome, palco] of Object.entries(palcos)) {
   for (const lado of [-1, 1]) {
@@ -30,8 +30,9 @@ for (const [nome, palco] of Object.entries(palcos)) {
       // nunca na zona da cachorra
       if (palco.cao && base > palco.caoTopo && q.opacidade > 0.01)
         assert.ok(dentro >= palco.caoMeia - 0.5, `${nome}: cruza a cachorra (borda a ${dentro.toFixed(1)} px, u=${u})`);
-      // sem saltos: cada passo de 1/20000 da vida muda pouco
-      if (antes) for (const c of Object.keys(LIMITE)) maior[c] = Math.max(maior[c], Math.abs(q[c] - antes[c]));
+      // sem saltos enquanto aparece (algum pedaço na tela): cada passo de 1/20000 da vida muda pouco
+      const naTela = dentro < palco.w / 2 && topo < palco.h;
+      if (antes && naTela) for (const c of Object.keys(LIMITE)) maior[c] = Math.max(maior[c], Math.abs(q[c] - antes[c]));
       antes = q;
     }
     for (const c of Object.keys(LIMITE)) assert.ok(maior[c] <= LIMITE[c], `${nome}: ${c} saltou ${maior[c].toFixed(3)} num passo`);

@@ -8,11 +8,11 @@ const [pasta = "cards", url = "http://localhost:3100/"] = process.argv.slice(2);
 const saida = `capturas/${pasta}`;
 mkdirSync(saida, { recursive: true });
 const nav = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const ATE = 0.42; // os dois primeiros cenários e o começo do terceiro
+const ATE = 0.8; // os quatro cenários, até a chegada na loja
 
 for (const [nome, opcoes, passo, cada] of [
-  ["desktop", { viewport: { width: 1440, height: 900 } }, 0.004, 7],
-  ["celular", { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }, 0.006, 5],
+  ["desktop", { viewport: { width: 1440, height: 900 } }, 0.004, 12],
+  ["celular", { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }, 0.006, 8],
 ]) {
   const ctx = await nav.newContext(opcoes);
   const p = await ctx.newPage();
@@ -43,8 +43,8 @@ for (const [nome, opcoes, passo, cada] of [
     if (k % cada === 0) await p.screenshot({ path: `${saida}/${nome}-devagar-${String(k / cada).padStart(2, "0")}.png` });
   }
   // rápido: saltos grandes (o estado em cada ponto não depende de como se chegou nele)
-  for (let k = 0; k <= 7; k++) {
-    await ir((k * ATE) / 7);
+  for (let k = 0; k <= 9; k++) {
+    await ir((k * ATE) / 9);
     await p.screenshot({ path: `${saida}/${nome}-rapido-${k}.png` });
   }
   // para trás, nos mesmos pontos da ida

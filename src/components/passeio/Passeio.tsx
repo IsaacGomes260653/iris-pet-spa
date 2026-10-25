@@ -27,6 +27,7 @@ export function Passeio() {
   const maoRef = useRef<HTMLDivElement>(null);
   const veu = useRef<HTMLDivElement>(null);
   const lista = useRef<HTMLOListElement>(null);
+  const hero = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
@@ -78,6 +79,21 @@ export function Passeio() {
       }
       pAnterior = p;
 
+      // o hero sai e a lista de frases entra presos à rolagem (sem transição por tempo); a frase ativa acende e apaga
+      // com o cenário contínuo, o mesmo que troca as frases
+      if (hero.current) {
+        const sai = suave(0.004, 0.02, p);
+        hero.current.style.opacity = String(1 - sai);
+        hero.current.style.transform = `translateY(${(-24 * sai).toFixed(1)}px)`;
+      }
+      if (lista.current) {
+        lista.current.style.opacity = String(suave(0.02, 0.035, p) * (1 - suave(0.775, 0.79, p)));
+        const continuo = p / TRECHO + TROCA / 2;
+        Array.from(lista.current.children as HTMLCollectionOf<HTMLElement>).forEach((li, i) => {
+          li.style.opacity = String(0.55 + 0.45 * (1 - suave(0.42, 0.58, Math.abs(continuo - i - 0.5))));
+        });
+      }
+
       // cenários: zoom lento enquanto anda; na troca curta, a que sai cresce e desfoca, a que entra assenta e foca.
       // nenhuma camada fica abaixo de 1.04 de escala: a borda da foto nunca aparece
       camadas.current.forEach((c, i) => {
@@ -119,9 +135,9 @@ export function Passeio() {
       cartoes.current.forEach((c, k) => {
         const f = fotos.current[k];
         const e = etiquetas.current[k];
-        if (!c || !f || !palco) return;
-        const [i, inicio, lado] = roteiro[k];
-        const u = (p - (i + inicio) * TRECHO) / (DURACAO * TRECHO);
+        if (!c || !f || !palco || !trajetos[k]) return;
+        const [i, inicio, lado] = trajetos[k];
+        const u = (p - (i + inicio) * TRECHO) / (duracao * TRECHO);
         const q = quieto ? null : quadroDoCard(u, lado, palco, larguras[k]);
         if (!q) {
           c.style.visibility = "hidden";
@@ -130,13 +146,23 @@ export function Passeio() {
         c.style.visibility = "visible";
         c.style.opacity = q.opacidade.toFixed(3);
         c.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
+        // o borrão de quem passa perto vale para o card inteiro; o da distância e a névoa (cor lavada), só para a foto,
+        // sempre com o tom de amanhecer do passeio
+        c.style.filter = q.perto > 0.05 ? `blur(${q.perto.toFixed(1)}px)` : "none";
         f.style.transform = `translate(-50%, -50%) scale(${q.escala.toFixed(4)})`;
         const foto = f.firstElementChild as HTMLElement | null;
-        if (foto) foto.style.filter = q.desfoque > 0.05 ? `blur(${q.desfoque.toFixed(1)}px)` : "none";
+        if (foto) {
+          const n = q.nevoa;
+          const borrao = q.longe > 0.05 ? `blur(${q.longe.toFixed(1)}px) ` : "";
+          foto.style.filter = `${borrao}saturate(${((0.85 - 0.3 * n) * 0.85).toFixed(3)}) contrast(${(1 - 0.2 * n).toFixed(3)}) brightness(${(1 + 0.12 * n).toFixed(3)})`;
+        }
         if (e) {
+          // no canto de dentro (o do lado do caminho), crescendo um pouco com a foto
           const w = palco.cardW * q.escala;
           const h = palco.cardH * q.escala;
-          e.style.transform = `translate(${(w / 2 - larguras[k]).toFixed(1)}px, ${(-h / 2 - alturas[k]).toFixed(1)}px)`;
+          const s = q.etiquetaEscala;
+          const ex = lado > 0 ? -w / 2 : w / 2 - larguras[k] * s;
+          e.style.transform = `translate(${ex.toFixed(1)}px, ${(-h / 2 - alturas[k] * s).toFixed(1)}px) scale(${s.toFixed(3)})`;
           e.style.opacity = q.etiqueta.toFixed(3);
         }
       });
@@ -251,14 +277,14 @@ export function Passeio() {
                   <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>
                 </span>
               </div>
-            ),
-          )}
+          ))}
         </div>
 
         {/* hero: o primeiro quadro do passeio */}
         <div
+          ref={hero}
           inert={fase !== "hero"}
-          className={`absolute inset-x-0 top-0 flex flex-col items-center px-5 pt-[12svh] text-center transition-[opacity,translate] duration-700 ease-saida motion-reduce:translate-y-0 ${fase === "hero" ? "opacity-100" : "pointer-events-none -translate-y-6 opacity-0"}`}
+          className={`absolute inset-x-0 top-0 flex flex-col items-center px-5 pt-[12svh] text-center ${fase === "hero" ? "" : "pointer-events-none"}`}
         >
           <h1 id="titulo-hero" className="text-display [text-shadow:0_2px_40px_rgb(16_20_30/0.35)]">
             Cuidado
@@ -281,10 +307,12 @@ export function Passeio() {
         <ol
           ref={lista}
           aria-label="O que a Íris faz pelo caminho"
-          className={`pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-extralight transition-opacity duration-700 [text-shadow:0_1px_14px_rgb(0_0_0/0.35)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25] ${fase === "passeio" ? "opacity-100" : "opacity-0"}`}
+          className="pointer-events-none absolute inset-x-0 top-[12svh] px-5 text-center font-serifa text-[1.2rem] leading-[1.3] font-extralight [text-shadow:0_1px_14px_rgb(0_0_0/0.35)] md:top-[7svh] md:text-[2.2rem] md:leading-[1.25]"
+          style={{ opacity: 0 }}
         >
+          {/* opacidades presas à rolagem (ver ler()) */}
           {frases.map((f, i) => (
-            <li key={f} aria-current={i === cena ? "step" : undefined} className={`transition-opacity duration-500 ${i === cena ? "opacity-100" : "opacity-55"}`}>
+            <li key={f} aria-current={i === cena ? "step" : undefined} style={{ opacity: i === 0 ? 1 : 0.55 }}>
               {f}
             </li>
           ))}

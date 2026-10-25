@@ -28,6 +28,7 @@ export function Passeio() {
   const veu = useRef<HTMLDivElement>(null);
   const lista = useRef<HTMLOListElement>(null);
   const hero = useRef<HTMLDivElement>(null);
+  const agendar = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const [cena, setCena] = useState(0);
   const [fase, setFase] = useState<"hero" | "passeio" | "chegada">("hero");
@@ -86,8 +87,11 @@ export function Passeio() {
         hero.current.style.opacity = String(1 - sai);
         hero.current.style.transform = `translateY(${(-24 * sai).toFixed(1)}px)`;
       }
+      // a lista e o "Agendar" compacto do passeio entram e saem juntos
+      const noPasseio = suave(0.02, 0.035, p) * (1 - suave(0.775, 0.79, p));
+      if (agendar.current) agendar.current.style.opacity = String(noPasseio);
       if (lista.current) {
-        lista.current.style.opacity = String(suave(0.02, 0.035, p) * (1 - suave(0.775, 0.79, p)));
+        lista.current.style.opacity = String(noPasseio);
         const continuo = p / TRECHO + TROCA / 2;
         Array.from(lista.current.children as HTMLCollectionOf<HTMLElement>).forEach((li, i) => {
           li.style.opacity = String(0.55 + 0.45 * (1 - suave(0.42, 0.58, Math.abs(continuo - i - 0.5))));
@@ -145,17 +149,21 @@ export function Passeio() {
         }
         c.style.visibility = "visible";
         c.style.opacity = q.opacidade.toFixed(3);
+        c.style.zIndex = String(Math.round(q.escala * 100)); // o mais perto fica na frente
         c.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
         // o borrão de quem passa perto vale para o card inteiro; o da distância e a névoa (cor lavada), só para a foto,
         // sempre com o tom de amanhecer do passeio
         c.style.filter = q.perto > 0.05 ? `blur(${q.perto.toFixed(1)}px)` : "none";
         f.style.transform = `translate(-50%, -50%) scale(${q.escala.toFixed(4)})`;
-        const foto = f.firstElementChild as HTMLElement | null;
+        const foto = f.querySelector("img");
         if (foto) {
           const n = q.nevoa;
           const borrao = q.longe > 0.05 ? `blur(${q.longe.toFixed(1)}px) ` : "";
           foto.style.filter = `${borrao}saturate(${((0.85 - 0.3 * n) * 0.85).toFixed(3)}) contrast(${(1 - 0.2 * n).toFixed(3)}) brightness(${(1 + 0.12 * n).toFixed(3)})`;
         }
+        // a luz do amanhecer sobre a foto: mais forte ao longe, na névoa
+        const luz = f.lastElementChild as HTMLElement | null;
+        if (luz) luz.style.opacity = (0.5 + 0.5 * q.nevoa).toFixed(3);
         if (e) {
           // no canto de dentro (o do lado do caminho), crescendo um pouco com a foto
           const w = palco.cardW * q.escala;
@@ -272,6 +280,7 @@ export function Passeio() {
                   className="absolute top-0 left-0 aspect-[16/10] w-[min(30vw,420px)] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)] max-md:w-[44vw]"
                 >
                   {resto && <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 90vw, 900px" className="object-cover" />}
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,#b9bed4,#eccbbd)] opacity-50 mix-blend-soft-light" />
                 </div>
                 <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 origin-top-left whitespace-nowrap">
                   <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>
@@ -297,8 +306,10 @@ export function Passeio() {
 
         {/* durante o passeio, agendar continua a um toque */}
         <div
+          ref={agendar}
           inert={fase !== "passeio"}
-          className={`absolute top-5 right-[6.75rem] transition-opacity duration-500 md:top-6 md:right-[9rem] ${fase === "passeio" ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`absolute top-5 right-[6.75rem] md:top-6 md:right-[9rem] ${fase === "passeio" ? "" : "pointer-events-none"}`}
+          style={{ opacity: 0 }}
         >
           <Botao href="#agendar" compacto>Agendar</Botao>
         </div>

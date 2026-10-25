@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMidia } from "@/components/useMidia";
 import { Botao, Etiqueta } from "@/components/ui";
 import { altCachorra, cachorra, cards, cenas, mao } from "@/content/midia";
-import { DURACAO, quadroDoCard, roteiro, suave, type Palco } from "./cards";
+import { DURACAO, DURACAO_CELULAR, quadroDoCard, roteiro, roteiroCelular, suave, type Palco } from "./cards";
 
 // uma frase por cenário: a frase troca no meio do crossfade, junto com o mundo
 const frases = ["O banho e o spa que acalmam.", "A tosa que respeita cada raça.", "A loja com tudo que ele ama.", "O Táxi Dog que busca e leva."];
@@ -114,6 +114,8 @@ export function Passeio() {
 
       // cards: tudo vem de `quadroDoCard`, uma função contínua da rolagem (ver cards.ts). Só a foto escala; a etiqueta
       // fica no tamanho real, presa ao canto de cima da foto, e o desfoque fica só na imagem, dentro da moldura nítida
+      const trajetos = leve ? roteiroCelular : roteiro;
+      const duracao = leve ? DURACAO_CELULAR : DURACAO;
       cartoes.current.forEach((c, k) => {
         const f = fotos.current[k];
         const e = etiquetas.current[k];
@@ -231,8 +233,7 @@ export function Passeio() {
 
         {/* cards pelo caminho (decorativos: os serviços também estão no texto para leitores de tela) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          {roteiro.map(([i, , , card], k) =>
-            leve && roteiro.findIndex(([j]) => j === i) !== k ? null : (
+          {(leve ? roteiroCelular : roteiro).map(([, , , card], k) => (
               <div
                 key={k}
                 ref={(el) => void (cartoes.current[k] = el)}
@@ -244,9 +245,9 @@ export function Passeio() {
                   ref={(el) => void (fotos.current[k] = el)}
                   className="absolute top-0 left-0 aspect-[16/10] w-[min(30vw,420px)] overflow-hidden shadow-[0_24px_60px_-28px_rgb(10_14_20/0.6)] max-md:w-[44vw]"
                 >
-                  {resto && <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 65vw, 560px" className="object-cover" />}
+                  {resto && <Image src={cards[card].foto} alt="" fill sizes="(max-width: 768px) 90vw, 900px" className="object-cover" />}
                 </div>
-                <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 whitespace-nowrap">
+                <span ref={(el) => void (etiquetas.current[k] = el)} className="absolute top-0 left-0 origin-top-left whitespace-nowrap">
                   <Etiqueta className="text-[#1a1d24] max-md:text-[0.6875rem]">{cards[card].rotulo}</Etiqueta>
                 </span>
               </div>

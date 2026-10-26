@@ -1047,8 +1047,8 @@ if MODO == "cao":
         p0, p1 = sp.bezier_points
         p0.co, p1.co = MAO, nuca
         p0.handle_left = MAO + (MAO - nuca) * 0.1
-        p0.handle_right = MAO.lerp(nuca, 0.35) + Vector((0, 0, -0.32))  # a guia folgada faz barriga
-        p1.handle_left = MAO.lerp(nuca, 0.78) + Vector((0, 0, -0.18))
+        p0.handle_right = MAO.lerp(nuca, 0.35) + Vector((0, 0, -0.08))  # a guia quase esticada sobe até a coleira
+        p1.handle_left = MAO.lerp(nuca, 0.78) + Vector((0, 0, -0.03))
         p1.handle_right = nuca + (nuca - MAO) * 0.1
 
     bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 10, 0))

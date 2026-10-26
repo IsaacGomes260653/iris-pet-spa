@@ -20,6 +20,7 @@ perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling).
 import ctypes
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -1237,6 +1238,33 @@ if MODO == "cao":
     raiz.scale.x *= 1.55
     bpy.context.view_layer.update()
 
+    def achar_ossos():
+        """Os ossos que a cena usa, achados pelo nome (serve para qualquer esqueleto de cachorro); --osso-<chave> NOME
+        força um osso quando o nome não ajuda."""
+        evitar = r"end$|_end|nub|tip|ponta|(^|[_.\-\s])(ear|eye|jaw|tongue)|orelha|olho|mand[ií]bula|l[ií]ngua|_ik|ik_|pole|target"
+
+        def todos(padrao):
+            return [b for b in armacao.pose.bones if re.search(padrao, b.name, re.I) and not re.search(evitar, b.name, re.I)]
+
+        def um(chave, padrao):
+            nome = opcao(f"--osso-{chave}", "")
+            achados = [armacao.pose.bones[nome]] if nome else todos(padrao)
+            if not achados:
+                raise SystemExit(f"OSSO NÃO ACHADO: {chave}. Use --osso-{chave} NOME. Ossos: " + ", ".join(b.name for b in armacao.pose.bones))
+            return achados[0]
+
+        pes = todos(r"foot|paw|pata|toe") or [um("pe", r"foot")]
+        return {
+            "pescoco": um("pescoco", r"neck|pesco"),
+            "cabeca": um("cabeca", r"head|cabe"),
+            "tronco": todos(r"spine|chest|trunk|torso|ribcage|coluna")[-2:] or [um("tronco", r"spine")],  # os dois perto do peito
+            "pe": min(pes, key=lambda b: (armacao.matrix_world @ b.head).y),  # o mais de trás (ela olha para +Y)
+            "cauda": todos(r"tail|cauda|rabo"),
+        }
+
+    OSSO = achar_ossos()
+    print("OSSOS", {k: [b.name for b in v] if isinstance(v, list) else v.name for k, v in OSSO.items()}, flush=True)
+
     # ------------------------------------------------------------ pelo: fios curtos e densos, mais longos na cauda e no pescoço
     def material_pelo():
         m = bpy.data.materials.new("Pelo preto")
@@ -1257,7 +1285,7 @@ if MODO == "cao":
         lig.new(pelo.outputs[0], saida.inputs["Surface"])
         return m
 
-    def arvore_pelo(alvo, densidade, comp, raio, mat):
+    def arvore_pelo(alvo, densidade, comp, raio, mat, pesos):
         g = bpy.data.node_groups.new("Pelo", "GeometryNodeTree")
         g.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
         n, l = g.nodes, g.links
@@ -1267,9 +1295,7 @@ if MODO == "cao":
         info.transform_space = "RELATIVE"
         # comprimento extra: cauda (pesos dos ossos da cauda) e pescoço mais peludos
         soma = None
-        for nome_, peso_ in (("Tail_Bone_1_Wolf_Armature", 1.2), ("Tail_Bone_2_Wolf_Armature", 1.8), ("Tail_Bone_3_Wolf_Armature", 2.0),
-                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6),
-                             ("Head_Wolf_Armature", -0.7)):  # a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
+        for nome_, peso_ in pesos:
             at = n.new("GeometryNodeInputNamedAttribute")
             at.data_type = "FLOAT"
             at.inputs["Name"].default_value = nome_
@@ -1382,15 +1408,15 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo())
+    # pelo mais longo na cauda e no pescoço; a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
+    pesos_pelo = [(b.name, 1.6) for b in OSSO["cauda"]] + [(OSSO["pescoco"].name, 0.6), (OSSO["cabeca"].name, -0.7)]
+    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo(), pesos_pelo)
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
-    ossos = {b.name: b for b in armacao.pose.bones}
-
     def nuca_e_coleira():
         bpy.context.view_layer.update()
-        a = armacao.matrix_world @ ossos["Neck_Bone_Wolf_Armature"].head
-        b = armacao.matrix_world @ ossos["Head_Wolf_Armature"].head
+        a = armacao.matrix_world @ OSSO["pescoco"].head
+        b = armacao.matrix_world @ OSSO["cabeca"].head
         eixo = (b - a).normalized()
         meio_ = a.lerp(b, 0.45)
         cima = Vector((0, 0, 1))
@@ -1455,7 +1481,7 @@ if MODO == "cao":
     bpy.context.view_layer.update()
     mao_tela = world_to_camera_view(cena, camobj, MAO)
     # passada: quanto o chão "anda" num ciclo (a pata de apoio desliza para trás na caminhada no lugar)
-    pe = ossos["Rear_Left_Foot_Bone_Wolf_Armature"]
+    pe = OSSO["pe"]
     ys_pe = []
     for f in range(ANDAR[0], ANDAR[1]):
         cena.frame_set(f)
@@ -1507,9 +1533,9 @@ if MODO == "cao":
             fase = math.sin(2 * math.pi * k / 24)
             for pb in armacao.pose.bones:
                 pb.matrix_basis = base[pb.name]
-            for nome_, amp in (("Trunk_Bone_2_Wolf_Armature", 0.016), ("Trunk_Bone_3_Wolf_Armature", 0.01)):
-                ossos[nome_].matrix_basis = base[nome_] @ Matrix.Diagonal((1 + amp * fase, 1, 1 + amp * fase, 1))
-            cab_ = ossos["Head_Wolf_Armature"]
+            for osso_, amp in zip(OSSO["tronco"], (0.016, 0.01)):
+                osso_.matrix_basis = base[osso_.name] @ Matrix.Diagonal((1 + amp * fase, 1, 1 + amp * fase, 1))
+            cab_ = OSSO["cabeca"]
             cab_.matrix_basis = base[cab_.name] @ Matrix.Rotation(math.radians(0.8) * fase, 4, "X")
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"parada-{k:02d}.png")

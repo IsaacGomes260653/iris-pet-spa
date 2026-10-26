@@ -318,14 +318,14 @@ def florada(col):
             bsdf = next(n for n in nos if n.type == "BSDF_PRINCIPLED")
             origem = bsdf.inputs["Base Color"].links[0].from_socket
             matiz = nos.new("ShaderNodeHueSaturation")
-            matiz.inputs["Hue"].default_value = 0.98  # verde → lilás
+            matiz.inputs["Hue"].default_value = 0.05  # verde → violeta-lilás de jacarandá (não azul)
             matiz.inputs["Saturation"].default_value = 1.05
             matiz.inputs["Value"].default_value = 2.6
             lig.new(origem, matiz.inputs["Color"])
             geo = nos.new("ShaderNodeNewGeometry")
             corte = nos.new("ShaderNodeMath")
             corte.operation = "GREATER_THAN"
-            corte.inputs[1].default_value = 0.22
+            corte.inputs[1].default_value = 0.4  # ~60% das ilhas em flor, o resto verde
             lig.new(geo.outputs["Random Per Island"], corte.inputs[0])
             mistura = nos.new("ShaderNodeMix")
             mistura.data_type = "RGBA"

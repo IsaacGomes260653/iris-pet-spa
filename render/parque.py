@@ -761,9 +761,19 @@ def foco(q):
     return math.hypot(cao_y(q) - camera_y(q), ALTURA_OLHO - 0.5)
 
 
-def posicionar_camera(y):
+OLHAR_LOJA = math.radians(5)  # na chegada o olhar sobe para a fachada, como quem chega e olha a loja
+
+
+def inclinacao(q):
+    if q <= Q_ENTRADA:
+        return INCLINA
+    t = (q - Q_ENTRADA) / (TOTAL - 1 - Q_ENTRADA)
+    return INCLINA - OLHAR_LOJA * t * t * (3 - 2 * t)
+
+
+def posicionar_camera(y, q=0):
     camobj.location = (0.0, y, ALTURA_OLHO)
-    camobj.rotation_euler = (math.pi / 2 - INCLINA, 0.0, 0.0)  # +Y, um pouco para baixo
+    camobj.rotation_euler = (math.pi / 2 - inclinacao(q), 0.0, 0.0)  # +Y, um pouco para baixo
 
 
 cam.dof.focus_distance = foco(0)
@@ -837,7 +847,7 @@ if REGIAO:
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
     for q in QUADROS or range(ini, fim + 1):
-        posicionar_camera(camera_y(q))
+        posicionar_camera(camera_y(q), q)
         cam.dof.focus_distance = foco(q)
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
         if pronto(cena.render.filepath):
@@ -1242,6 +1252,7 @@ if MODO == "cao":
             t = (q - Q_ENTRADA) / n_
             raiz.location.y = y_base + (cao_y(q) - camera_y(q)) - DIST_CAO
             cam.dof.focus_distance = foco(q)
+            posicionar_camera(0.0, q)  # a camada da cachorra fica com a câmera parada; só o olhar sobe
             fase = ((cao_y(q) - DIST_CAO) / passo) % 1.0  # continua a passada do passeio (a distância andada)
             quadro = ANDAR[0] + fase * (ANDAR[1] - ANDAR[0])
             cena.frame_set(int(quadro), subframe=quadro % 1)

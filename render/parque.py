@@ -605,8 +605,8 @@ for x, larg, alt, base in ((0, 1.5, 2.6, 0.0), (-3.6, 3.2, 2.3, 0.5), (3.6, 3.2,
     moldura = caixa("Moldura", (x, Y_LOJA + 0.02, base + alt / 2), (larg + 0.24, 0.12, alt + 0.24), SALVIA)
     if x != 0:  # a porta fica aberta: a cachorra entra por ela
         caixa("Vidro", (x, Y_LOJA - 0.05, base + alt / 2), (larg, 0.02, alt), VIDRO)
-    interior(x, Y_LOJA + 1.1, base, larg, alt)
-    corte = caixa("Corte", (x, Y_LOJA + 0.6, base + alt / 2), (larg, 1.4, alt), REBOCO)
+    interior(x, Y_LOJA + 2.6, base, larg, alt)  # fundo da loja a 2,6 m do vidro: desfocado, com profundidade
+    corte = caixa("Corte", (x, Y_LOJA + 1.35, base + alt / 2), (larg, 2.9, alt), REBOCO)
     corte.hide_render = corte.hide_viewport = True
     for alvo_ in (predio, moldura):  # o vão atravessa a parede e a moldura (sobra só o caixilho)
         bo = alvo_.modifiers.new("Vão", "BOOLEAN")

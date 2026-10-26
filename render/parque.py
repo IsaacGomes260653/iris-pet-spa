@@ -567,6 +567,8 @@ lum = px[..., :3] @ np.array([0.2126, 0.7152, 0.0722])
 yy, xx = np.unravel_index(np.argmax(lum), lum.shape)
 az_sol = (xx / env.image.size[0] - 0.5) * 2 * math.pi
 mapa.inputs["Rotation"].default_value[2] = math.atan2(1.0, -0.15) - az_sol
+del px, lum
+env.image.scale(2048, 1024)
 
 sol = bpy.data.lights.new("Sol", "SUN")
 sol.energy = 5.0

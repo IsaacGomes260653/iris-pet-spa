@@ -751,6 +751,7 @@ if MODO == "cao":
     # o céu claro da névoa deixaria o pelo preto cinza-azulado: menos céu nesta camada, a contraluz do sol continua
     fundo.inputs["Strength"].default_value = 0.18
     ceu.energy = 0.25  # a luz de trás acende as copas; nas costas da cachorra, deixaria o pelo preto cinzento
+    sol.energy = 3.0  # debaixo do túnel de copas quase não chega sol direto: a 8, o topo da cabeça estourava
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.11, 0.04, 0.015, 1), "Roughness": 0.6})  # escuro: ao sol de frente, o conhaque claro virava uma mancha
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})

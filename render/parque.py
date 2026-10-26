@@ -745,7 +745,7 @@ else:
     INCLINA = math.radians(7)
 cam.dof.use_dof = True
 cam.dof.aperture_fstop = 4.0
-cam.dof.focus_distance = math.hypot(DIST_CAO, ALTURA_OLHO - 0.5)
+cam.dof.focus_distance = foco(0)
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
 cena.camera = camobj
@@ -758,6 +758,22 @@ def camera_y(q):
         return Y_INICIO + v * q
     t = (q - Q_ENTRADA) / (TOTAL - 1 - Q_ENTRADA)
     return Y_INICIO + v * Q_ENTRADA + v * (TOTAL - 1 - Q_ENTRADA) * (t - t * t / 2)
+
+
+PORTA = Y_LOJA + 0.9  # onde a cachorra termina, já do lado de dentro
+
+
+def cao_y(q):
+    """Onde a cachorra está no quadro q: sempre à frente da câmera e, na chegada, adiantando-se até a porta."""
+    if q <= Q_ENTRADA:
+        return camera_y(q) + DIST_CAO
+    ini = camera_y(Q_ENTRADA) + DIST_CAO
+    return ini + (PORTA - ini) * (q - Q_ENTRADA) / (TOTAL - 1 - Q_ENTRADA)
+
+
+def foco(q):
+    """O foco acompanha a cachorra: perto no passeio e, na chegada, vai com ela até a porta (a fachada fica nítida)."""
+    return math.hypot(cao_y(q) - camera_y(q), ALTURA_OLHO - 0.5)
 
 
 def posicionar_camera(y):
@@ -826,6 +842,7 @@ if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
     for q in QUADROS or range(ini, fim + 1):
         posicionar_camera(camera_y(q))
+        cam.dof.focus_distance = foco(q)
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
         if pronto(cena.render.filepath):
             continue
@@ -1224,14 +1241,12 @@ if MODO == "cao":
         cena.render.use_border = False  # ela se afasta rumo à porta: sai da região medida com ela perto da câmera
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
         y_base = raiz.location.y
-        ini = camera_y(Q_ENTRADA) + DIST_CAO
-        porta = Y_LOJA + 0.9
         n_ = TOTAL - 1 - Q_ENTRADA
         for q in QUADROS or range(Q_ENTRADA, TOTAL):
             t = (q - Q_ENTRADA) / n_
-            cao_y = ini + (porta - ini) * t
-            raiz.location.y = y_base + (cao_y - camera_y(q)) - DIST_CAO
-            fase = ((camera_y(Q_ENTRADA) + cao_y - ini) / passo) % 1.0
+            raiz.location.y = y_base + (cao_y(q) - camera_y(q)) - DIST_CAO
+            cam.dof.focus_distance = foco(q)
+            fase = ((cao_y(q) - DIST_CAO) / passo) % 1.0  # continua a passada do passeio (a distância andada)
             quadro = ANDAR[0] + fase * (ANDAR[1] - ANDAR[0])
             cena.frame_set(int(quadro), subframe=quadro % 1)
             atualizar_guia()

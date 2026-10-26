@@ -548,6 +548,8 @@ VIDRO = material("Vidro", **{"Base Color": (0.96, 0.98, 0.97, 1), "Transmission 
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
 FORRO = material("Forro", **{"Base Color": (0.86, 0.8, 0.72, 1), "Roughness": 0.9})
 METAL_ESCURO = material("Metal escuro", **{"Base Color": (0.05, 0.06, 0.06, 1), "Metallic": 1.0, "Roughness": 0.35})
+LUZ_MORNA = material("Luz morna", **{"Base Color": (1, 0.85, 0.65, 1), "Emission Color": (1.0, 0.76, 0.5, 1), "Emission Strength": 12.0})
+COR_MORNA = (1.0, 0.78, 0.56)
 
 
 
@@ -719,6 +721,18 @@ def texto(conteudo, fonte, tamanho, local, extrude=0.02):
 
 texto("Íris", "Literata.ttf", 0.5, (-0.55, Y_LOJA - 0.08, 3.44))
 texto("PET SPA", "MartianMono.ttf", 0.14, (1.05, Y_LOJA - 0.08, 3.4), 0.01)
+# arandelas dos dois lados da porta: poças de luz morna no reboco
+for lado in (-1, 1):
+    ar = Pecas()
+    ar.caixa((lado * 1.0, Y_LOJA - 0.05, 2.3), (0.08, 0.1, 0.08), METAL_ESCURO)
+    ar.cilindro((lado * 1.0, Y_LOJA - 0.13, 2.14), 0.05, 0.2, LUZ_MORNA)
+    ar.cone((lado * 1.0, Y_LOJA - 0.13, 2.27), 0.08, 0.03, 0.06, METAL_ESCURO)
+    ar.objeto("Arandela")
+    luz_ = bpy.data.lights.new("Arandela", "POINT")
+    luz_.energy, luz_.color, luz_.shadow_soft_size = 25.0, COR_MORNA, 0.05
+    o_ = bpy.data.objects.new("Arandela", luz_)
+    o_.location = (lado * 1.0, Y_LOJA - 0.22, 2.12)
+    cena.collection.objects.link(o_)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

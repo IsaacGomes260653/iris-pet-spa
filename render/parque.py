@@ -13,6 +13,9 @@ Uso:
   (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros)
 Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
 media-src/render/misty_dawn_4k.hdr e media-src/fontes.
+
+Memória (para caber num PC de 8 GB, até ~4 GB): texturas limitadas a 1024 px no render, céu reduzido a 2K, grama só
+perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling). Cada render imprime "MEMORIA ...".
 """
 import ctypes
 import json
@@ -653,6 +656,26 @@ cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
 cena.render.resolution_x, cena.render.resolution_y = RES
 cena.render.resolution_percentage = opcao("--escala", 100)
+# memória: as texturas da vegetação e dos objetos caem para 1024 px (o chão, visto de perto e de lado, fica em 2K).
+# As cópias reduzidas ficam em media-src/parque-1k e o Cycles lê delas; render em blocos de 1024 px e a cena mantida
+# entre os quadros do mesmo lote
+REDUZIDAS = MIDIA / "parque-1k"
+REDUZIDAS.mkdir(exist_ok=True)
+for im in bpy.data.images:
+    origem = Path(bpy.path.abspath(im.filepath)) if im.filepath else None
+    if not origem or PARQUE not in origem.parents or origem.parent.parent.name == "tex" or im.size[0] <= 1024:
+        continue
+    destino = REDUZIDAS / f"{origem.stem}.png"
+    if not destino.exists():
+        im.scale(1024, 1024)
+        im.filepath_raw = str(destino)
+        im.file_format = "PNG"
+        im.save()
+    im.filepath = str(destino)
+    im.reload()
+cena.cycles.use_auto_tile = True
+cena.cycles.tile_size = 1024
+cena.render.use_persistent_data = True
 cena.view_settings.view_transform = "AgX"
 cena.view_settings.look = "AgX - Base Contrast"
 cena.view_settings.exposure = 0.6

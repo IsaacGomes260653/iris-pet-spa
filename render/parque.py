@@ -1120,7 +1120,8 @@ if MODO == "cao":
         return origem + (alvo - origem).normalized() * dist
 
     # a mão segura a guia embaixo, à direita: no desktop, na borda de baixo do recorte 16:9; no celular, na base da tela
-    MAO = ponto_da_tela(0.6, 0.97, 0.8) if TELA == "desktop" else ponto_da_tela(0.64, 0.975, 0.8)
+    # a mão fica logo abaixo da base do quadro: a corda entra pela borda, sem ponta solta no ar
+    MAO = ponto_da_tela(0.62, 1.12, 0.8) if TELA == "desktop" else ponto_da_tela(0.66, 1.06, 0.8)
     curva = bpy.data.curves.new("Guia", "CURVE")
     curva.dimensions = "3D"
     curva.bevel_depth = 0.005  # corda redonda de 1 cm

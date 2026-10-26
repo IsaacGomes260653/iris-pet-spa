@@ -832,7 +832,7 @@ if MODO == "cao":
         info = nos.new("ShaderNodeHairInfo")
         ponta = nos.new("ShaderNodeMapRange")
         ponta.inputs["From Min"].default_value, ponta.inputs["From Max"].default_value = 0.55, 1.0
-        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.07
+        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.015  # pontas quase pretas: contra o sol, clareavam
         lig.new(info.outputs["Intercept"], ponta.inputs["Value"])
         alt = nos.new("ShaderNodeAttribute")
         alt.attribute_name = "altura"

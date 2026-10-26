@@ -580,10 +580,12 @@ luz.rotation_euler = (-DIR_SOL).to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz)
 
 # névoa: densa rente ao chão e rala no alto, lavanda; a luz do sol à frente acende o véu (anisotropia)
-bpy.ops.mesh.primitive_cube_add(size=1, location=(0, Y_LOJA / 2, 7))
+# o cubo começa 40 cm abaixo do chão: com a face colada no chão (z = 0) os raios ficavam ora dentro, ora fora do
+# volume, e o cascalho saía riscado nas arestas da malha
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0, Y_LOJA / 2, 6.8))
 nevoa = bpy.context.active_object
 nevoa.name = "Névoa"
-nevoa.scale = (140, 200, 14)
+nevoa.scale = (140, 200, 14.4)
 mv = bpy.data.materials.new("Névoa")
 mv.use_nodes = True
 mv.node_tree.nodes.remove(mv.node_tree.nodes["Principled BSDF"])
@@ -595,7 +597,7 @@ _sep = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
 mv.node_tree.links.new(_co.outputs["Object"], _sep.inputs[0])
 _z = mv.node_tree.nodes.new("ShaderNodeMath")
 _z.operation = "MULTIPLY_ADD"
-_z.inputs[1].default_value, _z.inputs[2].default_value = 14.0, 7.0  # coordenada local → altura em metros
+_z.inputs[1].default_value, _z.inputs[2].default_value = 14.4, 6.8  # coordenada local → altura em metros
 mv.node_tree.links.new(_sep.outputs["Z"], _z.inputs[0])
 _alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
 _alt.interpolation_type = "SMOOTHSTEP"

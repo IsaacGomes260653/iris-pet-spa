@@ -243,8 +243,8 @@ def chao_misto():
 
 CHAO = chao_misto()
 chao = faixa("Chão", -60, 60, -12, Y_LOJA + 30, CHAO, 0.5, 60)
-gramado_e = faixa("Gramado esq", -60, -meio - 0.1, -12, Y_LOJA + 30, GRAMA_CHAO, 0.35, 40)
-gramado_d = faixa("Gramado dir", meio + 0.1, 60, -12, Y_LOJA + 30, GRAMA_CHAO, 0.35, 40)
+gramado_e = faixa("Gramado esq", -18, -meio - 0.1, -6, Y_LOJA + 4, GRAMA_CHAO, 0.35, 12)
+gramado_d = faixa("Gramado dir", meio + 0.1, 18, -6, Y_LOJA + 4, GRAMA_CHAO, 0.35, 12)
 for g_ in (gramado_e, gramado_d):
     g_.hide_render = True  # só base para espalhar a vegetação
 calcada = faixa("Calçada", -9, 9, Y_LOJA - 6, Y_LOJA + 0.5, TIJOLO, 0.55)

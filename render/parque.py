@@ -846,7 +846,7 @@ if MODO == "cao":
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
-    FITA = material("Guia de corda", **{"Base Color": (0.3, 0.4, 0.33, 1), "Roughness": 0.85, "Sheen Weight": 0.5})  # verde-sálvia
+    FITA = material("Guia de corda", **{"Base Color": (0.13, 0.19, 0.15, 1), "Roughness": 0.9, "Specular IOR Level": 0.2})  # verde-sálvia escuro
 
     importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
     raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")

@@ -209,30 +209,6 @@ def chao_misto():
 
     a = pbr("flower_scattered_gravel", 0.5, (1.35, 1.25, 1.2, 1))
     b = pbr("grass_ground", 0.35, (0.42, 0.62, 0.34, 1))
-    # o tapete de jacarandá: pétalas em manchas (ruído fino recortado por um ruído largo), por cima dos dois chãos
-    petala = nos.new("ShaderNodeTexNoise")
-    petala.inputs["Scale"].default_value = 70.0
-    petala.inputs["Detail"].default_value = 0.0
-    lig.new(coord.outputs["Object"], petala.inputs["Vector"])
-    mancha = nos.new("ShaderNodeTexNoise")
-    mancha.inputs["Scale"].default_value = 2.4
-    lig.new(coord.outputs["Object"], mancha.inputs["Vector"])
-    soma_p = nos.new("ShaderNodeMath")
-    soma_p.operation = "MULTIPLY_ADD"
-    soma_p.inputs[1].default_value = 0.7
-    lig.new(petala.outputs["Fac"], soma_p.inputs[0])
-    lig.new(mancha.outputs["Fac"], soma_p.inputs[2])
-    cobre = nos.new("ShaderNodeMapRange")
-    cobre.interpolation_type = "SMOOTHSTEP"
-    cobre.inputs["From Min"].default_value, cobre.inputs["From Max"].default_value = 0.985, 1.04  # só um pó de pétalas: as de verdade vêm em instâncias
-    lig.new(soma_p.outputs[0], cobre.inputs["Value"])
-    for d_ in (a, b):
-        ponte = nos.new("ShaderNodeMix")
-        ponte.data_type = "RGBA"
-        lig.new(cobre.outputs["Result"], ponte.inputs["Factor"])
-        lig.new(d_["diff"], ponte.inputs[6])
-        ponte.inputs[7].default_value = (0.3, 0.17, 0.52, 1)
-        d_["diff"] = ponte.outputs[2]
     sep = nos.new("ShaderNodeSeparateXYZ")
     lig.new(coord.outputs["Object"], sep.inputs[0])
     absx = nos.new("ShaderNodeMath")

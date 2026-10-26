@@ -11,6 +11,7 @@ Uso:
 Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
 media-src/render/misty_dawn_4k.hdr e media-src/fontes.
 """
+import ctypes
 import json
 import math
 import sys
@@ -35,6 +36,25 @@ SAIDA = Path(args[1]) if Path(args[1]).is_absolute() else RAIZ / args[1]  # o Bl
 AMOSTRAS = opcao("--amostras", 64)
 RES = opcao("--res", 1600)
 TOTAL = opcao("--total", 150)  # quadros do fundo ao longo do caminho
+
+
+def memoria():
+    """Memória do processo (Windows): privada agora e no pico, e o pico de memória física."""
+    try:
+        class Info(ctypes.Structure):
+            _fields_ = [("cb", ctypes.c_ulong), ("faltas", ctypes.c_ulong)] + [(n, ctypes.c_size_t) for n in (
+                "pico_fisica", "fisica", "a", "b", "c", "d", "privada", "pico_privada")]
+
+        k32, psapi = ctypes.WinDLL("kernel32"), ctypes.WinDLL("psapi")
+        k32.GetCurrentProcess.restype = ctypes.c_void_p
+        psapi.GetProcessMemoryInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(Info), ctypes.c_ulong]
+        i = Info()
+        i.cb = ctypes.sizeof(i)
+        psapi.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(i), i.cb)
+        mb = 2 ** 20
+        return f"privada {i.privada / mb:.0f} MB, pico privada {i.pico_privada / mb:.0f} MB, pico física {i.pico_fisica / mb:.0f} MB"
+    except (AttributeError, OSError):
+        return "indisponível"
 
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
 ALTURA_OLHO = 1.28
@@ -649,6 +669,7 @@ if MODO == "fundo":
             continue
         bpy.ops.render.render(write_still=True)
         print("QUADRO", q, flush=True)
+        print("MEMORIA", memoria(), flush=True)
 
 # ================================================================ camada da cachorra
 if MODO == "cao":
@@ -1003,6 +1024,7 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", f, flush=True)
+            print("MEMORIA", memoria(), flush=True)
     elif trecho == "parada":
         # parada: a pose em pé e a respiração (peito sobe e desce, cabeça acompanha de leve), laço de 24 quadros
         cena.frame_set(PARADA)
@@ -1022,6 +1044,7 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", k, flush=True)
+            print("MEMORIA", memoria(), flush=True)
     elif trecho == "entrada":
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
         y_base = raiz.location.y
@@ -1050,3 +1073,4 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", q, flush=True)
+            print("MEMORIA", memoria(), flush=True)

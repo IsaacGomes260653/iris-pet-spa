@@ -809,6 +809,10 @@ cena.cycles.max_bounces = 4
 cena.cycles.volume_bounces = 0
 cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
+# a luz do sol espalhada na névoa (anisotropia alta) dá amostras raras e muito fortes, que o denoiser deixa como
+# granulado; limitar a luz direta a 5 tira o granulado e mantém o brilho do véu. A camada da cachorra não tem névoa
+# e fica sem limite (o brilho do sol nas pontas do pelo continua)
+cena.cycles.sample_clamp_direct = opcao("--clamp-direto", 5.0 if MODO == "fundo" else 0.0)
 cena.render.resolution_x, cena.render.resolution_y = RES
 cena.render.resolution_percentage = opcao("--escala", 100)
 # memória: as texturas da vegetação e dos objetos caem para 1024 px (o chão, visto de perto e de lado, fica em 2K).

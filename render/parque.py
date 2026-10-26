@@ -863,7 +863,8 @@ if MODO == "cao":
         # comprimento extra: cauda (pesos dos ossos da cauda) e pescoço mais peludos
         soma = None
         for nome_, peso_ in (("Tail_Bone_1_Wolf_Armature", 1.2), ("Tail_Bone_2_Wolf_Armature", 1.8), ("Tail_Bone_3_Wolf_Armature", 2.0),
-                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6)):
+                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6),
+                             ("Head_Wolf_Armature", -0.7)):  # a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
             at = n.new("GeometryNodeInputNamedAttribute")
             at.data_type = "FLOAT"
             at.inputs["Name"].default_value = nome_

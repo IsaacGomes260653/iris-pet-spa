@@ -541,7 +541,7 @@ for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda
 antes_da_loja = set(bpy.data.objects)
-REBOCO = material("Reboco creme", **{"Base Color": (0.86, 0.79, 0.67, 1), "Roughness": 0.85})
+REBOCO = material("Reboco creme", **{"Base Color": (0.72, 0.6, 0.44, 1), "Roughness": 0.85})  # creme de verdade (o claro saía branco)
 SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
 VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.45})  # reflete o céu e as copas
 INTERIOR = material("Interior aceso", **{"Base Color": (1, 0.85, 0.7, 1), "Emission Color": (1.0, 0.83, 0.62, 1), "Emission Strength": 9.0})

@@ -12,8 +12,12 @@ import { Pacotes } from "@/components/secoes/Pacotes";
 import { Rede } from "@/components/secoes/Rede";
 import { Rodape } from "@/components/secoes/Rodape";
 import { Passeio } from "@/components/passeio/Passeio";
+import { PasseioAnimado } from "@/components/passeio/PasseioAnimado";
 import { Som } from "@/components/Som";
 import { Logo } from "@/components/ui";
+
+// a nova abertura (passeio renderizado) fica desligada até ser aprovada: liga com NEXT_PUBLIC_NOVA_ABERTURA=1
+const NOVA_ABERTURA = process.env.NEXT_PUBLIC_NOVA_ABERTURA === "1";
 
 export default function Home() {
   return (
@@ -29,7 +33,7 @@ export default function Home() {
       </Link>
       <Som />
       <BarraProgresso />
-      <Passeio />
+      {NOVA_ABERTURA ? <PasseioAnimado /> : <Passeio />}
       {/* abaixo da dobra, um limite de Suspense por seção: o React hidrata cada uma numa tarefa curta, sem uma tarefa longa só */}
       <Suspense>
         <BanhoTosa />

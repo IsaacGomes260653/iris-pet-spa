@@ -1000,7 +1000,7 @@ if MODO == "cao":
         linha = n.new("GeometryNodeCurvePrimitiveLine")
         linha.inputs["End"].default_value = (0, 0, comp)
         amostra = n.new("GeometryNodeResampleCurve")
-        amostra.inputs["Count"].default_value = 5
+        amostra.inputs["Count"].default_value = 6
         l.new(linha.outputs[0], amostra.inputs["Curve"])
         # a altura da raiz de cada fio (para o marrom das patas), guardada nos pontos
         pos0 = n.new("GeometryNodeInputPosition")
@@ -1084,7 +1084,7 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    pelo = arvore_pelo(corpo, opcao("--densidade", 110000.0), 0.04, opcao("--raio-pelo", 0.0011), material_pelo())
+    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo())
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
     ossos = {b.name: b for b in armacao.pose.bones}

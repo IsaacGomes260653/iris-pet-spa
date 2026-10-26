@@ -546,7 +546,6 @@ PEDRA = material("Pedra", **{"Base Color": (0.5, 0.46, 0.4, 1), "Roughness": 0.7
 SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.4})  # caixilho pintado, acetinado
 VIDRO = material("Vidro", **{"Base Color": (0.96, 0.98, 0.97, 1), "Transmission Weight": 1.0, "Roughness": 0.0, "IOR": 1.5})
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
-TOLDO = material("Toldo", **{"Base Color": (0.42, 0.53, 0.46, 1), "Roughness": 0.8, "Sheen Weight": 0.4})
 FORRO = material("Forro", **{"Base Color": (0.86, 0.8, 0.72, 1), "Roughness": 0.9})
 METAL_ESCURO = material("Metal escuro", **{"Base Color": (0.05, 0.06, 0.06, 1), "Metallic": 1.0, "Roughness": 0.35})
 
@@ -662,13 +661,41 @@ folha.caixa((fw - 0.16, -0.05, 1.0), (0.03, 0.04, 0.3), METAL_ESCURO)  # puxador
 porta = folha.objeto("Porta", bisel=0.004)
 porta.location = (-0.62, Y_LOJA + 0.16, 0.0)
 porta.rotation_euler = (0, 0, math.radians(78))
-# toldo inclinado sobre porta e vitrines
-bpy.ops.mesh.primitive_plane_add(size=1, location=(0, Y_LOJA - 0.42, 2.98))
-toldo = bpy.context.active_object
-toldo.scale = (L - 1.2, 0.9, 1)
-toldo.rotation_euler = (math.radians(-22), 0, 0)
-toldo.data.materials.append(TOLDO)
-toldo.modifiers.new("Espessura", "SOLIDIFY").thickness = 0.03
+
+# toldos listrados (sálvia e creme) sobre as vitrines, com a franja caindo na frente
+TOLDO = material("Toldo listrado", **{"Roughness": 0.85, "Sheen Weight": 0.3})
+_n, _l = TOLDO.node_tree.nodes, TOLDO.node_tree.links
+_geo = _n.new("ShaderNodeNewGeometry")
+_sx = _n.new("ShaderNodeSeparateXYZ")
+_l.new(_geo.outputs["Position"], _sx.inputs[0])
+_fr = _n.new("ShaderNodeMath")
+_fr.operation = "PINGPONG"
+_fr.inputs[1].default_value = 0.18  # listras de 18 cm
+_l.new(_sx.outputs["X"], _fr.inputs[0])
+_lst = _n.new("ShaderNodeMath")
+_lst.operation = "GREATER_THAN"
+_lst.inputs[1].default_value = 0.09
+_l.new(_fr.outputs[0], _lst.inputs[0])
+_cor = _n.new("ShaderNodeMix")
+_cor.data_type = "RGBA"
+_cor.inputs[6].default_value = (0.3, 0.4, 0.33, 1)
+_cor.inputs[7].default_value = (0.86, 0.8, 0.68, 1)
+_l.new(_lst.outputs[0], _cor.inputs["Factor"])
+_l.new(_cor.outputs[2], _n["Principled BSDF"].inputs["Base Color"])
+for x, larg, peit in VAOS[1:]:
+    bm = bmesh.new()
+    w = larg / 2 + 0.15
+    vs = [bm.verts.new(p) for p in ((x - w, Y_LOJA - 0.02, 3.02), (x + w, Y_LOJA - 0.02, 3.02), (x + w, Y_LOJA - 0.8, 2.66),
+                                    (x - w, Y_LOJA - 0.8, 2.66), (x + w, Y_LOJA - 0.8, 2.44), (x - w, Y_LOJA - 0.8, 2.44))]
+    bm.faces.new((vs[0], vs[1], vs[2], vs[3]))
+    bm.faces.new((vs[3], vs[2], vs[4], vs[5]))
+    malha = bpy.data.meshes.new("Toldo")
+    bm.to_mesh(malha)
+    bm.free()
+    malha.materials.append(TOLDO)
+    toldo = bpy.data.objects.new("Toldo", malha)
+    cena.collection.objects.link(toldo)
+    toldo.modifiers.new("Espessura", "SOLIDIFY").thickness = 0.012
 # letreiro: "Íris" em Literata e "PET SPA" em Martian Mono, sobre faixa verde-sálvia
 caixa("Faixa do letreiro", (0, Y_LOJA - 0.12, 3.48), (5.2, 0.08, 0.78), SALVIA)
 

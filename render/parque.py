@@ -67,10 +67,10 @@ def memoria():
 ALTURA_OLHO = 1.28
 Y_INICIO, Y_FIM = 0.0, 62.0  # a câmera anda de Y_INICIO a Y_FIM ao longo dos quadros do fundo
 Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
-DIST_CAO = 2.9  # a cachorra anda sempre à frente da câmera, a esta distância
+DIST_CAO = 1.8  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3
-INCLINA = math.radians(8)  # a câmera olha um pouco para baixo
+INCLINA = math.radians(10)  # a câmera olha um pouco para baixo
 
 cena = bpy.context.scene
 for o in list(bpy.data.objects):
@@ -750,6 +750,7 @@ if MODO == "cao":
             o.hide_render = True
     # o céu claro da névoa deixaria o pelo preto cinza-azulado: menos céu nesta camada, a contraluz do sol continua
     fundo.inputs["Strength"].default_value = 0.35
+    ceu.energy = 0.25  # a luz de trás acende as copas; nas costas da cachorra, deixaria o pelo preto cinzento
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 0.65})
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
@@ -808,7 +809,7 @@ if MODO == "cao":
         ys.append(round(float(vertices(corpo)[:, 1].mean()), 3))
     print("CENTRO Y NA CAMINHADA", ys, "tamanho", np.round(vertices(corpo).max(0) - vertices(corpo).min(0), 2), flush=True)
     # pastora encorpada: o lobo do arquivo é estreito
-    raiz.scale.x *= 1.35
+    raiz.scale.x *= 1.55
     bpy.context.view_layer.update()
 
     # ------------------------------------------------------------ pelo: fios curtos e densos, mais longos na cauda e no pescoço
@@ -821,7 +822,7 @@ if MODO == "cao":
         pelo = nos.new("ShaderNodeBsdfHairPrincipled")
         pelo.parametrization = "MELANIN"
         pelo.inputs["Melanin Redness"].default_value = 0.15
-        pelo.inputs["Roughness"].default_value = 0.5
+        pelo.inputs["Roughness"].default_value = 0.38
         pelo.inputs["Radial Roughness"].default_value = 0.5
         pelo.inputs["Coat"].default_value = 0.0
         pelo.inputs["Random Color"].default_value = 0.1

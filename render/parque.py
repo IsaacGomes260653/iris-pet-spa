@@ -10,6 +10,7 @@ Cada tela tem a sua câmera: desktop 1920 × 1080 e celular 1080 × 1920 (vertic
 Uso:
   blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> --tela desktop|celular [--amostras N]
   blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> --tela desktop|celular [--amostras N]
+  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros)
 Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
 media-src/render/misty_dawn_4k.hdr e media-src/fontes.
 """
@@ -651,6 +652,7 @@ cena.cycles.volume_bounces = 1
 cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
 cena.render.resolution_x, cena.render.resolution_y = RES
+cena.render.resolution_percentage = opcao("--escala", 100)
 cena.view_settings.view_transform = "AgX"
 cena.view_settings.look = "AgX - Base Contrast"
 cena.view_settings.exposure = 0.6
@@ -668,9 +670,10 @@ def pronto(caminho):
         f.seek(-12, 2)
         return f.read(12)[4:8] == b"IEND"
 
+QUADROS = [int(q) for q in opcao("--quadros", "").split(",") if q]
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
-    for q in range(ini, fim + 1):
+    for q in QUADROS or range(ini, fim + 1):
         posicionar_camera(camera_y(q))
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
         if pronto(cena.render.filepath):
@@ -1059,7 +1062,7 @@ if MODO == "cao":
         ini = camera_y(Q_ENTRADA) + DIST_CAO
         porta = Y_LOJA + 0.9
         n_ = TOTAL - 1 - Q_ENTRADA
-        for q in range(Q_ENTRADA, TOTAL):
+        for q in QUADROS or range(Q_ENTRADA, TOTAL):
             t = (q - Q_ENTRADA) / n_
             cao_y = ini + (porta - ini) * t
             raiz.location.y = y_base + (cao_y - camera_y(q)) - DIST_CAO

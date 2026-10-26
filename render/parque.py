@@ -814,6 +814,16 @@ e_esq = estante("Estante da esquerda", 4.6)
 e_esq.location, e_esq.rotation_euler = (-DENTRO_X + 0.38, Y_DENTRO0 + 1.4, 0.015), (0, 0, math.radians(90))
 e_dir = estante("Estante da direita", 4.6)
 e_dir.location, e_dir.rotation_euler = (DENTRO_X - 0.38, Y_DENTRO0 + 6.0, 0.015), (0, 0, math.radians(-90))
+
+
+# no alto da parede do fundo, a pata da marca em luz e "BANHO · TOSA · SPA"
+pata = Pecas()
+py_ = Y_DENTRO1 - 0.03
+pata.esfera((-0.9, py_, 2.98), 0.2, LETRA, 0.85, (1, 0.12))
+for k, (dx, dz) in enumerate(((-0.24, 0.2), (-0.09, 0.3), (0.09, 0.3), (0.24, 0.2))):
+    pata.esfera((-0.9 + dx, py_, 2.98 + dz), 0.075, LETRA, 1.25, (1, 0.12))
+pata.objeto("Pata em luz", suave=True)
+texto("BANHO · TOSA · SPA", "MartianMono.ttf", 0.11, (0.55, Y_DENTRO1 - 0.04, 3.0), 0.006)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

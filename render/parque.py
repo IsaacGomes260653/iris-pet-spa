@@ -583,7 +583,7 @@ mapa = nos.new("ShaderNodeMapping")
 lig.new(coord.outputs["Generated"], mapa.inputs["Vector"])
 lig.new(mapa.outputs[0], env.inputs["Vector"])
 lig.new(env.outputs["Color"], fundo.inputs["Color"])
-fundo.inputs["Strength"].default_value = 0.7
+fundo.inputs["Strength"].default_value = 0.95
 # gira o HDRI para o sol dele ficar à frente da câmera (+Y), levemente à esquerda: contraluz no pelo preto
 px = np.empty(env.image.size[0] * env.image.size[1] * 4, dtype=np.float32)
 env.image.pixels.foreach_get(px)
@@ -591,18 +591,26 @@ px = px.reshape(env.image.size[1], env.image.size[0], 4)
 lum = px[..., :3] @ np.array([0.2126, 0.7152, 0.0722])
 yy, xx = np.unravel_index(np.argmax(lum), lum.shape)
 az_sol = (xx / env.image.size[0] - 0.5) * 2 * math.pi
-mapa.inputs["Rotation"].default_value[2] = math.atan2(1.0, -0.15) - az_sol
+mapa.inputs["Rotation"].default_value[2] = math.atan2(1.0, -0.06) - az_sol
 del px, lum
 env.image.scale(2048, 1024)
 
 sol = bpy.data.lights.new("Sol", "SUN")
-sol.energy = 5.0
-sol.color = (1.0, 0.7, 0.5)
+sol.energy = 8.0
+sol.color = (1.0, 0.64, 0.42)
 sol.angle = math.radians(2.5)
 luz = bpy.data.objects.new("Sol", sol)
-DIR_SOL = Vector((-0.05, 1.0, math.tan(math.radians(11)))).normalized()  # quase de frente: as sombras da grama correm junto ao caminho  # de onde a luz vem
+DIR_SOL = Vector((-0.06, 1.0, math.tan(math.radians(6)))).normalized()  # quase de frente: as sombras da grama correm junto ao caminho  # de onde a luz vem
 luz.rotation_euler = (-DIR_SOL).to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz)
+# o céu atrás de quem passeia: luz fraca e fria vinda de trás, sem sombra marcada, que acende o lilás das copas
+ceu = bpy.data.lights.new("Céu atrás", "SUN")
+ceu.energy = 2.0
+ceu.color = (0.85, 0.82, 1.0)
+ceu.angle = math.radians(30)
+luz_ceu = bpy.data.objects.new("Céu atrás", ceu)
+luz_ceu.rotation_euler = Vector((0.15, 1.0, -0.55)).normalized().to_track_quat("-Z", "Y").to_euler()
+cena.collection.objects.link(luz_ceu)
 
 # névoa: densa rente ao chão e rala no alto, lavanda; a luz do sol à frente acende o véu (anisotropia)
 # o cubo começa 40 cm abaixo do chão: com a face colada no chão (z = 0) os raios ficavam ora dentro, ora fora do
@@ -627,7 +635,7 @@ mv.node_tree.links.new(_sep.outputs["Z"], _z.inputs[0])
 _alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
 _alt.interpolation_type = "SMOOTHSTEP"
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 6.0
-_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.004
+_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.003
 mv.node_tree.links.new(_z.outputs[0], _alt.inputs["Value"])
 mv.node_tree.links.new(_alt.outputs["Result"], vol.inputs["Density"])
 mv.node_tree.links.new(vol.outputs[0], mv.node_tree.nodes["Material Output"].inputs["Volume"])
@@ -707,7 +715,7 @@ cena.cycles.tile_size = 1024
 cena.render.use_persistent_data = True
 cena.view_settings.view_transform = "AgX"
 cena.view_settings.look = "AgX - Base Contrast"
-cena.view_settings.exposure = 0.6
+cena.view_settings.exposure = 1.25
 cena.render.image_settings.file_format = "PNG"
 cena.render.image_settings.color_depth = "8"
 SAIDA.mkdir(parents=True, exist_ok=True)

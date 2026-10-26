@@ -5,12 +5,19 @@ Duas camadas, montadas no navegador:
   cao    → a cachorra de costas com coleira, guia e sombra, em fundo transparente, na mesma câmera:
            ciclo de caminhada (amarrado à rolagem), respiração (parada) e a entrada na loja.
 
+Cada tela tem a sua câmera: desktop 1920 × 1080 e celular 1080 × 1920 (vertical), na mesma posição.
+
 Uso:
-  blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> [--amostras N] [--res N] [--total N]
-  blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> [--amostras N] [--res N]
+  blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> --tela desktop|celular [--amostras N]
+  blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> --tela desktop|celular [--amostras N]
+  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros)
 Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
 media-src/render/misty_dawn_4k.hdr e media-src/fontes.
+
+Memória (para caber num PC de 8 GB, até ~4 GB): texturas limitadas a 1024 px no render, céu reduzido a 2K, grama só
+perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling). Cada render imprime "MEMORIA ...".
 """
+import ctypes
 import json
 import math
 import sys
@@ -33,17 +40,37 @@ def opcao(nome, padrao):
 MODO = args[0]
 SAIDA = Path(args[1]) if Path(args[1]).is_absolute() else RAIZ / args[1]  # o Blender resolveria relativo à raiz do disco
 AMOSTRAS = opcao("--amostras", 64)
-RES = opcao("--res", 1600)
-TOTAL = opcao("--total", 150)  # quadros do fundo ao longo do caminho
+TELA = opcao("--tela", "desktop")
+RES = (1920, 1080) if TELA == "desktop" else (1080, 1920)
+TOTAL = opcao("--total", 180)  # quadros do fundo ao longo do caminho
+
+
+def memoria():
+    """Memória do processo (Windows): privada agora e no pico, e o pico de memória física."""
+    try:
+        class Info(ctypes.Structure):
+            _fields_ = [("cb", ctypes.c_ulong), ("faltas", ctypes.c_ulong)] + [(n, ctypes.c_size_t) for n in (
+                "pico_fisica", "fisica", "a", "b", "c", "d", "privada", "pico_privada")]
+
+        k32, psapi = ctypes.WinDLL("kernel32"), ctypes.WinDLL("psapi")
+        k32.GetCurrentProcess.restype = ctypes.c_void_p
+        psapi.GetProcessMemoryInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(Info), ctypes.c_ulong]
+        i = Info()
+        i.cb = ctypes.sizeof(i)
+        psapi.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(i), i.cb)
+        mb = 2 ** 20
+        return f"privada {i.privada / mb:.0f} MB, pico privada {i.pico_privada / mb:.0f} MB, pico física {i.pico_fisica / mb:.0f} MB"
+    except (AttributeError, OSError):
+        return "indisponível"
 
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
-ALTURA_OLHO = 1.28
-Y_INICIO, Y_FIM = 0.0, 62.0  # a câmera anda de Y_INICIO a Y_FIM ao longo dos quadros do fundo
-Q_ENTRADA = 126  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
-DIST_CAO = 2.9  # a cachorra anda sempre à frente da câmera, a esta distância
+ALTURA_OLHO = 1.1  # um pouco acima da cachorra
+Y_INICIO, Y_FIM = 0.0, 66.0  # a câmera anda de Y_INICIO a Y_FIM (para a 8 m da fachada; a cachorra segue até a porta)
+Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+DIST_CAO = 1.45  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3
-INCLINA = math.radians(8)  # a câmera olha um pouco para baixo
+INCLINA = math.radians(3)  # quase reta: o horizonte fica a ~40% da altura e sobra céu para as frases
 
 cena = bpy.context.scene
 for o in list(bpy.data.objects):
@@ -182,6 +209,30 @@ def chao_misto():
 
     a = pbr("flower_scattered_gravel", 0.5, (1.35, 1.25, 1.2, 1))
     b = pbr("grass_ground", 0.35, (0.42, 0.62, 0.34, 1))
+    # o tapete de jacarandá: pétalas em manchas (ruído fino recortado por um ruído largo), por cima dos dois chãos
+    petala = nos.new("ShaderNodeTexNoise")
+    petala.inputs["Scale"].default_value = 70.0
+    petala.inputs["Detail"].default_value = 0.0
+    lig.new(coord.outputs["Object"], petala.inputs["Vector"])
+    mancha = nos.new("ShaderNodeTexNoise")
+    mancha.inputs["Scale"].default_value = 2.4
+    lig.new(coord.outputs["Object"], mancha.inputs["Vector"])
+    soma_p = nos.new("ShaderNodeMath")
+    soma_p.operation = "MULTIPLY_ADD"
+    soma_p.inputs[1].default_value = 0.7
+    lig.new(petala.outputs["Fac"], soma_p.inputs[0])
+    lig.new(mancha.outputs["Fac"], soma_p.inputs[2])
+    cobre = nos.new("ShaderNodeMapRange")
+    cobre.interpolation_type = "SMOOTHSTEP"
+    cobre.inputs["From Min"].default_value, cobre.inputs["From Max"].default_value = 0.985, 1.04  # só um pó de pétalas: as de verdade vêm em instâncias
+    lig.new(soma_p.outputs[0], cobre.inputs["Value"])
+    for d_ in (a, b):
+        ponte = nos.new("ShaderNodeMix")
+        ponte.data_type = "RGBA"
+        lig.new(cobre.outputs["Result"], ponte.inputs["Factor"])
+        lig.new(d_["diff"], ponte.inputs[6])
+        ponte.inputs[7].default_value = (0.3, 0.17, 0.52, 1)
+        d_["diff"] = ponte.outputs[2]
     sep = nos.new("ShaderNodeSeparateXYZ")
     lig.new(coord.outputs["Object"], sep.inputs[0])
     absx = nos.new("ShaderNodeMath")
@@ -194,12 +245,12 @@ def chao_misto():
     lig.new(coord.outputs["Object"], ruido.inputs["Vector"])
     soma = nos.new("ShaderNodeMath")
     soma.operation = "MULTIPLY_ADD"
-    soma.inputs[1].default_value = 1.1
+    soma.inputs[1].default_value = 0.45  # borda do caminho definida, só um pouco irregular
     lig.new(ruido.outputs["Fac"], soma.inputs[0])
     lig.new(absx.outputs[0], soma.inputs[2])
     borda = nos.new("ShaderNodeMapRange")
     borda.interpolation_type = "SMOOTHSTEP"
-    borda.inputs["From Min"].default_value, borda.inputs["From Max"].default_value = meio + 0.15, meio + 0.95
+    borda.inputs["From Min"].default_value, borda.inputs["From Max"].default_value = meio + 0.2, meio + 0.45
     lig.new(soma.outputs[0], borda.inputs["Value"])
     for chave, destino in (("diff", "Base Color"), ("rough", "Roughness"), ("nor_gl", None)):
         mx = nos.new("ShaderNodeMix")
@@ -219,12 +270,93 @@ def chao_misto():
 
 CHAO = chao_misto()
 chao = faixa("Chão", -60, 60, -12, Y_LOJA + 30, CHAO, 0.5, 60)
-gramado_e = faixa("Gramado esq", -60, -meio - 0.1, -12, Y_LOJA + 30, GRAMA_CHAO, 0.35, 40)
-gramado_d = faixa("Gramado dir", meio + 0.1, 60, -12, Y_LOJA + 30, GRAMA_CHAO, 0.35, 40)
+gramado_e = faixa("Gramado esq", -18, -meio - 0.1, -6, Y_LOJA + 4, GRAMA_CHAO, 0.35, 12)
+gramado_d = faixa("Gramado dir", meio + 0.1, 18, -6, Y_LOJA + 4, GRAMA_CHAO, 0.35, 12)
 for g_ in (gramado_e, gramado_d):
     g_.hide_render = True  # só base para espalhar a vegetação
 calcada = faixa("Calçada", -9, 9, Y_LOJA - 6, Y_LOJA + 0.5, TIJOLO, 0.55)
 calcada.location.z = 0.012
+
+
+def petalas():
+    """Pétalas caídas de verdade: discos de 2,4 cm lilases e translúcidos espalhados no chão, em tufos, mais densos
+    debaixo das copas (|x| de 3 a 8 m) que no meio do caminho. Instâncias: a malha é uma só."""
+    bpy.ops.mesh.primitive_circle_add(vertices=6, radius=0.012, fill_type="TRIFAN")
+    petala = bpy.context.active_object
+    petala.name = "Pétala"
+    petala.scale.y = 0.7
+    bpy.ops.object.transform_apply(scale=True)
+    m = material("Pétala", **{"Base Color": (0.5, 0.33, 0.72, 1), "Roughness": 0.6})
+    nos_, lig_ = m.node_tree.nodes, m.node_tree.links
+    transl = nos_.new("ShaderNodeBsdfTranslucent")
+    transl.inputs["Color"].default_value = (0.6, 0.4, 0.8, 1)
+    junta = nos_.new("ShaderNodeMixShader")
+    junta.inputs["Fac"].default_value = 0.35
+    lig_.new(nos_["Principled BSDF"].outputs[0], junta.inputs[1])
+    lig_.new(transl.outputs[0], junta.inputs[2])
+    lig_.new(junta.outputs[0], nos_["Material Output"].inputs["Surface"])
+    petala.data.materials.append(m)
+    col = colecao("Pétalas", [petala])
+    base = faixa("Chão das pétalas", -8, 8, -6, Y_LOJA - 6.5, CHAO, 1.0, 8)
+    base.data.materials.clear()
+    g = bpy.data.node_groups.new("Pétalas", "GeometryNodeTree")
+    g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+    g.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    n, l = g.nodes, g.links
+    ent, sai = n.new("NodeGroupInput"), n.new("NodeGroupOutput")
+    pts = n.new("GeometryNodeDistributePointsOnFaces")
+    pts.inputs["Density"].default_value = 420.0
+    l.new(ent.outputs[0], pts.inputs["Mesh"])
+    # tufos (ruído) + mais pétalas longe do eixo do caminho: apaga onde a soma fica abaixo do corte
+    pos = n.new("GeometryNodeInputPosition")
+    sep = n.new("ShaderNodeSeparateXYZ")
+    l.new(pos.outputs[0], sep.inputs[0])
+    absx = n.new("ShaderNodeMath")
+    absx.operation = "ABSOLUTE"
+    l.new(sep.outputs["X"], absx.inputs[0])
+    sob_copa = n.new("ShaderNodeMapRange")
+    sob_copa.inputs["From Min"].default_value, sob_copa.inputs["From Max"].default_value = 1.5, 4.5
+    sob_copa.inputs["To Min"].default_value, sob_copa.inputs["To Max"].default_value = 0.0, 0.22
+    l.new(absx.outputs[0], sob_copa.inputs["Value"])
+    ruido = n.new("ShaderNodeTexNoise")
+    ruido.inputs["Scale"].default_value = 1.3
+    ruido.inputs["Detail"].default_value = 4.0
+    l.new(pos.outputs[0], ruido.inputs["Vector"])
+    soma = n.new("ShaderNodeMath")
+    l.new(ruido.outputs["Fac"], soma.inputs[0])
+    l.new(sob_copa.outputs["Result"], soma.inputs[1])
+    pouco = n.new("ShaderNodeMath")
+    pouco.operation = "LESS_THAN"
+    pouco.inputs[1].default_value = 0.6
+    l.new(soma.outputs[0], pouco.inputs[0])
+    apaga = n.new("GeometryNodeDeleteGeometry")
+    apaga.domain = "POINT"
+    l.new(pts.outputs["Points"], apaga.inputs["Geometry"])
+    l.new(pouco.outputs[0], apaga.inputs["Selection"])
+    info = n.new("GeometryNodeCollectionInfo")
+    info.inputs["Collection"].default_value = col
+    info.inputs["Separate Children"].default_value = True
+    info.inputs["Reset Children"].default_value = True
+    inst = n.new("GeometryNodeInstanceOnPoints")
+    l.new(apaga.outputs[0], inst.inputs["Points"])
+    l.new(info.outputs[0], inst.inputs["Instance"])
+    rot = n.new("FunctionNodeRandomValue")
+    rot.data_type = "FLOAT_VECTOR"
+    rot.inputs["Min"].default_value = (-0.35, -0.35, 0)
+    rot.inputs["Max"].default_value = (0.35, 0.35, 6.283)
+    l.new(rot.outputs["Value"], inst.inputs["Rotation"])
+    esc = n.new("FunctionNodeRandomValue")
+    esc.data_type = "FLOAT"
+    esc.inputs["Min"].default_value, esc.inputs["Max"].default_value = 0.7, 1.35
+    l.new(esc.outputs["Value"], inst.inputs["Scale"])
+    sobe = n.new("GeometryNodeTranslateInstances")
+    sobe.inputs["Translation"].default_value = (0, 0, 0.004)
+    l.new(inst.outputs[0], sobe.inputs["Instances"])
+    l.new(sobe.outputs[0], sai.inputs[0])
+    base.modifiers.new("Pétalas", "NODES").node_group = g
+
+
+petalas()
 
 # ---------------------------------------------------------------- vegetação (Poly Haven, CC0)
 def preparar(nome):
@@ -242,13 +374,14 @@ dente = preparar("dandelion_01")
 vaso = preparar("potted_plant_02")
 jardineira = preparar("planter_box_01")
 
-# jacarandás dos dois lados, formando um túnel de copas; mais densos perto da loja não (a loja aparece entre eles)
+# jacarandás dos dois lados, perto do caminho e próximos entre si: as copas se encontram por cima (um túnel lilás);
+# perto da loja a fileira para, e a fachada aparece no fim do túnel
 for lado in (-1, 1):
-    y = -10.0 + (3.5 if lado > 0 else 0.0)
-    while y < Y_LOJA - 7:
-        x = lado * rng.uniform(5.4, 6.6)
-        instancia(jacaranda, (x, y, 0), rng.uniform(0, 2 * math.pi), rng.uniform(0.5, 0.6))
-        y += rng.uniform(9.0, 11.0)
+    y = -8.0 + (3.0 if lado > 0 else 0.0)
+    while y < Y_LOJA - 8:
+        x = lado * rng.uniform(5.4, 6.2)  # as copas quase se tocam: fica uma faixa de céu sobre o caminho
+        instancia(jacaranda, (x, y, 0), rng.uniform(0, 2 * math.pi), rng.uniform(0.56, 0.66))
+        y += rng.uniform(7.5, 9.0)
 # segunda fileira, mais longe, só para encher a névoa
 for lado in (-1, 1):
     for y in np.arange(-6, Y_LOJA + 20, 13.0):
@@ -266,14 +399,14 @@ def florada(col):
             bsdf = next(n for n in nos if n.type == "BSDF_PRINCIPLED")
             origem = bsdf.inputs["Base Color"].links[0].from_socket
             matiz = nos.new("ShaderNodeHueSaturation")
-            matiz.inputs["Hue"].default_value = 0.98  # verde → lilás
-            matiz.inputs["Saturation"].default_value = 0.85
-            matiz.inputs["Value"].default_value = 1.9
+            matiz.inputs["Hue"].default_value = 0.05  # verde → violeta-lilás de jacarandá (não azul)
+            matiz.inputs["Saturation"].default_value = 1.05
+            matiz.inputs["Value"].default_value = 2.6
             lig.new(origem, matiz.inputs["Color"])
             geo = nos.new("ShaderNodeNewGeometry")
             corte = nos.new("ShaderNodeMath")
             corte.operation = "GREATER_THAN"
-            corte.inputs[1].default_value = 0.38
+            corte.inputs[1].default_value = 0.4  # ~60% das ilhas em flor, o resto verde
             lig.new(geo.outputs["Random Per Island"], corte.inputs[0])
             mistura = nos.new("ShaderNodeMix")
             mistura.data_type = "RGBA"
@@ -285,7 +418,7 @@ def florada(col):
             transl = nos.new("ShaderNodeBsdfTranslucent")
             lig.new(mistura.outputs["Result"], transl.inputs["Color"])
             junta = nos.new("ShaderNodeMixShader")
-            junta.inputs["Fac"].default_value = 0.4
+            junta.inputs["Fac"].default_value = 0.55
             lig.new(bsdf.outputs[0], junta.inputs[1])
             lig.new(transl.outputs[0], junta.inputs[2])
             lig.new(junta.outputs[0], saida.inputs["Surface"])
@@ -396,22 +529,23 @@ for i, lado in enumerate((gramado_e, gramado_d)):
 
 # postes de luz de praça: haste verde escura e lanterna morna (ainda acesa ao amanhecer)
 POSTE = material("Poste", **{"Base Color": (0.05, 0.08, 0.07, 1), "Metallic": 0.6, "Roughness": 0.45})
-LANTERNA = material("Lanterna", **{"Base Color": (1, 0.8, 0.55, 1), "Emission Color": (1.0, 0.72, 0.45, 1), "Emission Strength": 6.0})
+LANTERNA = material("Lanterna", **{"Base Color": (1, 0.8, 0.55, 1), "Emission Color": (1.0, 0.72, 0.45, 1), "Emission Strength": 2.2})
 for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
     lado = 1 if k % 2 == 0 else -1
-    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.05, depth=3.4, location=(lado * 1.75, y, 1.7))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.05, depth=3.4, location=(lado * 3.2, y, 1.7))
     bpy.context.active_object.data.materials.append(POSTE)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.13, depth=0.36, location=(lado * 1.75, y, 3.5))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.13, depth=0.36, location=(lado * 3.2, y, 3.5))
     bpy.context.active_object.data.materials.append(LANTERNA)
-    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.2, depth=0.18, location=(lado * 1.75, y, 3.76))
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.2, depth=0.18, location=(lado * 3.2, y, 3.76))
     bpy.context.active_object.data.materials.append(POSTE)
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda
-REBOCO = material("Reboco creme", **{"Base Color": (0.86, 0.79, 0.67, 1), "Roughness": 0.85})
+antes_da_loja = set(bpy.data.objects)
+REBOCO = material("Reboco creme", **{"Base Color": (0.72, 0.6, 0.44, 1), "Roughness": 0.85})  # creme de verdade (o claro saía branco)
 SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
-VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.05})
+VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.45})  # reflete o céu e as copas
 INTERIOR = material("Interior aceso", **{"Base Color": (1, 0.85, 0.7, 1), "Emission Color": (1.0, 0.83, 0.62, 1), "Emission Strength": 9.0})
-LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 0.6})
+LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
 TOLDO = material("Toldo", **{"Base Color": (0.42, 0.53, 0.46, 1), "Roughness": 0.8, "Sheen Weight": 0.4})
 
 
@@ -442,7 +576,7 @@ def interior(x, y, base, larg, alt):
     morno.inputs[7].default_value = (1.0, 0.82, 0.62, 1)
     lig.new(tex.outputs["Color"], morno.inputs[6])
     em = nos.new("ShaderNodeEmission")
-    em.inputs["Strength"].default_value = 2.2
+    em.inputs["Strength"].default_value = 1.5  # loja acesa vista pelo vidro, sem estourar
     lig.new(morno.outputs[2], em.inputs["Color"])
     lig.new(em.outputs[0], saida.inputs["Surface"])
     o.data.materials.append(m)
@@ -471,8 +605,8 @@ for x, larg, alt, base in ((0, 1.5, 2.6, 0.0), (-3.6, 3.2, 2.3, 0.5), (3.6, 3.2,
     moldura = caixa("Moldura", (x, Y_LOJA + 0.02, base + alt / 2), (larg + 0.24, 0.12, alt + 0.24), SALVIA)
     if x != 0:  # a porta fica aberta: a cachorra entra por ela
         caixa("Vidro", (x, Y_LOJA - 0.05, base + alt / 2), (larg, 0.02, alt), VIDRO)
-    interior(x, Y_LOJA + 1.1, base, larg, alt)
-    corte = caixa("Corte", (x, Y_LOJA + 0.6, base + alt / 2), (larg, 1.4, alt), REBOCO)
+    interior(x, Y_LOJA + 2.6, base, larg, alt)  # fundo da loja a 2,6 m do vidro: desfocado, com profundidade
+    corte = caixa("Corte", (x, Y_LOJA + 1.35, base + alt / 2), (larg, 2.9, alt), REBOCO)
     corte.hide_render = corte.hide_viewport = True
     for alvo_ in (predio, moldura):  # o vão atravessa a parede e a moldura (sobra só o caixilho)
         bo = alvo_.modifiers.new("Vão", "BOOLEAN")
@@ -518,6 +652,8 @@ for x in (-8.5, 8.5):
     for y in (Y_LOJA - 1.5, Y_LOJA + 2.0):
         instancia(arbusto, (x, y, 0.6), rng.uniform(0, 6.28), 0.9)
 
+LOJA = [o for o in bpy.data.objects if o not in antes_da_loja]
+
 # ---------------------------------------------------------------- mundo: céu de amanhecer, sol baixo à frente e névoa rasteira
 mundo = bpy.data.worlds.new("Amanhecer")
 cena.world = mundo
@@ -531,7 +667,7 @@ mapa = nos.new("ShaderNodeMapping")
 lig.new(coord.outputs["Generated"], mapa.inputs["Vector"])
 lig.new(mapa.outputs[0], env.inputs["Vector"])
 lig.new(env.outputs["Color"], fundo.inputs["Color"])
-fundo.inputs["Strength"].default_value = 0.7
+fundo.inputs["Strength"].default_value = 0.95
 # gira o HDRI para o sol dele ficar à frente da câmera (+Y), levemente à esquerda: contraluz no pelo preto
 px = np.empty(env.image.size[0] * env.image.size[1] * 4, dtype=np.float32)
 env.image.pixels.foreach_get(px)
@@ -539,22 +675,41 @@ px = px.reshape(env.image.size[1], env.image.size[0], 4)
 lum = px[..., :3] @ np.array([0.2126, 0.7152, 0.0722])
 yy, xx = np.unravel_index(np.argmax(lum), lum.shape)
 az_sol = (xx / env.image.size[0] - 0.5) * 2 * math.pi
-mapa.inputs["Rotation"].default_value[2] = math.atan2(1.0, -0.15) - az_sol
+mapa.inputs["Rotation"].default_value[2] = math.atan2(1.0, -0.06) - az_sol
+del px, lum
+env.image.scale(2048, 1024)
 
 sol = bpy.data.lights.new("Sol", "SUN")
-sol.energy = 5.0
-sol.color = (1.0, 0.7, 0.5)
+sol.energy = 8.0
+sol.color = (1.0, 0.64, 0.42)
 sol.angle = math.radians(2.5)
 luz = bpy.data.objects.new("Sol", sol)
-DIR_SOL = Vector((-0.05, 1.0, math.tan(math.radians(11)))).normalized()  # quase de frente: as sombras da grama correm junto ao caminho  # de onde a luz vem
+DIR_SOL = Vector((-0.06, 1.0, math.tan(math.radians(6)))).normalized()  # quase de frente: as sombras da grama correm junto ao caminho  # de onde a luz vem
 luz.rotation_euler = (-DIR_SOL).to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz)
+# o céu atrás de quem passeia: luz fraca e fria vinda de trás, sem sombra marcada, que acende o lilás das copas
+ceu = bpy.data.lights.new("Céu atrás", "SUN")
+ceu.energy = 2.0
+ceu.color = (0.85, 0.82, 1.0)
+ceu.angle = math.radians(30)
+luz_ceu = bpy.data.objects.new("Céu atrás", ceu)
+luz_ceu.rotation_euler = Vector((0.15, 1.0, -0.55)).normalized().to_track_quat("-Z", "Y").to_euler()
+cena.collection.objects.link(luz_ceu)
+# a loja fica fora dessa luz: contra o sol, a fachada fica na sombra suave e o que brilha são as vitrines e o letreiro
+sem_luz_de_tras = bpy.data.collections.new("Sem luz de trás")
+for o in LOJA:
+    sem_luz_de_tras.objects.link(o)
+luz_ceu.light_linking.receiver_collection = sem_luz_de_tras
+for item in sem_luz_de_tras.collection_objects:
+    item.light_linking.link_state = "EXCLUDE"
 
 # névoa: densa rente ao chão e rala no alto, lavanda; a luz do sol à frente acende o véu (anisotropia)
-bpy.ops.mesh.primitive_cube_add(size=1, location=(0, Y_LOJA / 2, 7))
+# o cubo começa 40 cm abaixo do chão: com a face colada no chão (z = 0) os raios ficavam ora dentro, ora fora do
+# volume, e o cascalho saía riscado nas arestas da malha
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0, Y_LOJA / 2, 6.8))
 nevoa = bpy.context.active_object
 nevoa.name = "Névoa"
-nevoa.scale = (140, 200, 14)
+nevoa.scale = (140, 200, 14.4)
 mv = bpy.data.materials.new("Névoa")
 mv.use_nodes = True
 mv.node_tree.nodes.remove(mv.node_tree.nodes["Principled BSDF"])
@@ -566,12 +721,12 @@ _sep = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
 mv.node_tree.links.new(_co.outputs["Object"], _sep.inputs[0])
 _z = mv.node_tree.nodes.new("ShaderNodeMath")
 _z.operation = "MULTIPLY_ADD"
-_z.inputs[1].default_value, _z.inputs[2].default_value = 14.0, 7.0  # coordenada local → altura em metros
+_z.inputs[1].default_value, _z.inputs[2].default_value = 14.4, 6.8  # coordenada local → altura em metros
 mv.node_tree.links.new(_sep.outputs["Z"], _z.inputs[0])
 _alt = mv.node_tree.nodes.new("ShaderNodeMapRange")
 _alt.interpolation_type = "SMOOTHSTEP"
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 6.0
-_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.004
+_alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.003
 mv.node_tree.links.new(_z.outputs[0], _alt.inputs["Value"])
 mv.node_tree.links.new(_alt.outputs["Result"], vol.inputs["Density"])
 mv.node_tree.links.new(vol.outputs[0], mv.node_tree.nodes["Material Output"].inputs["Volume"])
@@ -580,11 +735,16 @@ nevoa.visible_shadow = False
 
 # ---------------------------------------------------------------- câmera em primeira pessoa
 cam = bpy.data.cameras.new("Olhar")
-cam.sensor_fit = "HORIZONTAL"
 cam.sensor_width = 36
-cam.lens = 23.5  # ~75° na horizontal, como a câmera de um celular: o recorte 16:9 do desktop
+if TELA == "desktop":
+    cam.sensor_fit = "HORIZONTAL"
+    cam.lens = 35  # ~54° na horizontal: a cachorra entra cortada na base, como a proa
+else:
+    cam.sensor_fit = "VERTICAL"
+    cam.lens = 34  # ~56° na vertical
+    INCLINA = math.radians(7)
 cam.dof.use_dof = True
-cam.dof.aperture_fstop = 3.2
+cam.dof.aperture_fstop = 4.0
 cam.dof.focus_distance = math.hypot(DIST_CAO, ALTURA_OLHO - 0.5)
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
@@ -618,14 +778,35 @@ cena.cycles.adaptive_threshold = opcao("--limiar", 0.02)
 cena.cycles.use_denoising = True
 cena.cycles.denoiser = "OPENIMAGEDENOISE"
 cena.cycles.volume_step_rate = opcao("--passo-nevoa", 4.0)
-cena.cycles.max_bounces = 6
-cena.cycles.volume_bounces = 1
+cena.cycles.max_bounces = 4
+cena.cycles.volume_bounces = 0
 cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
-cena.render.resolution_x = cena.render.resolution_y = RES
+cena.render.resolution_x, cena.render.resolution_y = RES
+cena.render.resolution_percentage = opcao("--escala", 100)
+# memória: as texturas da vegetação e dos objetos caem para 1024 px (o chão, visto de perto e de lado, fica em 2K).
+# As cópias reduzidas ficam em media-src/parque-1k e o Cycles lê delas; render em blocos de 1024 px e a cena mantida
+# entre os quadros do mesmo lote
+REDUZIDAS = MIDIA / "parque-1k"
+REDUZIDAS.mkdir(exist_ok=True)
+for im in bpy.data.images:
+    origem = Path(bpy.path.abspath(im.filepath)) if im.filepath else None
+    if not origem or PARQUE not in origem.parents or origem.parent.parent.name == "tex" or im.size[0] <= 1024:
+        continue
+    destino = REDUZIDAS / f"{origem.stem}.png"
+    if not destino.exists():
+        im.scale(1024, 1024)
+        im.filepath_raw = str(destino)
+        im.file_format = "PNG"
+        im.save()
+    im.filepath = str(destino)
+    im.reload()
+cena.cycles.use_auto_tile = True
+cena.cycles.tile_size = 1024
+cena.render.use_persistent_data = True
 cena.view_settings.view_transform = "AgX"
-cena.view_settings.look = "AgX - Base Contrast"
-cena.view_settings.exposure = 0.6
+cena.view_settings.look = "AgX - Medium High Contrast"
+cena.view_settings.exposure = 1.25
 cena.render.image_settings.file_format = "PNG"
 cena.render.image_settings.color_depth = "8"
 SAIDA.mkdir(parents=True, exist_ok=True)
@@ -640,15 +821,17 @@ def pronto(caminho):
         f.seek(-12, 2)
         return f.read(12)[4:8] == b"IEND"
 
+QUADROS = [int(q) for q in opcao("--quadros", "").split(",") if q]
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
-    for q in range(ini, fim + 1):
+    for q in QUADROS or range(ini, fim + 1):
         posicionar_camera(camera_y(q))
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
         if pronto(cena.render.filepath):
             continue
         bpy.ops.render.render(write_still=True)
         print("QUADRO", q, flush=True)
+        print("MEMORIA", memoria(), flush=True)
 
 # ================================================================ camada da cachorra
 if MODO == "cao":
@@ -657,11 +840,13 @@ if MODO == "cao":
         if o.type not in {"LIGHT", "CAMERA"}:
             o.hide_render = True
     # o céu claro da névoa deixaria o pelo preto cinza-azulado: menos céu nesta camada, a contraluz do sol continua
-    fundo.inputs["Strength"].default_value = 0.35
-    PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 0.65})
+    fundo.inputs["Strength"].default_value = 0.18
+    ceu.energy = 0.25  # a luz de trás acende as copas; nas costas da cachorra, deixaria o pelo preto cinzento
+    sol.energy = 3.0  # debaixo do túnel de copas quase não chega sol direto: a 8, o topo da cabeça estourava
+    PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
-    FITA = material("Guia", **{"Base Color": (0.02, 0.02, 0.022, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})
+    FITA = material("Guia de corda", **{"Base Color": (0.13, 0.19, 0.15, 1), "Roughness": 0.9, "Specular IOR Level": 0.2})  # verde-sálvia escuro
 
     importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
     raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
@@ -716,7 +901,7 @@ if MODO == "cao":
         ys.append(round(float(vertices(corpo)[:, 1].mean()), 3))
     print("CENTRO Y NA CAMINHADA", ys, "tamanho", np.round(vertices(corpo).max(0) - vertices(corpo).min(0), 2), flush=True)
     # pastora encorpada: o lobo do arquivo é estreito
-    raiz.scale.x *= 1.35
+    raiz.scale.x *= 1.55
     bpy.context.view_layer.update()
 
     # ------------------------------------------------------------ pelo: fios curtos e densos, mais longos na cauda e no pescoço
@@ -729,8 +914,9 @@ if MODO == "cao":
         pelo = nos.new("ShaderNodeBsdfHairPrincipled")
         pelo.parametrization = "MELANIN"
         pelo.inputs["Melanin Redness"].default_value = 0.15
-        pelo.inputs["Roughness"].default_value = 0.5
-        pelo.inputs["Radial Roughness"].default_value = 0.5
+        pelo.inputs["Roughness"].default_value = 0.75  # espalha o reflexo do sol rasante nos fios da cabeça
+        pelo.inputs["Radial Roughness"].default_value = 0.6
+        pelo.inputs["IOR"].default_value = 1.45  # menos reflexo do céu claro: o preto continua preto
         pelo.inputs["Coat"].default_value = 0.0
         pelo.inputs["Random Color"].default_value = 0.1
         pelo.inputs["Random Roughness"].default_value = 0.15
@@ -738,7 +924,7 @@ if MODO == "cao":
         info = nos.new("ShaderNodeHairInfo")
         ponta = nos.new("ShaderNodeMapRange")
         ponta.inputs["From Min"].default_value, ponta.inputs["From Max"].default_value = 0.55, 1.0
-        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.07
+        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.015  # pontas quase pretas: contra o sol, clareavam
         lig.new(info.outputs["Intercept"], ponta.inputs["Value"])
         alt = nos.new("ShaderNodeAttribute")
         alt.attribute_name = "altura"
@@ -769,7 +955,8 @@ if MODO == "cao":
         # comprimento extra: cauda (pesos dos ossos da cauda) e pescoço mais peludos
         soma = None
         for nome_, peso_ in (("Tail_Bone_1_Wolf_Armature", 1.2), ("Tail_Bone_2_Wolf_Armature", 1.8), ("Tail_Bone_3_Wolf_Armature", 2.0),
-                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6)):
+                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6),
+                             ("Head_Wolf_Armature", -0.7)):  # a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
             at = n.new("GeometryNodeInputNamedAttribute")
             at.data_type = "FLOAT"
             at.inputs["Name"].default_value = nome_
@@ -813,7 +1000,7 @@ if MODO == "cao":
         linha = n.new("GeometryNodeCurvePrimitiveLine")
         linha.inputs["End"].default_value = (0, 0, comp)
         amostra = n.new("GeometryNodeResampleCurve")
-        amostra.inputs["Count"].default_value = 5
+        amostra.inputs["Count"].default_value = 6
         l.new(linha.outputs[0], amostra.inputs["Curve"])
         # a altura da raiz de cada fio (para o marrom das patas), guardada nos pontos
         pos0 = n.new("GeometryNodeInputPosition")
@@ -897,7 +1084,7 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    pelo = arvore_pelo(corpo, opcao("--densidade", 260000.0), 0.042, 0.0007, material_pelo())
+    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo())
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
     ossos = {b.name: b for b in armacao.pose.bones}
@@ -933,11 +1120,12 @@ if MODO == "cao":
         return origem + (alvo - origem).normalized() * dist
 
     # a mão segura a guia embaixo, à direita: no desktop, na borda de baixo do recorte 16:9; no celular, na base da tela
-    MAO = ponto_da_tela(0.6, 0.755 if opcao("--tela", "desktop") == "desktop" else 0.94, 0.8)
+    # a mão fica logo abaixo da base do quadro: a corda entra pela borda, sem ponta solta no ar
+    MAO = ponto_da_tela(0.62, 1.12, 0.8) if TELA == "desktop" else ponto_da_tela(0.66, 1.06, 0.8)
     curva = bpy.data.curves.new("Guia", "CURVE")
     curva.dimensions = "3D"
-    curva.extrude = 0.009  # fita de 18 mm
-    curva.bevel_depth = 0.0015
+    curva.bevel_depth = 0.005  # corda redonda de 1 cm
+    curva.bevel_resolution = 3
     sp = curva.splines.new("BEZIER")
     sp.bezier_points.add(1)
     guia = bpy.data.objects.new("Guia", curva)
@@ -953,8 +1141,8 @@ if MODO == "cao":
         p0, p1 = sp.bezier_points
         p0.co, p1.co = MAO, nuca
         p0.handle_left = MAO + (MAO - nuca) * 0.1
-        p0.handle_right = MAO.lerp(nuca, 0.35) + Vector((0, 0, -0.32))  # a guia folgada faz barriga
-        p1.handle_left = MAO.lerp(nuca, 0.78) + Vector((0, 0, -0.18))
+        p0.handle_right = MAO.lerp(nuca, 0.35) + Vector((0, 0, -0.08))  # a guia quase esticada sobe até a coleira
+        p1.handle_left = MAO.lerp(nuca, 0.78) + Vector((0, 0, -0.03))
         p1.handle_right = nuca + (nuca - MAO) * 0.1
 
     bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 10, 0))
@@ -976,7 +1164,7 @@ if MODO == "cao":
         bpy.context.view_layer.update()
         ys_pe.append((armacao.matrix_world @ pe.head).y)
     passo = max(ys_pe) - min(ys_pe)
-    tela = opcao("--tela", "desktop")
+    tela = TELA
     (SAIDA / f"camada-{tela}.json").write_text(json.dumps({
         "mao": [round(mao_tela.x, 4), round(1 - mao_tela.y, 4)], "passo_m": round(passo, 3), "quadros_andar": ANDAR[1] - ANDAR[0],
         "fundo_total": TOTAL, "q_entrada": Q_ENTRADA, "camera_y": [round(camera_y(q), 3) for q in range(TOTAL)],
@@ -985,8 +1173,16 @@ if MODO == "cao":
     # só a região da cachorra, da guia e da sombra é renderizada (o resto é transparente)
     cena.render.use_border = True
     cena.render.use_crop_to_border = False
-    cena.render.border_min_x, cena.render.border_max_x = 0.26, 0.74
-    cena.render.border_min_y, cena.render.border_max_y = 0.0, 0.64
+    cantos = []
+    for f in range(ANDAR[0], ANDAR[1], 4):
+        cena.frame_set(f)
+        bpy.context.view_layer.update()
+        cantos += [world_to_camera_view(cena, camobj, Vector(v)) for v in vertices(corpo)[::40]]
+    us = [c.x for c in cantos] + [mao_tela.x]
+    vs = [c.y for c in cantos]
+    cena.render.border_min_x, cena.render.border_max_x = max(0.0, min(us) - 0.06), min(1.0, max(us) + 0.06)
+    cena.render.border_min_y, cena.render.border_max_y = 0.0, min(1.0, max(vs) + 0.05)  # da base até acima das orelhas
+    print("BORDA", [round(v, 3) for v in (cena.render.border_min_x, cena.render.border_max_x, cena.render.border_max_y)], flush=True)
 
     trecho = args[2]
     if "--depurar" in args:  # guia vermelha e sem pelo: confere material e luz da camada
@@ -1003,6 +1199,7 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", f, flush=True)
+            print("MEMORIA", memoria(), flush=True)
     elif trecho == "parada":
         # parada: a pose em pé e a respiração (peito sobe e desce, cabeça acompanha de leve), laço de 24 quadros
         cena.frame_set(PARADA)
@@ -1022,13 +1219,15 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", k, flush=True)
+            print("MEMORIA", memoria(), flush=True)
     elif trecho == "entrada":
+        cena.render.use_border = False  # ela se afasta rumo à porta: sai da região medida com ela perto da câmera
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
         y_base = raiz.location.y
         ini = camera_y(Q_ENTRADA) + DIST_CAO
         porta = Y_LOJA + 0.9
         n_ = TOTAL - 1 - Q_ENTRADA
-        for q in range(Q_ENTRADA, TOTAL):
+        for q in QUADROS or range(Q_ENTRADA, TOTAL):
             t = (q - Q_ENTRADA) / n_
             cao_y = ini + (porta - ini) * t
             raiz.location.y = y_base + (cao_y - camera_y(q)) - DIST_CAO
@@ -1050,3 +1249,4 @@ if MODO == "cao":
                 continue
             bpy.ops.render.render(write_still=True)
             print("QUADRO", q, flush=True)
+            print("MEMORIA", memoria(), flush=True)

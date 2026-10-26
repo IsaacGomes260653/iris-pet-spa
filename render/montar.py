@@ -18,7 +18,7 @@ FAIXA = (1 - 9 / 16) / 2  # margem cortada de cada lado do quadrado (0,21875)
 # mapa de gradiente da marca: azul-acinzentado → lavanda → malva → pêssego → creme (o mesmo de scripts/gradear.py)
 MAPA_POS = np.array([0.0, 0.32, 0.58, 0.80, 1.0])
 MAPA_COR = np.array([[0x26, 0x30, 0x42], [0x66, 0x6E, 0x91], [0xC0, 0xA4, 0xB0], [0xF2, 0xC2, 0xA0], [0xFF, 0xF1, 0xE4]]) / 255
-FORCA, SATURACAO, PISO = 0.24, 0.86, 0.025  # botão de calibração da cor
+FORCA, SATURACAO, PISO = 0.14, 0.9, 0.008  # botão de calibração da cor (leve: os pretos continuam pretos)
 
 
 def gradear(rgb):

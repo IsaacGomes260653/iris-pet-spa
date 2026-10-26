@@ -26,6 +26,10 @@ export const cenas = [
 
 export const altCachorra = "Em primeira pessoa, a guia vai da mão até a coleira de uma cachorra preta que caminha à frente, de costas.";
 
+/** Texto alternativo da nova abertura (o passeio renderizado, atrás da flag NEXT_PUBLIC_NOVA_ABERTURA). */
+export const altPasseio =
+  "Em primeira pessoa, ao amanhecer: a mão segura a guia de uma pastora-alemã preta que caminha à frente, de costas, por uma alameda de jacarandás com névoa, rumo à loja Íris no fim do caminho.";
+
 export const cards = [
   { rotulo: "Banho — água morna", foto: banho, alt: "Cão preto de orelhas em pé tomando um jato de água de mangueira no gramado." },
   { rotulo: "Tosa — na tesoura", foto: tosa, alt: "Tosador apara com tesoura o pelo de um cão marrom-escuro no salão." },

@@ -38,7 +38,7 @@ SAIDA = Path(args[1]) if Path(args[1]).is_absolute() else RAIZ / args[1]  # o Bl
 AMOSTRAS = opcao("--amostras", 64)
 TELA = opcao("--tela", "desktop")
 RES = (1920, 1080) if TELA == "desktop" else (1080, 1920)
-TOTAL = opcao("--total", 150)  # quadros do fundo ao longo do caminho
+TOTAL = opcao("--total", 180)  # quadros do fundo ao longo do caminho
 
 
 def memoria():
@@ -62,7 +62,7 @@ def memoria():
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
 ALTURA_OLHO = 1.28
 Y_INICIO, Y_FIM = 0.0, 62.0  # a câmera anda de Y_INICIO a Y_FIM ao longo dos quadros do fundo
-Q_ENTRADA = 126  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
 DIST_CAO = 2.9  # a cachorra anda sempre à frente da câmera, a esta distância
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3

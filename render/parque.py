@@ -816,6 +816,14 @@ e_dir = estante("Estante da direita", 4.6)
 e_dir.location, e_dir.rotation_euler = (DENTRO_X - 0.38, Y_DENTRO0 + 6.0, 0.015), (0, 0, math.radians(-90))
 
 
+def cama(p, centro, raio, m):
+    """Cama redonda: borda fofa (rosca achatada) e almofada."""
+    for k in range(14):
+        a = 2 * math.pi * k / 14
+        p.esfera((centro[0] + raio * math.cos(a), centro[1] + raio * math.sin(a), centro[2] + raio * 0.22), raio * 0.32, m, 0.8)
+    p.cilindro((centro[0], centro[1], centro[2] + 0.04), raio * 0.85, 0.08, m, 24)
+
+
 # no alto da parede do fundo, a pata da marca em luz e "BANHO · TOSA · SPA"
 pata = Pecas()
 py_ = Y_DENTRO1 - 0.03
@@ -824,6 +832,48 @@ for k, (dx, dz) in enumerate(((-0.24, 0.2), (-0.09, 0.3), (0.09, 0.3), (0.24, 0.
     pata.esfera((-0.9 + dx, py_, 2.98 + dz), 0.075, LETRA, 1.25, (1, 0.12))
 pata.objeto("Pata em luz", suave=True)
 texto("BANHO · TOSA · SPA", "MartianMono.ttf", 0.11, (0.55, Y_DENTRO1 - 0.04, 3.0), 0.006)
+# pilhas de sacos de ração de 15 kg no chão, à direita do fundo (do outro lado do balcão)
+racao = Pecas()
+for k in range(5):
+    m = PALETA[(0, 2, 5, 0, 4)[k]]
+    for lado_ in (0, 1):
+        cz = 0.09 + 0.15 * k
+        centro = (2.25 + lado_ * 0.7 + loja_rng.uniform(-0.03, 0.03), Y_LOJA + 5.3 + loja_rng.uniform(-0.03, 0.03), cz)
+        racao.caixa(centro, (0.62, 0.44, 0.14), m)
+        racao.caixa((centro[0], centro[1] - 0.222, cz), (0.4, 0.004, 0.08), ROTULOS[k % 2])
+racao.objeto("Sacos de ração", bisel=0.03)
+# guias e coleiras penduradas num painel, na parede da esquerda perto da vitrine
+guias = Pecas()
+gx = -DENTRO_X + 0.03
+guias.caixa((gx, Y_DENTRO0 + 0.75, 1.7), (0.02, 1.1, 1.2), FUNDO_ESTANTE)
+for k in range(9):
+    gy = Y_DENTRO0 + 0.3 + k * 0.11
+    m = PALETA[(2, 4, 3, 0, 7, 5, 2, 4, 3)[k]]
+    guias.cilindro((gx + 0.04, gy, 2.2), 0.008, 0.06, METAL_ESCURO, 6)  # gancho
+    guias.caixa((gx + 0.05, gy, 1.85), (0.008, 0.022, 0.65), m)  # guia
+    guias.caixa((gx + 0.05, gy, 1.48), (0.03, 0.06, 0.06), m)  # alça
+guias.objeto("Guias", bisel=0.003)
+
+# mesa de camas e brinquedos no meio do salão
+mesa = Pecas()
+mx, my = 0.0, Y_LOJA + 3.6
+mesa.caixa((mx, my, 0.72), (1.8, 0.9, 0.05), CARVALHO)
+for dx in (-0.82, 0.82):
+    for dy in (-0.38, 0.38):
+        mesa.caixa((mx + dx, my + dy, 0.36), (0.05, 0.05, 0.7), CARVALHO)
+for k, dx in enumerate((-0.5, 0.0, 0.5)):
+    cama(mesa, (mx + dx, my + (0.1 if k == 1 else -0.12), 0.745), 0.22, PALETA[(3, 0, 7)[k]])
+for _ in range(9):  # bolinhas e brinquedos no tampo
+    mesa.esfera((mx + loja_rng.uniform(-0.8, 0.8), my + loja_rng.uniform(0.25, 0.4), 0.79), 0.04, PALETA[loja_rng.choice((2, 4, 3, 7))])
+mesa.objeto("Mesa de camas", bisel=0.004, suave=False)
+# balcão à esquerda, perto do fundo, com o caixa
+balcao = Pecas()
+bx, by = -2.6, Y_LOJA + 5.4
+balcao.caixa((bx, by, 0.5), (2.0, 0.6, 1.0), CARVALHO)
+balcao.caixa((bx, by, 1.02), (2.06, 0.66, 0.04), CREME)
+balcao.caixa((bx + 0.5, by + 0.05, 1.12), (0.3, 0.22, 0.16), METAL_ESCURO)
+balcao.objeto("Balcão", bisel=0.005)
+instancia(vaso, (bx - 0.7, by, 1.04), 0.5, 0.6)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

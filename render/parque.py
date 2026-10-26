@@ -547,11 +547,40 @@ SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Rough
 VIDRO = material("Vidro", **{"Base Color": (0.96, 0.98, 0.97, 1), "Transmission Weight": 1.0, "Roughness": 0.0, "IOR": 1.5})
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
 FORRO = material("Forro", **{"Base Color": (0.86, 0.8, 0.72, 1), "Roughness": 0.9})
+FUNDO_ESTANTE = material("Fundo da estante", **{"Base Color": (0.36, 0.45, 0.4, 1), "Roughness": 0.85})
 METAL_ESCURO = material("Metal escuro", **{"Base Color": (0.05, 0.06, 0.06, 1), "Metallic": 1.0, "Roughness": 0.35})
 LUZ_MORNA = material("Luz morna", **{"Base Color": (1, 0.85, 0.65, 1), "Emission Color": (1.0, 0.76, 0.5, 1), "Emission Strength": 12.0})
 COR_MORNA = (1.0, 0.78, 0.56)
 
 
+def madeira(nome, cor, escala=5.0):
+    """Madeira procedural: veios (ondas distorcidas) em dois tons."""
+    m = material(nome, Roughness=0.5)
+    arvore, liga = m.node_tree.nodes, m.node_tree.links
+    veio = arvore.new("ShaderNodeTexWave")
+    veio.bands_direction = "X"
+    veio.inputs["Scale"].default_value = escala
+    veio.inputs["Distortion"].default_value = 8.0
+    veio.inputs["Detail"].default_value = 4.0
+    tom = arvore.new("ShaderNodeMix")
+    tom.data_type = "RGBA"
+    tom.inputs[6].default_value = cor
+    tom.inputs[7].default_value = tuple(c * 0.68 for c in cor[:3]) + (1,)
+    liga.new(veio.outputs["Fac"], tom.inputs["Factor"])
+    liga.new(tom.outputs[2], arvore["Principled BSDF"].inputs["Base Color"])
+    return m
+
+
+CARVALHO = madeira("Carvalho", (0.42, 0.27, 0.15, 1))
+PISO = madeira("Piso de tábuas", (0.36, 0.23, 0.13, 1), 3.0)
+# embalagens nas cores da marca e de petshop: sálvia, creme, terracota, lilás, mostarda, marinho, branco, rosa, preto
+PALETA = [material(f"Produto {k}", **{"Base Color": (*c, 1), "Roughness": r}) for k, (c, r) in enumerate((
+    ((0.27, 0.36, 0.3), 0.5), ((0.86, 0.79, 0.66), 0.55), ((0.6, 0.27, 0.16), 0.5), ((0.5, 0.4, 0.66), 0.45),
+    ((0.82, 0.6, 0.18), 0.5), ((0.16, 0.24, 0.38), 0.4), ((0.92, 0.91, 0.88), 0.35), ((0.72, 0.42, 0.4), 0.5),
+    ((0.12, 0.12, 0.12), 0.3)))]
+CREME = PALETA[1]
+ROTULOS = [material(f"Rótulo {k}", **{"Base Color": (*c, 1), "Roughness": 0.35}) for k, c in enumerate(
+    ((0.95, 0.94, 0.9), (0.9, 0.84, 0.7), (0.1, 0.1, 0.1)))]
 
 
 class Pecas:
@@ -733,6 +762,58 @@ for lado in (-1, 1):
     o_ = bpy.data.objects.new("Arandela", luz_)
     o_.location = (lado * 1.0, Y_LOJA - 0.22, 2.12)
     cena.collection.objects.link(o_)
+
+# ---- o salão: piso de tábuas, estantes cheias, mesa de camas, balcão, pendentes e luz morna
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, (Y_DENTRO0 + Y_DENTRO1) / 2, 0.015))
+piso = bpy.context.active_object
+piso.scale = (2 * DENTRO_X, Y_DENTRO1 - Y_DENTRO0, 1)
+piso.data.materials.append(PISO)
+
+
+def estante(nome, comp, prof=0.38, alturas=(0.12, 0.55, 0.98, 1.41, 1.84, 2.27)):
+    """Estante de carvalho com fundo sálvia, de frente para -Y (local): produtos em grupos de 2 a 5 iguais."""
+    p = Pecas()
+    topo = alturas[-1] + 0.33
+    p.caixa((comp / 2, prof - 0.01, topo / 2), (comp, 0.02, topo), FUNDO_ESTANTE)
+    n_mod = max(1, round(comp / 1.1))
+    for k in range(n_mod + 1):
+        p.caixa((min(max(k * comp / n_mod, 0.02), comp - 0.02), prof / 2, topo / 2), (0.035, prof, topo), CARVALHO)
+    for k, z in enumerate(alturas):
+        p.caixa((comp / 2, prof / 2, z), (comp, prof, 0.03), CARVALHO)
+        vao = (alturas[k + 1] if k + 1 < len(alturas) else topo) - z - 0.06
+        x = 0.06
+        while x < comp - 0.15:
+            tipo = loja_rng.choice(3, p=(0.55, 0.2, 0.25)) if vao > 0.36 else loja_rng.choice((0, 2))
+            m = PALETA[loja_rng.integers(len(PALETA))]
+            rotulo = ROTULOS[loja_rng.integers(len(ROTULOS))]
+            if tipo == 1:  # saco de ração
+                w, h, d = loja_rng.uniform(0.26, 0.34), loja_rng.uniform(0.3, min(0.38, vao)), 0.15
+            elif tipo == 2:  # lata ou pote
+                w = loja_rng.uniform(0.08, 0.12)
+                h, d = loja_rng.uniform(0.08, min(0.16, vao)), w
+            else:  # caixa: mais larga que alta (embalagem, não livro)
+                w, h, d = loja_rng.uniform(0.14, 0.28), loja_rng.uniform(0.1, min(0.24, vao)), loja_rng.uniform(0.1, prof - 0.08)
+            for _ in range(loja_rng.integers(2, 6)):
+                if x + w > comp - 0.06:
+                    break
+                centro = (x + w / 2, 0.04 + d / 2, z + 0.015 + h / 2)
+                if tipo == 2:
+                    p.cilindro(centro, w / 2, h, m, 14)
+                    p.cilindro(centro, w / 2 + 0.002, h * 0.45, rotulo, 14)  # cinta do rótulo
+                else:
+                    p.caixa(centro, (w, d, h), m)
+                    p.caixa((centro[0], 0.038, centro[2] + h * 0.08), (w * 0.72, 0.004, h * 0.42), rotulo)  # rótulo na frente
+                x += w + 0.01
+            x += loja_rng.uniform(0.03, 0.12)
+    return p.objeto(nome, bisel=0.005)
+
+
+fundo_estante = estante("Estante do fundo", 2 * DENTRO_X - 0.1)
+fundo_estante.location = (-DENTRO_X + 0.05, Y_DENTRO1 - 0.38, 0.015)
+e_esq = estante("Estante da esquerda", 4.6)
+e_esq.location, e_esq.rotation_euler = (-DENTRO_X + 0.38, Y_DENTRO0 + 1.4, 0.015), (0, 0, math.radians(90))
+e_dir = estante("Estante da direita", 4.6)
+e_dir.location, e_dir.rotation_euler = (DENTRO_X - 0.38, Y_DENTRO0 + 6.0, 0.015), (0, 0, math.radians(-90))
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

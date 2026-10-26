@@ -298,7 +298,7 @@ jardineira = preparar("planter_box_01")
 for lado in (-1, 1):
     y = -8.0 + (3.0 if lado > 0 else 0.0)
     while y < Y_LOJA - 8:
-        x = lado * rng.uniform(4.6, 5.4)
+        x = lado * rng.uniform(5.4, 6.2)  # as copas quase se tocam: fica uma faixa de céu sobre o caminho
         instancia(jacaranda, (x, y, 0), rng.uniform(0, 2 * math.pi), rng.uniform(0.56, 0.66))
         y += rng.uniform(7.5, 9.0)
 # segunda fileira, mais longe, só para encher a névoa

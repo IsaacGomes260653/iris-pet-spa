@@ -991,7 +991,7 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    pelo = arvore_pelo(corpo, opcao("--densidade", 90000.0), 0.05, opcao("--raio-pelo", 0.0011), material_pelo())
+    pelo = arvore_pelo(corpo, opcao("--densidade", 110000.0), 0.04, opcao("--raio-pelo", 0.0011), material_pelo())
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
     ossos = {b.name: b for b in armacao.pose.bones}

@@ -894,6 +894,22 @@ for y_ in (Y_LOJA + 2.4, Y_LOJA + 5.2):
     o_ = bpy.data.objects.new("Teto", painel)
     o_.location = (0, y_, PE_DIREITO - 0.05)
     cena.collection.objects.link(o_)
+# vitrines: tablado creme com cama, pilha de caixas, brinquedo e planta, e um foco de cima
+for x, larg, peit in VAOS[1:]:
+    vit = Pecas()
+    vy = Y_DENTRO0 + 0.5
+    vit.caixa((x, vy, 0.25), (larg - 0.2, 0.9, 0.5), CREME)
+    cama(vit, (x - 0.55 * math.copysign(1, x), vy, 0.5), 0.3, PALETA[0 if x < 0 else 3])
+    for k in range(3):  # pilha de caixas
+        vit.caixa((x + 0.45 * math.copysign(1, x), vy + 0.05, 0.5 + 0.11 + 0.22 * k), (0.34 - 0.04 * k, 0.26, 0.22), PALETA[(2, 1, 5)[k]])
+    vit.esfera((x - 0.1 * math.copysign(1, x), vy - 0.2, 0.56), 0.06, PALETA[4])  # bolinha
+    vit.objeto("Vitrine", bisel=0.004)
+    instancia(vaso, (x + 0.95 * math.copysign(1, x), vy + 0.15, 0.5), loja_rng.uniform(0, 6.28), 0.8)
+    foco_ = bpy.data.lights.new("Foco da vitrine", "SPOT")
+    foco_.energy, foco_.color, foco_.spot_size, foco_.spot_blend = 110.0, COR_MORNA, math.radians(70), 0.6
+    o_ = bpy.data.objects.new("Foco da vitrine", foco_)
+    o_.location = (x, vy - 0.1, PE_DIREITO - 0.1)
+    cena.collection.objects.link(o_)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

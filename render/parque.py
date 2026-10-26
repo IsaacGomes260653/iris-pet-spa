@@ -325,10 +325,19 @@ def petalas():
     soma = n.new("ShaderNodeMath")
     l.new(ruido.outputs["Fac"], soma.inputs[0])
     l.new(sob_copa.outputs["Result"], soma.inputs[1])
+    # sem corte seco: a soma vira a chance de cada pétala ficar, então a densidade varia aos poucos (o corte fazia
+    # manchas azuladas de borda dura no caminho)
+    chance = n.new("ShaderNodeMapRange")
+    chance.inputs["From Min"].default_value, chance.inputs["From Max"].default_value = 0.3, 0.9
+    chance.inputs["To Min"].default_value, chance.inputs["To Max"].default_value = 0.12, 0.75
+    l.new(soma.outputs[0], chance.inputs["Value"])
+    sorteio = n.new("FunctionNodeRandomValue")
+    sorteio.data_type = "FLOAT"
+    sorteio.inputs["Seed"].default_value = 3
     pouco = n.new("ShaderNodeMath")
-    pouco.operation = "LESS_THAN"
-    pouco.inputs[1].default_value = 0.6
-    l.new(soma.outputs[0], pouco.inputs[0])
+    pouco.operation = "GREATER_THAN"
+    l.new(sorteio.outputs["Value"], pouco.inputs[0])
+    l.new(chance.outputs["Result"], pouco.inputs[1])
     apaga = n.new("GeometryNodeDeleteGeometry")
     apaga.domain = "POINT"
     l.new(pts.outputs["Points"], apaga.inputs["Geometry"])
@@ -745,7 +754,6 @@ else:
     INCLINA = math.radians(7)
 cam.dof.use_dof = True
 cam.dof.aperture_fstop = 4.0
-cam.dof.focus_distance = foco(0)
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
 cena.camera = camobj
@@ -779,6 +787,9 @@ def foco(q):
 def posicionar_camera(y):
     camobj.location = (0.0, y, ALTURA_OLHO)
     camobj.rotation_euler = (math.pi / 2 - INCLINA, 0.0, 0.0)  # +Y, um pouco para baixo
+
+
+cam.dof.focus_distance = foco(0)
 
 
 # ---------------------------------------------------------------- render

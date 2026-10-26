@@ -1042,8 +1042,16 @@ if MODO == "cao":
     # só a região da cachorra, da guia e da sombra é renderizada (o resto é transparente)
     cena.render.use_border = True
     cena.render.use_crop_to_border = False
-    cena.render.border_min_x, cena.render.border_max_x = 0.26, 0.74
-    cena.render.border_min_y, cena.render.border_max_y = 0.0, 0.64
+    cantos = []
+    for f in range(ANDAR[0], ANDAR[1], 4):
+        cena.frame_set(f)
+        bpy.context.view_layer.update()
+        cantos += [world_to_camera_view(cena, camobj, Vector(v)) for v in vertices(corpo)[::40]]
+    us = [c.x for c in cantos] + [mao_tela.x]
+    vs = [c.y for c in cantos]
+    cena.render.border_min_x, cena.render.border_max_x = max(0.0, min(us) - 0.06), min(1.0, max(us) + 0.06)
+    cena.render.border_min_y, cena.render.border_max_y = 0.0, min(1.0, max(vs) + 0.05)  # da base até acima das orelhas
+    print("BORDA", [round(v, 3) for v in (cena.render.border_min_x, cena.render.border_max_x, cena.render.border_max_y)], flush=True)
 
     trecho = args[2]
     if "--depurar" in args:  # guia vermelha e sem pelo: confere material e luz da camada

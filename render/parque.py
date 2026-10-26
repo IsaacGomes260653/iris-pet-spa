@@ -66,7 +66,8 @@ def memoria():
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
 ALTURA_OLHO = 1.1  # um pouco acima da cachorra
 Y_INICIO, Y_FIM = 0.0, 60.0  # a câmera anda de Y_INICIO a Y_FIM (para a 14 m da fachada, com as copas e o céu em volta)
-Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+Q_ENTRADA = round(TOTAL * 0.78)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+# (com a câmera parando a 14 m, a chegada precisa de 22% dos quadros para ela ir só ~1,4× mais rápida que a câmera)
 DIST_CAO = 1.45  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3

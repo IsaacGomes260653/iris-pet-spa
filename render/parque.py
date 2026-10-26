@@ -576,7 +576,7 @@ def interior(x, y, base, larg, alt):
     morno.inputs[7].default_value = (1.0, 0.82, 0.62, 1)
     lig.new(tex.outputs["Color"], morno.inputs[6])
     em = nos.new("ShaderNodeEmission")
-    em.inputs["Strength"].default_value = 3.6
+    em.inputs["Strength"].default_value = 1.5  # loja acesa vista pelo vidro, sem estourar
     lig.new(morno.outputs[2], em.inputs["Color"])
     lig.new(em.outputs[0], saida.inputs["Surface"])
     o.data.materials.append(m)

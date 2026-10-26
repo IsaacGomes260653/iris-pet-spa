@@ -874,6 +874,26 @@ balcao.caixa((bx, by, 1.02), (2.06, 0.66, 0.04), CREME)
 balcao.caixa((bx + 0.5, by + 0.05, 1.12), (0.3, 0.22, 0.16), METAL_ESCURO)
 balcao.objeto("Balcão", bisel=0.005)
 instancia(vaso, (bx - 0.7, by, 1.04), 0.5, 0.6)
+# pendentes sobre a mesa: fio, cúpula sálvia e lâmpada acesa (cada um com uma luz pontual dentro)
+pend = Pecas()
+for dx in (-0.6, 0.0, 0.6):
+    pend.cilindro((mx + dx, my, (PE_DIREITO + 1.9) / 2 + 0.1), 0.004, PE_DIREITO - 2.1, METAL_ESCURO, 6)
+    pend.cone((mx + dx, my, 1.98), 0.2, 0.05, 0.2, SALVIA, 24, tampa=False)
+    pend.esfera((mx + dx, my, 1.9), 0.05, LUZ_MORNA)
+    luz_ = bpy.data.lights.new("Pendente", "POINT")
+    luz_.energy, luz_.color, luz_.shadow_soft_size = 30.0, COR_MORNA, 0.04
+    o_ = bpy.data.objects.new("Pendente", luz_)
+    o_.location = (mx + dx, my, 1.86)
+    cena.collection.objects.link(o_)
+pend.objeto("Pendentes", suave=True)
+# luz do teto: dois painéis mornos, e um foco em cada vitrine
+for y_ in (Y_LOJA + 2.4, Y_LOJA + 5.2):
+    painel = bpy.data.lights.new("Teto", "AREA")
+    painel.shape, painel.size, painel.size_y = "RECTANGLE", 3.2, 1.0
+    painel.energy, painel.color = 170.0, COR_MORNA  # aceso sem desbotar as embalagens
+    o_ = bpy.data.objects.new("Teto", painel)
+    o_.location = (0, y_, PE_DIREITO - 0.05)
+    cena.collection.objects.link(o_)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

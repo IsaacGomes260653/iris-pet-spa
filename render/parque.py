@@ -294,13 +294,13 @@ def florada(col):
             origem = bsdf.inputs["Base Color"].links[0].from_socket
             matiz = nos.new("ShaderNodeHueSaturation")
             matiz.inputs["Hue"].default_value = 0.98  # verde → lilás
-            matiz.inputs["Saturation"].default_value = 0.85
-            matiz.inputs["Value"].default_value = 1.9
+            matiz.inputs["Saturation"].default_value = 1.05
+            matiz.inputs["Value"].default_value = 2.6
             lig.new(origem, matiz.inputs["Color"])
             geo = nos.new("ShaderNodeNewGeometry")
             corte = nos.new("ShaderNodeMath")
             corte.operation = "GREATER_THAN"
-            corte.inputs[1].default_value = 0.38
+            corte.inputs[1].default_value = 0.22
             lig.new(geo.outputs["Random Per Island"], corte.inputs[0])
             mistura = nos.new("ShaderNodeMix")
             mistura.data_type = "RGBA"
@@ -312,7 +312,7 @@ def florada(col):
             transl = nos.new("ShaderNodeBsdfTranslucent")
             lig.new(mistura.outputs["Result"], transl.inputs["Color"])
             junta = nos.new("ShaderNodeMixShader")
-            junta.inputs["Fac"].default_value = 0.4
+            junta.inputs["Fac"].default_value = 0.55
             lig.new(bsdf.outputs[0], junta.inputs[1])
             lig.new(transl.outputs[0], junta.inputs[2])
             lig.new(junta.outputs[0], saida.inputs["Surface"])

@@ -64,13 +64,13 @@ def memoria():
         return "indisponível"
 
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
-ALTURA_OLHO = 1.28
+ALTURA_OLHO = 1.1  # um pouco acima da cachorra
 Y_INICIO, Y_FIM = 0.0, 62.0  # a câmera anda de Y_INICIO a Y_FIM ao longo dos quadros do fundo
 Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
 DIST_CAO = 1.45  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3
-INCLINA = math.radians(10)  # a câmera olha um pouco para baixo
+INCLINA = math.radians(3)  # quase reta: o horizonte fica a ~40% da altura e sobra céu para as frases
 
 cena = bpy.context.scene
 for o in list(bpy.data.objects):
@@ -657,13 +657,13 @@ cam = bpy.data.cameras.new("Olhar")
 cam.sensor_width = 36
 if TELA == "desktop":
     cam.sensor_fit = "HORIZONTAL"
-    cam.lens = 23.5  # ~75° na horizontal
+    cam.lens = 35  # ~54° na horizontal: a cachorra entra cortada na base, como a proa
 else:
     cam.sensor_fit = "VERTICAL"
-    cam.lens = 24.5  # ~72° na vertical: a cachorra fica maior na tela estreita
-    INCLINA = math.radians(13)
+    cam.lens = 34  # ~56° na vertical
+    INCLINA = math.radians(7)
 cam.dof.use_dof = True
-cam.dof.aperture_fstop = 3.2
+cam.dof.aperture_fstop = 4.0
 cam.dof.focus_distance = math.hypot(DIST_CAO, ALTURA_OLHO - 0.5)
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)

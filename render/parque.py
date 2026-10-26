@@ -749,7 +749,7 @@ if MODO == "cao":
         if o.type not in {"LIGHT", "CAMERA"}:
             o.hide_render = True
     # o céu claro da névoa deixaria o pelo preto cinza-azulado: menos céu nesta camada, a contraluz do sol continua
-    fundo.inputs["Strength"].default_value = 0.35
+    fundo.inputs["Strength"].default_value = 0.18
     ceu.energy = 0.25  # a luz de trás acende as copas; nas costas da cachorra, deixaria o pelo preto cinzento
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 0.65})
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
@@ -822,8 +822,9 @@ if MODO == "cao":
         pelo = nos.new("ShaderNodeBsdfHairPrincipled")
         pelo.parametrization = "MELANIN"
         pelo.inputs["Melanin Redness"].default_value = 0.15
-        pelo.inputs["Roughness"].default_value = 0.38
-        pelo.inputs["Radial Roughness"].default_value = 0.5
+        pelo.inputs["Roughness"].default_value = 0.75  # espalha o reflexo do sol rasante nos fios da cabeça
+        pelo.inputs["Radial Roughness"].default_value = 0.6
+        pelo.inputs["IOR"].default_value = 1.45  # menos reflexo do céu claro: o preto continua preto
         pelo.inputs["Coat"].default_value = 0.0
         pelo.inputs["Random Color"].default_value = 0.1
         pelo.inputs["Random Roughness"].default_value = 0.15

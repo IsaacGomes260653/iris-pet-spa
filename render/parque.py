@@ -849,6 +849,10 @@ def pronto(caminho):
         return f.read(12)[4:8] == b"IEND"
 
 QUADROS = [int(q) for q in opcao("--quadros", "").split(",") if q]
+REGIAO = [float(v) for v in opcao("--regiao", "").split(",") if v]  # testes: só um recorte (x0,x1,y0,y1 em 0..1)
+if REGIAO:
+    cena.render.use_border = True
+    cena.render.border_min_x, cena.render.border_max_x, cena.render.border_min_y, cena.render.border_max_y = REGIAO
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
     for q in QUADROS or range(ini, fim + 1):

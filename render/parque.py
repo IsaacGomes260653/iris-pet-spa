@@ -67,7 +67,7 @@ def memoria():
 ALTURA_OLHO = 1.28
 Y_INICIO, Y_FIM = 0.0, 62.0  # a câmera anda de Y_INICIO a Y_FIM ao longo dos quadros do fundo
 Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
-DIST_CAO = 1.8  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
+DIST_CAO = 1.45  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3
 INCLINA = math.radians(10)  # a câmera olha um pouco para baixo

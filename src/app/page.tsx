@@ -4,11 +4,11 @@ import { BanhoTosa } from "@/components/banho/BanhoTosa";
 import { BarraProgresso } from "@/components/BarraProgresso";
 import { Lojas } from "@/components/lojas/Lojas";
 import { Agendar } from "@/components/secoes/Agendar";
+import { AntesDepois } from "@/components/secoes/AntesDepois";
 import { Clientes } from "@/components/secoes/Clientes";
 import { Especialistas } from "@/components/secoes/Especialistas";
 import { Guia } from "@/components/secoes/Guia";
 import { Pacotes } from "@/components/secoes/Pacotes";
-import { RaioX } from "@/components/secoes/RaioX";
 import { Rede } from "@/components/secoes/Rede";
 import { Rodape } from "@/components/secoes/Rodape";
 import { Passeio } from "@/components/passeio/Passeio";
@@ -42,7 +42,7 @@ export default function Home() {
         <Pacotes />
       </Suspense>
       <Suspense>
-        <RaioX />
+        <AntesDepois />
       </Suspense>
       <Suspense>
         <Rede />

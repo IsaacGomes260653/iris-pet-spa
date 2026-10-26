@@ -4,13 +4,15 @@
 
 Site de uma rede de petshop (banho, tosa, spa, loja e Táxi Dog) contado como um passeio ao amanhecer em primeira pessoa, com rolagem cinematográfica. A experiência de rolagem foi inspirada no site da Seasats; todo o código, os textos e a mídia são próprios ou de fontes com licença livre.
 
+![Seção das lojas do Íris Pet Spa: o título "Patinha após patinha" ao lado de um globo 3D com as unidades no Brasil, rotas do Táxi Dog e filtros em pílula](.github/screenshot.png)
+
 ## O que tem
 
 1. **O passeio:** em primeira pessoa, a mão segura a guia e uma cachorra preta anda à frente enquanto o mundo troca entre ponte, alameda, trilha e gramado com neblina. Frases e cards de serviços passam pela câmera; no fim ela entra na loja Íris.
 2. **Banho e tosa:** seção fixada em que cada vídeo (banho, tosa e finalização) cresce até a tela inteira, com os detalhes de cada passo, indicador e botão de pausa.
 3. **Lojas:** globo 3D (React Three Fiber, textura NASA Blue Marble) com 62 unidades fictícias em cidades reais, filtros em pílula, rotas do Táxi Dog, card da unidade e uma lista acessível com busca.
 4. **Pacotes:** comparativo em ficha técnica.
-5. **Raio-X do cuidado:** pontos na foto que mudam conforme o pacote, e uma chave que revela a "radiografia".
+5. **Antes e depois:** um slider (arrastável e acessível por teclado) compara fotos reais do mesmo cão antes e depois de cada pacote, com a lista do que foi feito acendendo conforme o depois aparece.
 6. **A rede em números:** contadores animados.
 7. **Especialistas:** carrossel arrastável.
 8. **Clientes e dúvidas:** depoimentos e perguntas frequentes.
@@ -69,3 +71,7 @@ As branches de experimento ficam publicadas para mostrar o caminho até a abertu
 ## Créditos
 
 Fotos, vídeos, textura e som: ver [`CREDITS.md`](CREDITS.md). Fontes: Literata, Hanken Grotesk e Martian Mono (SIL Open Font License). Ícones: Phosphor (MIT).
+
+## Licença
+
+O código está sob a licença [MIT](LICENSE). Fotos, vídeos, textura e som não entram nela: cada arquivo segue a licença da sua origem, listada em [`CREDITS.md`](CREDITS.md).

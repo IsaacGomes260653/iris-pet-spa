@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Botao, Etiqueta, Logo } from "@/components/ui";
-import { altPasseio, cards, pontosPasseio } from "@/content/midia";
+import { cards, cenas } from "@/content/midia";
 
 export const metadata: Metadata = {
   title: "Direção de arte — Íris Pet Spa",
@@ -57,7 +57,7 @@ const segmentos = [
   { nome: "Início e o passeio", cor: "bg-seg-passeio", peso: 6 },
   { nome: "Banho e tosa", cor: "bg-seg-banho", peso: 4 },
   { nome: "Lojas", cor: "bg-seg-lojas", peso: 2 },
-  { nome: "Pacotes e Raio-X", cor: "bg-seg-pacotes", peso: 4 },
+  { nome: "Pacotes e antes e depois", cor: "bg-seg-pacotes", peso: 4 },
   { nome: "A rede", cor: "bg-seg-rede", peso: 1 },
   { nome: "Especialistas e clientes", cor: "bg-seg-pessoas", peso: 2 },
   { nome: "Agendar", cor: "bg-seg-agendar", peso: 1 },
@@ -74,14 +74,14 @@ export default function Estilo() {
         <div className={conteudo}>
           <h1 className="font-serifa text-titulo font-extralight">Direção de arte</h1>
           <p className="mt-6 max-w-[52ch] text-lead">
-            Um único passeio ao amanhecer, por uma alameda de jacarandás até a porta da loja, renderizado quadro a quadro e
-            graduado com a mesma cor de manhã. O fundo da página muda de tema a cada seção.
+            Um único passeio ao amanhecer, do parque até a porta da loja. As fotos passam pela mesma correção de cor e o
+            fundo da página muda de tema a cada seção.
           </p>
-          <h2 id="t-passeio" className="sr-only">Quadros do passeio</h2>
+          <h2 id="t-passeio" className="sr-only">Fotos do passeio</h2>
           <ol className="mt-16 grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
-            {pontosPasseio.map((c, i) => (
+            {cenas.map((c, i) => (
               <li key={c.nome} className="relative aspect-[3/4] overflow-hidden bg-ardosia">
-                <Image src={`/passeio/celular/${c.arquivo}.webp`} alt={altPasseio} fill sizes="(min-width: 768px) 20vw, 50vw" className="object-cover" />
+                <Image src={c.foto} alt={c.alt} fill sizes="(min-width: 768px) 20vw, 50vw" className="object-cover" />
                 <Etiqueta className="absolute top-0 right-0">
                   {String(i + 1).padStart(2, "0")} · {c.nome}
                 </Etiqueta>

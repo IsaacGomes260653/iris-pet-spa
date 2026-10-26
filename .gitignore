@@ -53,3 +53,6 @@ midia-gerada/
 
 # capturas de tela das fases (ficam fora do Git)
 capturas/
+
+# cache do Python (scripts que importam render/montar.py)
+__pycache__/

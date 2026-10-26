@@ -1,3 +1,8 @@
+import ponte from "@/assets/passeio/fundo-1-ponte.jpg";
+import alameda from "@/assets/passeio/fundo-2-alameda.jpg";
+import trilha from "@/assets/passeio/fundo-3-trilha.jpg";
+import gramado from "@/assets/passeio/fundo-4-gramado.jpg";
+import loja from "@/assets/passeio/fundo-5-loja.jpg";
 export { default as cachorra } from "@/assets/passeio/cachorra.png";
 export { default as mao } from "@/assets/passeio/mao.png";
 import banho from "@/assets/cards/card-banho.jpg";
@@ -10,15 +15,18 @@ import camas from "@/assets/cards/card-camas.jpg";
 import coleiras from "@/assets/cards/card-coleiras.jpg";
 import taxiDog from "@/assets/cards/card-taxi-dog.jpg";
 
-/** Pontos do passeio renderizado (imagens paradas em public/passeio): um por frase e a chegada. */
-export const pontosPasseio = [
-  { nome: "Alameda", arquivo: "chave-0" },
-  { nome: "Raios de sol", arquivo: "chave-1" },
-  { nome: "Jacarandás", arquivo: "chave-2" },
-  { nome: "Rumo à loja", arquivo: "chave-3" },
-  { nome: "Porta da loja Íris", arquivo: "chave-chegada" },
+/** Cenários do passeio, em ordem (só o fundo; a cachorra é uma camada fixa por cima). `foco` é o object-position. */
+export const cenas = [
+  { nome: "Ponte de madeira", foto: ponte, foco: "50% 60%", alt: "Ponte de madeira estreita atravessando a mata, com o corrimão levando ao fundo." },
+  { nome: "Alameda florida", foto: alameda, foco: "50% 55%", alt: "Caminho de terra sob um túnel de árvores floridas de rosa." },
+  { nome: "Trilha", foto: trilha, foco: "50% 62%", alt: "Estrada de terra entre árvores altas, com névoa ao fundo." },
+  { nome: "Gramado com neblina", foto: gramado, foco: "50% 58%", alt: "Trilha num gramado com neblina da manhã e árvores ao longe." },
+  { nome: "Porta da loja Íris", foto: loja, foco: "50% 72%", alt: "Do outro lado da rua, a fachada branca da loja Íris Pet Spa, com toldo verde-sálvia, vitrines e dois bancos na calçada." },
 ];
 
+export const altCachorra = "Em primeira pessoa, a guia vai da mão até a coleira de uma cachorra preta que caminha à frente, de costas.";
+
+/** Texto alternativo da nova abertura (o passeio renderizado, atrás da flag NEXT_PUBLIC_NOVA_ABERTURA). */
 export const altPasseio =
   "Em primeira pessoa, ao amanhecer: a mão segura a guia de uma pastora-alemã preta que caminha à frente, de costas, por uma alameda de jacarandás com névoa, rumo à loja Íris no fim do caminho.";
 

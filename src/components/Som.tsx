@@ -1,12 +1,26 @@
 "use client";
 
 import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Som ambiente de parque (passarinhos de manhã). Desligado por padrão: só toca depois do clique. */
 export function Som() {
   const audio = useRef<HTMLAudioElement>(null);
   const [ligado, setLigado] = useState(false);
+  // descendo a página o botão se recolhe (não cobre as etiquetas das fotos); subindo, ele volta
+  const [recolhido, setRecolhido] = useState(false);
+
+  useEffect(() => {
+    let antes = scrollY;
+    const rolar = () => {
+      const y = scrollY;
+      if (Math.abs(y - antes) < 8) return;
+      setRecolhido(y > antes && y > 200);
+      antes = y;
+    };
+    addEventListener("scroll", rolar, { passive: true });
+    return () => removeEventListener("scroll", rolar);
+  }, []);
 
   const alternar = async () => {
     const a = audio.current;
@@ -42,7 +56,7 @@ export function Som() {
         onClick={alternar}
         aria-pressed={ligado}
         aria-label="Som ambiente de parque"
-        className="fixed top-5 right-9 z-30 inline-flex min-h-9 items-center gap-2 rounded-md bg-papel/90 px-3 font-mono text-[0.75rem] uppercase text-tinta [font-stretch:87.5%] shadow-[0_6px_24px_-12px_rgb(15_47_49/0.45)] backdrop-blur-sm transition-colors hover:bg-papel max-md:right-6 md:top-6 md:right-12"
+        className={`fixed top-5 right-9 z-30 inline-flex min-h-9 items-center gap-2 rounded-md bg-papel/90 px-3 font-mono text-[0.75rem] uppercase text-tinta [font-stretch:87.5%] shadow-[0_6px_24px_-12px_rgb(15_47_49/0.45)] backdrop-blur-sm transition-[background-color,translate,opacity] duration-300 ease-saida hover:bg-papel focus-visible:translate-y-0 focus-visible:opacity-100 max-md:right-6 md:top-6 md:right-12 ${recolhido ? "pointer-events-none -translate-y-[160%] opacity-0" : ""}`}
       >
         <Icone size={15} weight={ligado ? "fill" : "regular"} aria-hidden />
         Som

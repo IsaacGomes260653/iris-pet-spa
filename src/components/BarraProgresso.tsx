@@ -8,7 +8,7 @@ const trechos = [
   { id: "banho-e-tosa", nome: "Banho e tosa", cor: "bg-seg-banho" },
   { id: "lojas", nome: "Lojas", cor: "bg-seg-lojas" },
   { id: "pacotes", nome: "Pacotes", cor: "bg-seg-pacotes" },
-  { id: "raio-x", nome: "Raio-X", cor: "bg-seg-rede" },
+  { id: "antes-e-depois", nome: "Antes e depois", cor: "bg-seg-rede" },
   { id: "rede", nome: "A rede", cor: "bg-seg-rede" },
   { id: "especialistas", nome: "Especialistas", cor: "bg-seg-pessoas" },
   { id: "clientes", nome: "Clientes", cor: "bg-seg-pessoas" },

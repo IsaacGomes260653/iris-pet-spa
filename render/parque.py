@@ -293,13 +293,14 @@ dente = preparar("dandelion_01")
 vaso = preparar("potted_plant_02")
 jardineira = preparar("planter_box_01")
 
-# jacarandás dos dois lados, formando um túnel de copas; mais densos perto da loja não (a loja aparece entre eles)
+# jacarandás dos dois lados, perto do caminho e próximos entre si: as copas se encontram por cima (um túnel lilás);
+# perto da loja a fileira para, e a fachada aparece no fim do túnel
 for lado in (-1, 1):
-    y = -10.0 + (3.5 if lado > 0 else 0.0)
-    while y < Y_LOJA - 7:
-        x = lado * rng.uniform(5.4, 6.6)
-        instancia(jacaranda, (x, y, 0), rng.uniform(0, 2 * math.pi), rng.uniform(0.5, 0.6))
-        y += rng.uniform(9.0, 11.0)
+    y = -8.0 + (3.0 if lado > 0 else 0.0)
+    while y < Y_LOJA - 8:
+        x = lado * rng.uniform(4.6, 5.4)
+        instancia(jacaranda, (x, y, 0), rng.uniform(0, 2 * math.pi), rng.uniform(0.56, 0.66))
+        y += rng.uniform(7.5, 9.0)
 # segunda fileira, mais longe, só para encher a névoa
 for lado in (-1, 1):
     for y in np.arange(-6, Y_LOJA + 20, 13.0):

@@ -543,7 +543,7 @@ for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
 antes_da_loja = set(bpy.data.objects)
 REBOCO = material("Reboco creme", **{"Base Color": (0.86, 0.79, 0.67, 1), "Roughness": 0.85})
 SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
-VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.05})
+VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.45})  # reflete o céu e as copas
 INTERIOR = material("Interior aceso", **{"Base Color": (1, 0.85, 0.7, 1), "Emission Color": (1.0, 0.83, 0.62, 1), "Emission Strength": 9.0})
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
 TOLDO = material("Toldo", **{"Base Color": (0.42, 0.53, 0.46, 1), "Roughness": 0.8, "Sheen Weight": 0.4})

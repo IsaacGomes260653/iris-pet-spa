@@ -448,14 +448,14 @@ for i, lado in enumerate((gramado_e, gramado_d)):
 
 # postes de luz de praça: haste verde escura e lanterna morna (ainda acesa ao amanhecer)
 POSTE = material("Poste", **{"Base Color": (0.05, 0.08, 0.07, 1), "Metallic": 0.6, "Roughness": 0.45})
-LANTERNA = material("Lanterna", **{"Base Color": (1, 0.8, 0.55, 1), "Emission Color": (1.0, 0.72, 0.45, 1), "Emission Strength": 6.0})
+LANTERNA = material("Lanterna", **{"Base Color": (1, 0.8, 0.55, 1), "Emission Color": (1.0, 0.72, 0.45, 1), "Emission Strength": 2.2})
 for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
     lado = 1 if k % 2 == 0 else -1
-    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.05, depth=3.4, location=(lado * 1.75, y, 1.7))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.05, depth=3.4, location=(lado * 3.2, y, 1.7))
     bpy.context.active_object.data.materials.append(POSTE)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.13, depth=0.36, location=(lado * 1.75, y, 3.5))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.13, depth=0.36, location=(lado * 3.2, y, 3.5))
     bpy.context.active_object.data.materials.append(LANTERNA)
-    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.2, depth=0.18, location=(lado * 1.75, y, 3.76))
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.2, depth=0.18, location=(lado * 3.2, y, 3.76))
     bpy.context.active_object.data.materials.append(POSTE)
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda

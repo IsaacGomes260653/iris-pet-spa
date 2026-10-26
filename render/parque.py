@@ -1210,9 +1210,13 @@ if MODO == "cao":
     cena.frame_set(ANDAR[0])
 
     def vertices(obj):
+        """Vértices deformados, no mundo, lidos de uma vez (um modelo profissional tem centenas de milhares)."""
         bpy.context.view_layer.update()
         ev = obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
-        return np.array([obj.matrix_world @ v.co for v in ev.data.vertices])
+        co = np.empty(len(ev.data.vertices) * 3, dtype=np.float32)
+        ev.data.vertices.foreach_get("co", co)
+        m = np.array(obj.matrix_world)
+        return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
 
     # focinho para +Y (de costas para a câmera)
     pts, oc = vertices(corpo), vertices(olhos).mean(0)

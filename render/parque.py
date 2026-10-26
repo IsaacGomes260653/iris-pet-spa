@@ -245,12 +245,12 @@ def chao_misto():
     lig.new(coord.outputs["Object"], ruido.inputs["Vector"])
     soma = nos.new("ShaderNodeMath")
     soma.operation = "MULTIPLY_ADD"
-    soma.inputs[1].default_value = 1.1
+    soma.inputs[1].default_value = 0.45  # borda do caminho definida, só um pouco irregular
     lig.new(ruido.outputs["Fac"], soma.inputs[0])
     lig.new(absx.outputs[0], soma.inputs[2])
     borda = nos.new("ShaderNodeMapRange")
     borda.interpolation_type = "SMOOTHSTEP"
-    borda.inputs["From Min"].default_value, borda.inputs["From Max"].default_value = meio + 0.15, meio + 0.95
+    borda.inputs["From Min"].default_value, borda.inputs["From Max"].default_value = meio + 0.2, meio + 0.45
     lig.new(soma.outputs[0], borda.inputs["Value"])
     for chave, destino in (("diff", "Base Color"), ("rough", "Roughness"), ("nor_gl", None)):
         mx = nos.new("ShaderNodeMix")

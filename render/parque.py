@@ -696,8 +696,9 @@ for x, larg, peit in VAOS[1:]:
     toldo = bpy.data.objects.new("Toldo", malha)
     cena.collection.objects.link(toldo)
     toldo.modifiers.new("Espessura", "SOLIDIFY").thickness = 0.012
-# letreiro: "Íris" em Literata e "PET SPA" em Martian Mono, sobre faixa verde-sálvia
-caixa("Faixa do letreiro", (0, Y_LOJA - 0.12, 3.48), (5.2, 0.08, 0.78), SALVIA)
+
+# letreiro: "Íris" em Literata e "PET SPA" em Martian Mono, sobre faixa verde-sálvia acima da porta
+caixa("Faixa do letreiro", (0, Y_LOJA - 0.03, 3.42), (4.6, 0.06, 0.6), SALVIA)
 
 
 def texto(conteudo, fonte, tamanho, local, extrude=0.02):
@@ -716,8 +717,8 @@ def texto(conteudo, fonte, tamanho, local, extrude=0.02):
     return o
 
 
-texto("Íris", "Literata.ttf", 0.66, (-0.55, Y_LOJA - 0.2, 3.52))
-texto("PET SPA", "MartianMono.ttf", 0.17, (1.1, Y_LOJA - 0.2, 3.45), 0.012)
+texto("Íris", "Literata.ttf", 0.5, (-0.55, Y_LOJA - 0.08, 3.44))
+texto("PET SPA", "MartianMono.ttf", 0.14, (1.05, Y_LOJA - 0.08, 3.4), 0.01)
 for x in (-1.25, 1.25):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
 for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):

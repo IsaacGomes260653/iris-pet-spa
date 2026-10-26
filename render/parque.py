@@ -998,7 +998,33 @@ _alt.interpolation_type = "SMOOTHSTEP"
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 6.0
 _alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.003
 mv.node_tree.links.new(_z.outputs[0], _alt.inputs["Value"])
-mv.node_tree.links.new(_alt.outputs["Result"], vol.inputs["Density"])
+# dentro da loja não há névoa (o salão aceso fica limpo atrás do vidro)
+_geo_n = mv.node_tree.nodes.new("ShaderNodeNewGeometry")
+_sp_n = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
+mv.node_tree.links.new(_geo_n.outputs["Position"], _sp_n.inputs[0])
+_fora = mv.node_tree.nodes.new("ShaderNodeMath")
+_fora.operation = "MULTIPLY"
+mv.node_tree.links.new(_alt.outputs["Result"], _fora.inputs[0])
+_dentro = None
+for _eixo, _a, _b in (("X", -L / 2, L / 2), ("Y", Y_LOJA, Y_LOJA + FUNDO_LOJA), ("Z", -1.0, 4.3)):
+    _c = mv.node_tree.nodes.new("ShaderNodeMath")
+    _c.operation = "COMPARE"  # 1 quando |v - meio| <= meia largura
+    _c.inputs[1].default_value, _c.inputs[2].default_value = (_a + _b) / 2, (_b - _a) / 2
+    mv.node_tree.links.new(_sp_n.outputs[_eixo], _c.inputs[0])
+    if _dentro is None:
+        _dentro = _c
+    else:
+        _m = mv.node_tree.nodes.new("ShaderNodeMath")
+        _m.operation = "MULTIPLY"
+        mv.node_tree.links.new(_dentro.outputs[0], _m.inputs[0])
+        mv.node_tree.links.new(_c.outputs[0], _m.inputs[1])
+        _dentro = _m
+_inv = mv.node_tree.nodes.new("ShaderNodeMath")
+_inv.operation = "SUBTRACT"
+_inv.inputs[0].default_value = 1.0
+mv.node_tree.links.new(_dentro.outputs[0], _inv.inputs[1])
+mv.node_tree.links.new(_inv.outputs[0], _fora.inputs[1])
+mv.node_tree.links.new(_fora.outputs[0], vol.inputs["Density"])
 mv.node_tree.links.new(vol.outputs[0], mv.node_tree.nodes["Material Output"].inputs["Volume"])
 nevoa.data.materials.append(mv)
 nevoa.visible_shadow = False

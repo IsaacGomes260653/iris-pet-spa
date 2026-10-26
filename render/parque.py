@@ -5,9 +5,11 @@ Duas camadas, montadas no navegador:
   cao    → a cachorra de costas com coleira, guia e sombra, em fundo transparente, na mesma câmera:
            ciclo de caminhada (amarrado à rolagem), respiração (parada) e a entrada na loja.
 
+Cada tela tem a sua câmera: desktop 1920 × 1080 e celular 1080 × 1920 (vertical), na mesma posição.
+
 Uso:
-  blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> [--amostras N] [--res N] [--total N]
-  blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> [--amostras N] [--res N]
+  blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> --tela desktop|celular [--amostras N]
+  blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> --tela desktop|celular [--amostras N]
 Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
 media-src/render/misty_dawn_4k.hdr e media-src/fontes.
 """
@@ -34,7 +36,8 @@ def opcao(nome, padrao):
 MODO = args[0]
 SAIDA = Path(args[1]) if Path(args[1]).is_absolute() else RAIZ / args[1]  # o Blender resolveria relativo à raiz do disco
 AMOSTRAS = opcao("--amostras", 64)
-RES = opcao("--res", 1600)
+TELA = opcao("--tela", "desktop")
+RES = (1920, 1080) if TELA == "desktop" else (1080, 1920)
 TOTAL = opcao("--total", 150)  # quadros do fundo ao longo do caminho
 
 
@@ -600,9 +603,14 @@ nevoa.visible_shadow = False
 
 # ---------------------------------------------------------------- câmera em primeira pessoa
 cam = bpy.data.cameras.new("Olhar")
-cam.sensor_fit = "HORIZONTAL"
 cam.sensor_width = 36
-cam.lens = 23.5  # ~75° na horizontal, como a câmera de um celular: o recorte 16:9 do desktop
+if TELA == "desktop":
+    cam.sensor_fit = "HORIZONTAL"
+    cam.lens = 23.5  # ~75° na horizontal
+else:
+    cam.sensor_fit = "VERTICAL"
+    cam.lens = 24.5  # ~72° na vertical: a cachorra fica maior na tela estreita
+    INCLINA = math.radians(13)
 cam.dof.use_dof = True
 cam.dof.aperture_fstop = 3.2
 cam.dof.focus_distance = math.hypot(DIST_CAO, ALTURA_OLHO - 0.5)
@@ -642,7 +650,7 @@ cena.cycles.max_bounces = 6
 cena.cycles.volume_bounces = 1
 cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
-cena.render.resolution_x = cena.render.resolution_y = RES
+cena.render.resolution_x, cena.render.resolution_y = RES
 cena.view_settings.view_transform = "AgX"
 cena.view_settings.look = "AgX - Base Contrast"
 cena.view_settings.exposure = 0.6
@@ -954,7 +962,7 @@ if MODO == "cao":
         return origem + (alvo - origem).normalized() * dist
 
     # a mão segura a guia embaixo, à direita: no desktop, na borda de baixo do recorte 16:9; no celular, na base da tela
-    MAO = ponto_da_tela(0.6, 0.755 if opcao("--tela", "desktop") == "desktop" else 0.94, 0.8)
+    MAO = ponto_da_tela(0.6, 0.97, 0.8) if TELA == "desktop" else ponto_da_tela(0.64, 0.975, 0.8)
     curva = bpy.data.curves.new("Guia", "CURVE")
     curva.dimensions = "3D"
     curva.extrude = 0.009  # fita de 18 mm
@@ -997,7 +1005,7 @@ if MODO == "cao":
         bpy.context.view_layer.update()
         ys_pe.append((armacao.matrix_world @ pe.head).y)
     passo = max(ys_pe) - min(ys_pe)
-    tela = opcao("--tela", "desktop")
+    tela = TELA
     (SAIDA / f"camada-{tela}.json").write_text(json.dumps({
         "mao": [round(mao_tela.x, 4), round(1 - mao_tela.y, 4)], "passo_m": round(passo, 3), "quadros_andar": ANDAR[1] - ANDAR[0],
         "fundo_total": TOTAL, "q_entrada": Q_ENTRADA, "camera_y": [round(camera_y(q), 3) for q in range(TOTAL)],

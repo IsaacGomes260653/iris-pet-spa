@@ -910,13 +910,16 @@ for x, larg, peit in VAOS[1:]:
     o_ = bpy.data.objects.new("Foco da vitrine", foco_)
     o_.location = (x, vy - 0.1, PE_DIREITO - 0.1)
     cena.collection.objects.link(o_)
-for x in (-1.25, 1.25):
+
+# fora: jardineiras sob as vitrines, vasos na porta, jacarandás emoldurando a fachada e cerca viva dos lados
+for x, larg, peit in VAOS[1:]:
+    instancia(jardineira, (x, Y_LOJA - 0.45, 0.0), 0.0, 1.6)
+for x in (-1.3, 1.3):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
-for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):
+for x, y in ((-7.6, Y_LOJA - 2.5), (7.9, Y_LOJA - 1.0), (-3.5, Y_LOJA + 10.5), (4.5, Y_LOJA + 11.5)):
     instancia(jacaranda, (x, y, 0), rng.uniform(0, 6.28), 0.6)
-# cerca viva dos lados da loja
-for x in (-8.5, 8.5):
-    for y in (Y_LOJA - 1.5, Y_LOJA + 2.0):
+for x in (-6.4, 6.4):
+    for y in (Y_LOJA - 1.0, Y_LOJA + 1.8):
         instancia(arbusto, (x, y, 0.6), rng.uniform(0, 6.28), 0.9)
 
 LOJA = [o for o in bpy.data.objects if o not in antes_da_loja]

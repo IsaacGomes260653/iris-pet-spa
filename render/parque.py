@@ -23,6 +23,7 @@ import math
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
@@ -526,10 +527,14 @@ for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
     bpy.context.active_object.data.materials.append(POSTE)
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda
+# Modelada de verdade (nada de foto): parede com espessura, vãos fundos com caixilhos, toldos listrados, arandelas,
+# salão aceso com prateleiras e produtos, mesa de camas, balcão e vitrines montadas. Semente fixa: igual em todo quadro.
 antes_da_loja = set(bpy.data.objects)
-SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
-VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.45})  # reflete o céu e as copas
-INTERIOR = material("Interior aceso", **{"Base Color": (1, 0.85, 0.7, 1), "Emission Color": (1.0, 0.83, 0.62, 1), "Emission Strength": 9.0})
+L, FUNDO_LOJA, PE_DIREITO, PAREDE = 10.0, 7.5, 3.6, 0.3  # largura, profundidade, altura de dentro, espessura da parede
+TOPO_VAO = 2.75  # topo da porta e das vitrines
+VAOS = ((0.0, 1.3, 0.0), (-3.0, 2.6, 0.55), (3.0, 2.6, 0.55))  # (centro x, largura, peitoril): a porta e as vitrines
+DENTRO_X, Y_DENTRO0, Y_DENTRO1 = L / 2 - PAREDE, Y_LOJA + PAREDE, Y_LOJA + FUNDO_LOJA - PAREDE
+loja_rng = np.random.default_rng(11)
 # reboco: do barro do Poly Haven ficam só o relevo e a variação de claro e escuro; a cor é o creme da marca
 # (a textura tem luminância média 0,11; o tom leva o reboco ao creme ~(0,7; 0,58; 0,43))
 REBOCO = material_textura("Reboco creme", "clay_plaster", 0.5, (6.1, 5.1, 3.75, 1))
@@ -537,42 +542,61 @@ _tingir = next(n for n in REBOCO.node_tree.nodes if n.bl_idname == "ShaderNodeMi
 _pb = REBOCO.node_tree.nodes.new("ShaderNodeRGBToBW")
 REBOCO.node_tree.links.new(_tingir.inputs["A"].links[0].from_socket, _pb.inputs[0])
 REBOCO.node_tree.links.new(_pb.outputs[0], _tingir.inputs["A"])
+PEDRA = material("Pedra", **{"Base Color": (0.5, 0.46, 0.4, 1), "Roughness": 0.75})
+SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.4})  # caixilho pintado, acetinado
+VIDRO = material("Vidro", **{"Base Color": (0.96, 0.98, 0.97, 1), "Transmission Weight": 1.0, "Roughness": 0.0, "IOR": 1.5})
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
 TOLDO = material("Toldo", **{"Base Color": (0.42, 0.53, 0.46, 1), "Roughness": 0.8, "Sheen Weight": 0.4})
+FORRO = material("Forro", **{"Base Color": (0.86, 0.8, 0.72, 1), "Roughness": 0.9})
+METAL_ESCURO = material("Metal escuro", **{"Base Color": (0.05, 0.06, 0.06, 1), "Metallic": 1.0, "Roughness": 0.35})
 
 
-def interior(x, y, base, larg, alt):
-    """O lado de dentro: foto de uma parede de produtos de petshop, acesa e morna, em cada vão."""
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(x, y, base + alt / 2), rotation=(math.radians(90), 0, 0))
-    o = bpy.context.active_object
-    o.scale = (larg, alt, 1)
-    m = bpy.data.materials.new(f"Interior {x}")
-    m.use_nodes = True
-    nos, lig = m.node_tree.nodes, m.node_tree.links
-    saida = nos["Material Output"]
-    nos.remove(nos["Principled BSDF"])
-    tex = nos.new("ShaderNodeTexImage")
-    tex.image = bpy.data.images.load(str(MIDIA / "interior-loja.jpg"), check_existing=True)
-    mapa = nos.new("ShaderNodeMapping")
-    # cada vão mostra um pedaço diferente da foto, na proporção dele
-    foto_ar = tex.image.size[0] / tex.image.size[1]
-    mapa.inputs["Scale"].default_value = (larg / alt / foto_ar * 0.9, 0.9, 1)
-    mapa.inputs["Location"].default_value = (0.05 + (x + 4) / 12 * 0.5, 0.05, 0)
-    coord = nos.new("ShaderNodeTexCoord")
-    lig.new(coord.outputs["UV"], mapa.inputs["Vector"])
-    lig.new(mapa.outputs[0], tex.inputs["Vector"])
-    morno = nos.new("ShaderNodeMix")
-    morno.data_type = "RGBA"
-    morno.blend_type = "MULTIPLY"
-    morno.inputs["Factor"].default_value = 1.0
-    morno.inputs[7].default_value = (1.0, 0.82, 0.62, 1)
-    lig.new(tex.outputs["Color"], morno.inputs[6])
-    em = nos.new("ShaderNodeEmission")
-    em.inputs["Strength"].default_value = 1.5  # loja acesa vista pelo vidro, sem estourar
-    lig.new(morno.outputs[2], em.inputs["Color"])
-    lig.new(em.outputs[0], saida.inputs["Surface"])
-    o.data.materials.append(m)
-    return o
+
+
+class Pecas:
+    """Muitas peças (caixas, cilindros, cones e esferas) numa malha só, cada uma com o seu material."""
+
+    def __init__(self):
+        self.bm, self.mats = bmesh.new(), []
+
+    def _pintar(self, verts, m):
+        if m not in self.mats:
+            self.mats.append(m)
+        k = self.mats.index(m)
+        for f in {f for v in verts for f in v.link_faces}:
+            f.material_index = k
+
+    def caixa(self, centro, tam, m):
+        r = bmesh.ops.create_cube(self.bm, size=1.0, matrix=Matrix.Translation(centro) @ Matrix.Diagonal((*tam, 1.0)))
+        self._pintar(r["verts"], m)
+
+    def cone(self, centro, raio1, raio2, altura, m, lados=20, tampa=True):
+        r = bmesh.ops.create_cone(self.bm, cap_ends=tampa, segments=lados, radius1=raio1, radius2=raio2, depth=altura,
+                                  matrix=Matrix.Translation(centro))
+        self._pintar(r["verts"], m)
+
+    def cilindro(self, centro, raio, altura, m, lados=20):
+        self.cone(centro, raio, raio, altura, m, lados)
+
+    def esfera(self, centro, raio, m, achatar=1.0, escala=(1, 1)):
+        r = bmesh.ops.create_uvsphere(self.bm, u_segments=16, v_segments=10, radius=raio,
+                                      matrix=Matrix.Translation(centro) @ Matrix.Diagonal((*escala, achatar, 1)))
+        self._pintar(r["verts"], m)
+
+    def objeto(self, nome, bisel=0.0, suave=False):
+        malha = bpy.data.meshes.new(nome)
+        self.bm.to_mesh(malha)
+        self.bm.free()
+        for m in self.mats:
+            malha.materials.append(m)
+        if suave:
+            malha.shade_smooth()
+        o = bpy.data.objects.new(nome, malha)
+        cena.collection.objects.link(o)
+        if bisel:  # nenhuma aresta perfeitamente viva
+            b = o.modifiers.new("Bisel", "BEVEL")
+            b.width, b.segments, b.limit_method = bisel, 2, "ANGLE"
+        return o
 
 
 def caixa(nome, centro, tam, mat):
@@ -589,23 +613,55 @@ def caixa(nome, centro, tam, mat):
     return o
 
 
-L = 12.0  # largura da fachada
-predio = caixa("Prédio", (0, Y_LOJA + 4, 2.1), (L, 8, 4.2), REBOCO)
-caixa("Platibanda", (0, Y_LOJA - 0.05, 4.0), (L + 0.3, 0.3, 0.5), REBOCO)
-# porta e vitrines: molduras verde-sálvia, vidro e o interior aceso logo atrás
-for x, larg, alt, base in ((0, 1.5, 2.6, 0.0), (-3.6, 3.2, 2.3, 0.5), (3.6, 3.2, 2.3, 0.5)):
-    moldura = caixa("Moldura", (x, Y_LOJA + 0.02, base + alt / 2), (larg + 0.24, 0.12, alt + 0.24), SALVIA)
-    if x != 0:  # a porta fica aberta: a cachorra entra por ela
-        caixa("Vidro", (x, Y_LOJA - 0.05, base + alt / 2), (larg, 0.02, alt), VIDRO)
-    interior(x, Y_LOJA + 2.6, base, larg, alt)  # fundo da loja a 2,6 m do vidro: desfocado, com profundidade
-    corte = caixa("Corte", (x, Y_LOJA + 1.35, base + alt / 2), (larg, 2.9, alt), REBOCO)
+# casca: fachada com espessura, laterais, fundo e laje; cornija e friso no alto, rodapé de pedra embaixo
+fachada = caixa("Fachada", (0, Y_LOJA + PAREDE / 2, 2.0), (L, PAREDE, 4.0), REBOCO)
+for lado in (-1, 1):
+    caixa("Parede lateral", (lado * (L / 2 - PAREDE / 2), Y_LOJA + FUNDO_LOJA / 2, 2.0), (PAREDE, FUNDO_LOJA, 4.0), REBOCO)
+caixa("Parede do fundo", (0, Y_LOJA + FUNDO_LOJA - PAREDE / 2, 2.0), (L, PAREDE, 4.0), REBOCO)
+caixa("Laje", (0, Y_LOJA + FUNDO_LOJA / 2, (PE_DIREITO + 4.0) / 2), (L - 0.01, FUNDO_LOJA - 0.01, 4.0 - PE_DIREITO), FORRO)
+caixa("Cornija", (0, Y_LOJA + (PAREDE - 0.14) / 2, 4.12), (L + 0.28, PAREDE + 0.14, 0.24), REBOCO)
+caixa("Friso", (0, Y_LOJA, 3.88), (L + 0.12, 0.12, 0.08), REBOCO)
+for lado in (-1, 1):
+    comp = L / 2 + 0.03 - 0.65
+    caixa("Rodapé", (lado * (0.65 + comp / 2), Y_LOJA, 0.21), (comp, 0.06, 0.42), PEDRA)
+# vãos atravessando a parede: a profundidade do reboco aparece em volta de cada caixilho
+for x, larg, peit in VAOS:
+    base = peit if peit else -0.1
+    corte = caixa("Vão", (x, Y_LOJA + PAREDE / 2, (base + TOPO_VAO) / 2), (larg, PAREDE + 0.3, TOPO_VAO - base), REBOCO)
     corte.hide_render = corte.hide_viewport = True
-    for alvo_ in (predio, moldura):  # o vão atravessa a parede e a moldura (sobra só o caixilho)
-        bo = alvo_.modifiers.new("Vão", "BOOLEAN")
-        bo.operation = "DIFFERENCE"
-        bo.object = corte
-    if x != 0:
-        instancia(jardineira, (x, Y_LOJA - 0.45, 0.0), 0.0, 1.6)
+    bo = fachada.modifiers.new("Vão", "BOOLEAN")
+    bo.operation, bo.object = "DIFFERENCE", corte
+    if peit:
+        caixa("Peitoril", (x, Y_LOJA + PAREDE / 2 - 0.05, peit - 0.03), (larg + 0.12, PAREDE + 0.1, 0.06), PEDRA)
+
+# caixilhos verde-sálvia recuados 12 cm, com bandeira em cima; vitrines com montante no meio; vidro de verdade
+cx = Pecas()
+for x, larg, peit in VAOS:
+    yq, alt, e = Y_LOJA + 0.12, TOPO_VAO - peit, 0.06
+    zc, travessa = (peit + TOPO_VAO) / 2, peit + (TOPO_VAO - peit) * 0.78
+    cx.caixa((x - larg / 2 + e / 2, yq, zc), (e, 0.07, alt), SALVIA)
+    cx.caixa((x + larg / 2 - e / 2, yq, zc), (e, 0.07, alt), SALVIA)
+    cx.caixa((x, yq, TOPO_VAO - e / 2), (larg, 0.07, e), SALVIA)
+    cx.caixa((x, yq, travessa), (larg, 0.07, 0.05), SALVIA)
+    if peit:
+        cx.caixa((x, yq, peit + e / 2), (larg, 0.07, e), SALVIA)
+        cx.caixa((x, yq, (peit + travessa) / 2), (0.05, 0.07, travessa - peit), SALVIA)
+        cx.caixa((x, yq + 0.01, zc), (larg - 0.02, 0.008, alt - 0.02), VIDRO)
+    else:  # a porta: só a bandeira de vidro (a folha está aberta)
+        cx.caixa((x, yq + 0.01, (travessa + TOPO_VAO) / 2), (larg - 0.02, 0.008, TOPO_VAO - travessa - 0.02), VIDRO)
+cx.objeto("Caixilhos", bisel=0.004)
+# a folha da porta, aberta para dentro: a cachorra entra por ela
+folha = Pecas()
+fw, fh, e = 1.18, 2.1, 0.09
+for cx_, w_ in ((e / 2, e), (fw - e / 2, e)):
+    folha.caixa((cx_, 0, fh / 2), (w_, 0.05, fh), SALVIA)
+folha.caixa((fw / 2, 0, fh - e / 2), (fw, 0.05, e), SALVIA)
+folha.caixa((fw / 2, 0, 0.13), (fw, 0.05, 0.26), SALVIA)
+folha.caixa((fw / 2, 0, (0.26 + fh - e) / 2), (fw - 2 * e, 0.01, fh - e - 0.26), VIDRO)
+folha.caixa((fw - 0.16, -0.05, 1.0), (0.03, 0.04, 0.3), METAL_ESCURO)  # puxador
+porta = folha.objeto("Porta", bisel=0.004)
+porta.location = (-0.62, Y_LOJA + 0.16, 0.0)
+porta.rotation_euler = (0, 0, math.radians(78))
 # toldo inclinado sobre porta e vitrines
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, Y_LOJA - 0.42, 2.98))
 toldo = bpy.context.active_object

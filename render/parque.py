@@ -1253,27 +1253,7 @@ if MODO == "cao":
         pelo.inputs["Coat"].default_value = 0.0
         pelo.inputs["Random Color"].default_value = 0.1
         pelo.inputs["Random Roughness"].default_value = 0.15
-        # preto no corpo; nas patas e nas pontas, o marrom-escuro da Ellie
-        info = nos.new("ShaderNodeHairInfo")
-        ponta = nos.new("ShaderNodeMapRange")
-        ponta.inputs["From Min"].default_value, ponta.inputs["From Max"].default_value = 0.55, 1.0
-        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.015  # pontas quase pretas: contra o sol, clareavam
-        lig.new(info.outputs["Intercept"], ponta.inputs["Value"])
-        alt = nos.new("ShaderNodeAttribute")
-        alt.attribute_name = "altura"
-        pata = nos.new("ShaderNodeMapRange")
-        pata.inputs["From Min"].default_value, pata.inputs["From Max"].default_value = 0.12, 0.32
-        pata.inputs["To Min"].default_value, pata.inputs["To Max"].default_value = 0.04, 0.0
-        lig.new(alt.outputs["Fac"], pata.inputs["Value"])
-        tira = nos.new("ShaderNodeMath")
-        tira.operation = "ADD"
-        lig.new(ponta.outputs["Result"], tira.inputs[0])
-        lig.new(pata.outputs["Result"], tira.inputs[1])
-        melanina = nos.new("ShaderNodeMath")
-        melanina.operation = "SUBTRACT"
-        melanina.inputs[0].default_value = 1.0
-        lig.new(tira.outputs[0], melanina.inputs[1])
-        lig.new(melanina.outputs[0], pelo.inputs["Melanin"])
+        pelo.inputs["Melanin"].default_value = 1.0  # toda preta, das patas às pontas (o brilho vem da contraluz)
         lig.new(pelo.outputs[0], saida.inputs["Surface"])
         return m
 
@@ -1335,17 +1315,8 @@ if MODO == "cao":
         amostra = n.new("GeometryNodeResampleCurve")
         amostra.inputs["Count"].default_value = 6
         l.new(linha.outputs[0], amostra.inputs["Curve"])
-        # a altura da raiz de cada fio (para o marrom das patas), guardada nos pontos
-        pos0 = n.new("GeometryNodeInputPosition")
-        sep0 = n.new("ShaderNodeSeparateXYZ")
-        l.new(pos0.outputs[0], sep0.inputs[0])
-        guarda_alt = n.new("GeometryNodeCaptureAttribute")
-        guarda_alt.domain = "POINT"
-        guarda_alt.capture_items.new("FLOAT", "alt")
-        l.new(pontos.outputs["Points"], guarda_alt.inputs[0])
-        l.new(sep0.outputs["Z"], guarda_alt.inputs[1])
         inst = n.new("GeometryNodeInstanceOnPoints")
-        l.new(guarda_alt.outputs[0], inst.inputs["Points"])
+        l.new(pontos.outputs["Points"], inst.inputs["Points"])
         l.new(amostra.outputs[0], inst.inputs["Instance"])
         l.new(gira.outputs[0], inst.inputs["Rotation"])
         # escala do fio: aleatória × (1 + peso da cauda/pescoço)
@@ -1366,12 +1337,6 @@ if MODO == "cao":
         l.new(comb.outputs[0], inst.inputs["Scale"])
         real = n.new("GeometryNodeRealizeInstances")
         l.new(inst.outputs[0], real.inputs[0])
-        grava = n.new("GeometryNodeStoreNamedAttribute")
-        grava.data_type = "FLOAT"
-        grava.domain = "CURVE"
-        grava.inputs["Name"].default_value = "altura"
-        l.new(real.outputs[0], grava.inputs["Geometry"])
-        l.new(guarda_alt.outputs[1], grava.inputs["Value"])
         # ondulação leve e caimento
         param = n.new("GeometryNodeSplineParameter")
         ruido = n.new("ShaderNodeTexNoise")
@@ -1399,7 +1364,7 @@ if MODO == "cao":
         l.new(cai.outputs[0], desloc.inputs[0])
         l.new(peso.outputs[0], desloc.inputs["Scale"])
         setpos = n.new("GeometryNodeSetPosition")
-        l.new(grava.outputs[0], setpos.inputs["Geometry"])
+        l.new(real.outputs[0], setpos.inputs["Geometry"])
         l.new(desloc.outputs[0], setpos.inputs["Offset"])
         afina = n.new("ShaderNodeMapRange")
         afina.inputs["To Min"].default_value, afina.inputs["To Max"].default_value = raio, raio * 0.15

@@ -459,6 +459,7 @@ for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
     bpy.context.active_object.data.materials.append(POSTE)
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda
+antes_da_loja = set(bpy.data.objects)
 REBOCO = material("Reboco creme", **{"Base Color": (0.86, 0.79, 0.67, 1), "Roughness": 0.85})
 SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
 VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.05})
@@ -570,6 +571,8 @@ for x in (-8.5, 8.5):
     for y in (Y_LOJA - 1.5, Y_LOJA + 2.0):
         instancia(arbusto, (x, y, 0.6), rng.uniform(0, 6.28), 0.9)
 
+LOJA = [o for o in bpy.data.objects if o not in antes_da_loja]
+
 # ---------------------------------------------------------------- mundo: céu de amanhecer, sol baixo à frente e névoa rasteira
 mundo = bpy.data.worlds.new("Amanhecer")
 cena.world = mundo
@@ -611,6 +614,13 @@ ceu.angle = math.radians(30)
 luz_ceu = bpy.data.objects.new("Céu atrás", ceu)
 luz_ceu.rotation_euler = Vector((0.15, 1.0, -0.55)).normalized().to_track_quat("-Z", "Y").to_euler()
 cena.collection.objects.link(luz_ceu)
+# a loja fica fora dessa luz: contra o sol, a fachada fica na sombra suave e o que brilha são as vitrines e o letreiro
+sem_luz_de_tras = bpy.data.collections.new("Sem luz de trás")
+for o in LOJA:
+    sem_luz_de_tras.objects.link(o)
+luz_ceu.light_linking.receiver_collection = sem_luz_de_tras
+for item in sem_luz_de_tras.collection_objects:
+    item.light_linking.link_state = "EXCLUDE"
 
 # névoa: densa rente ao chão e rala no alto, lavanda; a luz do sol à frente acende o véu (anisotropia)
 # o cubo começa 40 cm abaixo do chão: com a face colada no chão (z = 0) os raios ficavam ora dentro, ora fora do

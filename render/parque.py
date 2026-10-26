@@ -224,7 +224,7 @@ def chao_misto():
     lig.new(mancha.outputs["Fac"], soma_p.inputs[2])
     cobre = nos.new("ShaderNodeMapRange")
     cobre.interpolation_type = "SMOOTHSTEP"
-    cobre.inputs["From Min"].default_value, cobre.inputs["From Max"].default_value = 0.93, 1.0
+    cobre.inputs["From Min"].default_value, cobre.inputs["From Max"].default_value = 0.985, 1.04  # só um pó de pétalas: as de verdade vêm em instâncias
     lig.new(soma_p.outputs[0], cobre.inputs["Value"])
     for d_ in (a, b):
         ponte = nos.new("ShaderNodeMix")
@@ -276,6 +276,87 @@ for g_ in (gramado_e, gramado_d):
     g_.hide_render = True  # só base para espalhar a vegetação
 calcada = faixa("Calçada", -9, 9, Y_LOJA - 6, Y_LOJA + 0.5, TIJOLO, 0.55)
 calcada.location.z = 0.012
+
+
+def petalas():
+    """Pétalas caídas de verdade: discos de 2,4 cm lilases e translúcidos espalhados no chão, em tufos, mais densos
+    debaixo das copas (|x| de 3 a 8 m) que no meio do caminho. Instâncias: a malha é uma só."""
+    bpy.ops.mesh.primitive_circle_add(vertices=6, radius=0.012, fill_type="TRIFAN")
+    petala = bpy.context.active_object
+    petala.name = "Pétala"
+    petala.scale.y = 0.7
+    bpy.ops.object.transform_apply(scale=True)
+    m = material("Pétala", **{"Base Color": (0.5, 0.33, 0.72, 1), "Roughness": 0.6})
+    nos_, lig_ = m.node_tree.nodes, m.node_tree.links
+    transl = nos_.new("ShaderNodeBsdfTranslucent")
+    transl.inputs["Color"].default_value = (0.6, 0.4, 0.8, 1)
+    junta = nos_.new("ShaderNodeMixShader")
+    junta.inputs["Fac"].default_value = 0.35
+    lig_.new(nos_["Principled BSDF"].outputs[0], junta.inputs[1])
+    lig_.new(transl.outputs[0], junta.inputs[2])
+    lig_.new(junta.outputs[0], nos_["Material Output"].inputs["Surface"])
+    petala.data.materials.append(m)
+    col = colecao("Pétalas", [petala])
+    base = faixa("Chão das pétalas", -8, 8, -6, Y_LOJA - 6.5, CHAO, 1.0, 8)
+    base.data.materials.clear()
+    g = bpy.data.node_groups.new("Pétalas", "GeometryNodeTree")
+    g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+    g.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    n, l = g.nodes, g.links
+    ent, sai = n.new("NodeGroupInput"), n.new("NodeGroupOutput")
+    pts = n.new("GeometryNodeDistributePointsOnFaces")
+    pts.inputs["Density"].default_value = 420.0
+    l.new(ent.outputs[0], pts.inputs["Mesh"])
+    # tufos (ruído) + mais pétalas longe do eixo do caminho: apaga onde a soma fica abaixo do corte
+    pos = n.new("GeometryNodeInputPosition")
+    sep = n.new("ShaderNodeSeparateXYZ")
+    l.new(pos.outputs[0], sep.inputs[0])
+    absx = n.new("ShaderNodeMath")
+    absx.operation = "ABSOLUTE"
+    l.new(sep.outputs["X"], absx.inputs[0])
+    sob_copa = n.new("ShaderNodeMapRange")
+    sob_copa.inputs["From Min"].default_value, sob_copa.inputs["From Max"].default_value = 1.5, 4.5
+    sob_copa.inputs["To Min"].default_value, sob_copa.inputs["To Max"].default_value = 0.0, 0.22
+    l.new(absx.outputs[0], sob_copa.inputs["Value"])
+    ruido = n.new("ShaderNodeTexNoise")
+    ruido.inputs["Scale"].default_value = 1.3
+    ruido.inputs["Detail"].default_value = 4.0
+    l.new(pos.outputs[0], ruido.inputs["Vector"])
+    soma = n.new("ShaderNodeMath")
+    l.new(ruido.outputs["Fac"], soma.inputs[0])
+    l.new(sob_copa.outputs["Result"], soma.inputs[1])
+    pouco = n.new("ShaderNodeMath")
+    pouco.operation = "LESS_THAN"
+    pouco.inputs[1].default_value = 0.6
+    l.new(soma.outputs[0], pouco.inputs[0])
+    apaga = n.new("GeometryNodeDeleteGeometry")
+    apaga.domain = "POINT"
+    l.new(pts.outputs["Points"], apaga.inputs["Geometry"])
+    l.new(pouco.outputs[0], apaga.inputs["Selection"])
+    info = n.new("GeometryNodeCollectionInfo")
+    info.inputs["Collection"].default_value = col
+    info.inputs["Separate Children"].default_value = True
+    info.inputs["Reset Children"].default_value = True
+    inst = n.new("GeometryNodeInstanceOnPoints")
+    l.new(apaga.outputs[0], inst.inputs["Points"])
+    l.new(info.outputs[0], inst.inputs["Instance"])
+    rot = n.new("FunctionNodeRandomValue")
+    rot.data_type = "FLOAT_VECTOR"
+    rot.inputs["Min"].default_value = (-0.35, -0.35, 0)
+    rot.inputs["Max"].default_value = (0.35, 0.35, 6.283)
+    l.new(rot.outputs["Value"], inst.inputs["Rotation"])
+    esc = n.new("FunctionNodeRandomValue")
+    esc.data_type = "FLOAT"
+    esc.inputs["Min"].default_value, esc.inputs["Max"].default_value = 0.7, 1.35
+    l.new(esc.outputs["Value"], inst.inputs["Scale"])
+    sobe = n.new("GeometryNodeTranslateInstances")
+    sobe.inputs["Translation"].default_value = (0, 0, 0.004)
+    l.new(inst.outputs[0], sobe.inputs["Instances"])
+    l.new(sobe.outputs[0], sai.inputs[0])
+    base.modifiers.new("Pétalas", "NODES").node_group = g
+
+
+petalas()
 
 # ---------------------------------------------------------------- vegetação (Poly Haven, CC0)
 def preparar(nome):

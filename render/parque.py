@@ -846,7 +846,7 @@ if MODO == "cao":
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
-    FITA = material("Guia", **{"Base Color": (0.02, 0.02, 0.022, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})
+    FITA = material("Guia de corda", **{"Base Color": (0.3, 0.4, 0.33, 1), "Roughness": 0.85, "Sheen Weight": 0.5})  # verde-sálvia
 
     importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
     raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
@@ -1123,8 +1123,8 @@ if MODO == "cao":
     MAO = ponto_da_tela(0.6, 0.97, 0.8) if TELA == "desktop" else ponto_da_tela(0.64, 0.975, 0.8)
     curva = bpy.data.curves.new("Guia", "CURVE")
     curva.dimensions = "3D"
-    curva.extrude = 0.009  # fita de 18 mm
-    curva.bevel_depth = 0.0015
+    curva.bevel_depth = 0.005  # corda redonda de 1 cm
+    curva.bevel_resolution = 3
     sp = curva.splines.new("BEZIER")
     sp.bezier_points.add(1)
     guia = bpy.data.objects.new("Guia", curva)

@@ -1139,6 +1139,7 @@ if MODO == "cao":
             print("QUADRO", k, flush=True)
             print("MEMORIA", memoria(), flush=True)
     elif trecho == "entrada":
+        cena.render.use_border = False  # ela se afasta rumo à porta: sai da região medida com ela perto da câmera
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
         y_base = raiz.location.y
         ini = camera_y(Q_ENTRADA) + DIST_CAO

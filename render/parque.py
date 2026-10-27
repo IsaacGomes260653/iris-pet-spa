@@ -81,6 +81,62 @@ for o in list(bpy.data.objects):
 rng = np.random.default_rng(7)
 
 
+# ---------------------------------------------------------------- o modelo da cachorra
+# o comprado (render/assets-comprados, fora do Git, porque a licença não deixa redistribuir) quando houver; senão, o
+# lobo de reserva
+FORMATOS = (".blend", ".fbx", ".glb", ".gltf", ".usd", ".usdc", ".usdz", ".abc")
+COMPRADO = Path(opcao("--modelo", "")) if "--modelo" in args else next(
+    (a for ext in FORMATOS for a in sorted((RAIZ / "render" / "assets-comprados").rglob(f"*{ext}"))), None)
+
+
+def importar_modelo(arq):
+    """Importa os formatos comuns de modelo; câmeras e luzes que vêm no arquivo ficam fora do render."""
+    antes = set(bpy.data.objects)
+    ext = arq.suffix.lower()
+    if ext == ".blend":
+        with bpy.data.libraries.load(str(arq), link=False) as (de, para):
+            para.objects, para.actions = de.objects, de.actions
+        for o in para.objects:
+            if o is not None:
+                cena.collection.objects.link(o)
+    elif ext == ".fbx":
+        bpy.ops.import_scene.fbx(filepath=str(arq), automatic_bone_orientation=True)
+    elif ext in (".glb", ".gltf"):
+        bpy.ops.import_scene.gltf(filepath=str(arq))
+    elif ext == ".abc":
+        bpy.ops.wm.alembic_import(filepath=str(arq))
+    else:
+        bpy.ops.wm.usd_import(filepath=str(arq))
+    novos = [o for o in bpy.data.objects if o not in antes]
+    for o in novos:
+        if o.type in {"CAMERA", "LIGHT"}:
+            o.hide_render = True
+    return novos
+
+
+if MODO == "inspecionar":
+    # só lista o que veio no modelo comprado, para adaptar a cena quando ele chegar:
+    #   blender -b --factory-startup --python render/parque.py -- inspecionar -   (ou --modelo ARQUIVO)
+    if not COMPRADO:
+        raise SystemExit("Nenhum modelo em render/assets-comprados.")
+    print("MODELO", COMPRADO, flush=True)
+    for o in importar_modelo(COMPRADO):
+        extra = ""
+        if o.type == "MESH":
+            extra = f"{len(o.data.vertices)} vértices, modificadores {[m.type for m in o.modifiers]}, materiais {[m.name for m in o.data.materials if m]}"
+            extra += "".join(f", pelo '{ps.name}' ({ps.settings.count} fios, {ps.settings.rendered_child_count} filhos)" for ps in o.particle_systems)
+        elif o.type == "ARMATURE":
+            extra = f"{len(o.data.bones)} ossos: " + ", ".join(b.name for b in o.data.bones)
+        elif o.type == "CURVES":
+            extra = f"{len(o.data.curves)} fios, superfície {o.data.surface.name if o.data.surface else '-'}"
+        print(f"OBJETO {o.name} [{o.type}] pai={o.parent.name if o.parent else '-'} {extra}", flush=True)
+    for a in bpy.data.actions:
+        print(f"ACAO {a.name} quadros {tuple(int(v) for v in a.frame_range)}", flush=True)
+    for im in bpy.data.images:
+        print(f"TEXTURA {im.name} {tuple(im.size)}", flush=True)
+    raise SystemExit
+
+
 # ---------------------------------------------------------------- materiais
 def material(nome, **principled):
     m = bpy.data.materials.new(nome)
@@ -1183,36 +1239,6 @@ if MODO == "cao":
     # guia de couro conhaque escuro, do jeito da coleira, sem brilho: o reflexo do sol do céu (rasante, de frente)
     # deixava a guia branca, de qualquer cor
     FITA = material("Guia de couro", **{"Base Color": (0.11, 0.04, 0.018, 1), "Roughness": 0.85, "Specular IOR Level": 0.0})
-
-    # ------------------------------------------------------------ o modelo: o comprado (render/assets-comprados, fora do
-    # Git, porque a licença não deixa redistribuir) quando houver; senão, o lobo de reserva
-    FORMATOS = (".blend", ".fbx", ".glb", ".gltf", ".usd", ".usdc", ".usdz", ".abc")
-    COMPRADO = Path(opcao("--modelo", "")) if "--modelo" in args else next(
-        (a for ext in FORMATOS for a in sorted((RAIZ / "render" / "assets-comprados").rglob(f"*{ext}"))), None)
-
-    def importar_modelo(arq):
-        """Importa os formatos comuns de modelo; câmeras e luzes que vêm no arquivo ficam fora do render."""
-        antes = set(bpy.data.objects)
-        ext = arq.suffix.lower()
-        if ext == ".blend":
-            with bpy.data.libraries.load(str(arq), link=False) as (de, para):
-                para.objects, para.actions = de.objects, de.actions
-            for o in para.objects:
-                if o is not None:
-                    cena.collection.objects.link(o)
-        elif ext == ".fbx":
-            bpy.ops.import_scene.fbx(filepath=str(arq), automatic_bone_orientation=True)
-        elif ext in (".glb", ".gltf"):
-            bpy.ops.import_scene.gltf(filepath=str(arq))
-        elif ext == ".abc":
-            bpy.ops.wm.alembic_import(filepath=str(arq))
-        else:
-            bpy.ops.wm.usd_import(filepath=str(arq))
-        novos = [o for o in bpy.data.objects if o not in antes]
-        for o in novos:
-            if o.type in {"CAMERA", "LIGHT"}:
-                o.hide_render = True
-        return novos
 
     def usar_acao(a):
         armacao.animation_data_create()

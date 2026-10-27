@@ -1182,31 +1182,92 @@ if MODO == "cao":
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
     FITA = material("Guia de corda", **{"Base Color": (0.13, 0.19, 0.15, 1), "Roughness": 0.9, "Specular IOR Level": 0.2})  # verde-sálvia escuro
 
-    importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
-    raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
-    armacao = next(o for o in importados if o.type == "ARMATURE")
-    corpo = olhos = None
-    for o in importados:
-        if o.type != "MESH":
-            continue
-        nomes = [s.material.name for s in o.material_slots if s.material]
-        if o.parent is None:
-            o.hide_render = True  # esfera solta do arquivo original
-            continue
-        if any(n.startswith("Wolf_Main") for n in nomes):
-            corpo = o
-        elif any(n.startswith("Wolf_Eye") for n in nomes):
-            olhos = o
-        o.hide_render = not any(n.startswith(("Wolf_Main", "Claw")) for n in nomes)  # de costas: sem olhos, língua, dentes
-        o.data.materials.clear()
-        o.data.materials.append(PELE)
-    acao = bpy.data.actions[0]
-    armacao.animation_data_create()
-    armacao.animation_data.action = acao
-    if hasattr(armacao.animation_data, "action_slot") and acao.slots:
-        armacao.animation_data.action_slot = acao.slots[0]
-    ANDAR = (58, 90)  # laço perfeito da caminhada (32 quadros)
-    PARADA = 11  # pose em pé para a respiração
+    # ------------------------------------------------------------ o modelo: o comprado (render/assets-comprados, fora do
+    # Git, porque a licença não deixa redistribuir) quando houver; senão, o lobo de reserva
+    FORMATOS = (".blend", ".fbx", ".glb", ".gltf", ".usd", ".usdc", ".usdz", ".abc")
+    COMPRADO = Path(opcao("--modelo", "")) if "--modelo" in args else next(
+        (a for ext in FORMATOS for a in sorted((RAIZ / "render" / "assets-comprados").rglob(f"*{ext}"))), None)
+
+    def importar_modelo(arq):
+        """Importa os formatos comuns de modelo; câmeras e luzes que vêm no arquivo ficam fora do render."""
+        antes = set(bpy.data.objects)
+        ext = arq.suffix.lower()
+        if ext == ".blend":
+            with bpy.data.libraries.load(str(arq), link=False) as (de, para):
+                para.objects, para.actions = de.objects, de.actions
+            for o in para.objects:
+                if o is not None:
+                    cena.collection.objects.link(o)
+        elif ext == ".fbx":
+            bpy.ops.import_scene.fbx(filepath=str(arq), automatic_bone_orientation=True)
+        elif ext in (".glb", ".gltf"):
+            bpy.ops.import_scene.gltf(filepath=str(arq))
+        elif ext == ".abc":
+            bpy.ops.wm.alembic_import(filepath=str(arq))
+        else:
+            bpy.ops.wm.usd_import(filepath=str(arq))
+        novos = [o for o in bpy.data.objects if o not in antes]
+        for o in novos:
+            if o.type in {"CAMERA", "LIGHT"}:
+                o.hide_render = True
+        return novos
+
+    def usar_acao(a):
+        armacao.animation_data_create()
+        armacao.animation_data.action = a
+        if a is not None and hasattr(armacao.animation_data, "action_slot") and a.slots:
+            armacao.animation_data.action_slot = a.slots[0]
+
+    if COMPRADO:
+        print("MODELO", COMPRADO.name, flush=True)
+        importados = importar_modelo(COMPRADO)
+        armacao = max((o for o in importados if o.type == "ARMATURE"), key=lambda o: len(o.data.bones))
+
+        def deformado(o):
+            return o.type == "MESH" and (o.parent == armacao or any(m.type == "ARMATURE" and m.object == armacao for m in o.modifiers))
+
+        corpo = max((o for o in importados if deformado(o)), key=lambda o: len(o.data.vertices))
+        for o in importados:
+            if o.type == "MESH" and not deformado(o) and not len(o.particle_systems):
+                o.hide_render = True  # chão, fundo de estúdio e afins que vêm no arquivo
+        raiz = bpy.data.objects.new("Cachorra", None)  # uma raiz nova gira, escala e põe no caminho sem mexer no arquivo
+        cena.collection.objects.link(raiz)
+        for o in importados:
+            if o.parent is None:
+                o.parent = raiz
+
+        def acao_por(padrao):
+            fora = r"back|tr[aá]s|turn|vira|left|right|esq|dir|start|stop|begin|jump|run|corr"
+            return next((a for a in bpy.data.actions if re.search(padrao, a.name, re.I) and not re.search(fora, a.name, re.I)), None)
+
+        acao = bpy.data.actions[opcao("--acao", "")] if "--acao" in args else acao_por(r"walk|caminh|andar") or acao_por(r"trot")
+        if acao is None:
+            raise SystemExit("CAMINHADA NÃO ACHADA. Use --acao NOME. Ações: " + ", ".join(a.name for a in bpy.data.actions))
+        # o laço da caminhada: o intervalo da ação (ou --andar ini,fim, com fim = início do ciclo seguinte)
+        ANDAR = tuple(int(v) for v in (opcao("--andar", "").split(",") if "--andar" in args else acao.frame_range))
+        ACAO_PARADA = acao_por(r"idle|stand|parad|breath|respir")  # sem pose parada no arquivo: a pose de descanso
+        PARADA = int(ACAO_PARADA.frame_range[0]) if ACAO_PARADA else None
+    else:
+        importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
+        raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
+        armacao = next(o for o in importados if o.type == "ARMATURE")
+        corpo = None
+        for o in importados:
+            if o.type != "MESH":
+                continue
+            nomes = [s.material.name for s in o.material_slots if s.material]
+            if o.parent is None:
+                o.hide_render = True  # esfera solta do arquivo original
+                continue
+            if any(n.startswith("Wolf_Main") for n in nomes):
+                corpo = o
+            o.hide_render = not any(n.startswith(("Wolf_Main", "Claw")) for n in nomes)  # de costas: sem olhos, língua, dentes
+            o.data.materials.clear()
+            o.data.materials.append(PELE)
+        acao = ACAO_PARADA = bpy.data.actions[0]
+        ANDAR = (58, 90)  # laço perfeito da caminhada (32 quadros)
+        PARADA = 11  # pose em pé para a respiração
+    usar_acao(acao)
     cena.frame_set(ANDAR[0])
 
     def vertices(obj):
@@ -1218,28 +1279,37 @@ if MODO == "cao":
         m = np.array(obj.matrix_world)
         return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
 
-    # focinho para +Y (de costas para a câmera)
-    pts, oc = vertices(corpo), vertices(olhos).mean(0)
-    frente = oc[:2] - pts.mean(0)[:2]
+    # focinho para +Y (de costas para a câmera): do meio do corpo para a cabeça
+    cab = next(b for b in armacao.pose.bones if re.search(r"head|cabe", b.name, re.I))
+    pts = vertices(corpo)
+    frente = np.array(armacao.matrix_world @ cab.head)[:2] - pts.mean(0)[:2]
     raiz.matrix_world = Matrix.Rotation(math.atan2(1.0, 0.0) - math.atan2(frente[1], frente[0]), 4, "Z") @ raiz.matrix_world
-    # porte de pastora-alemã encorpada: ~1,05 m do peito à garupa (sem a cauda), ~0,62 m na cernelha
+    # porte de pastora-alemã: o lobo vai a 0,63 m de altura (e é alargado depois); o comprado, a --altura (até as orelhas)
     pts = vertices(corpo)
     tam = pts.max(0) - pts.min(0)
-    raiz.scale = tuple(s * 0.63 / tam[2] for s in raiz.scale)
+    alvo = opcao("--altura", 0.8) if COMPRADO else 0.63
+    raiz.scale = tuple(s * alvo / tam[2] for s in raiz.scale)
     pts = vertices(corpo)
     raiz.location.z -= pts[:, 2].min()
     raiz.location.x -= (pts[:, 0].min() + pts[:, 0].max()) / 2
     centro_y = (pts[:, 1].min() + pts[:, 1].max()) / 2
     raiz.location.y += DIST_CAO - centro_y
-    bpy.context.view_layer.update()
-    # a caminhada do arquivo é no lugar? (se andar, desconta depois)
-    ys = []
-    for f in range(ANDAR[0], ANDAR[1] + 1, 8):
+    Y_RAIZ = raiz.location.y
+    # a caminhada do arquivo anda sozinha (root motion)? mede o avanço do corpo no ciclo, e a raiz desconta
+    centros = []
+    for f in (ANDAR[0], ANDAR[1]):
         cena.frame_set(f)
-        ys.append(round(float(vertices(corpo)[:, 1].mean()), 3))
-    print("CENTRO Y NA CAMINHADA", ys, "tamanho", np.round(vertices(corpo).max(0) - vertices(corpo).min(0), 2), flush=True)
-    # pastora encorpada: o lobo do arquivo é estreito
-    raiz.scale.x *= 1.55
+        centros.append(float(vertices(corpo)[:, 1].mean()))
+    AVANCO_CICLO = centros[1] - centros[0] if abs(centros[1] - centros[0]) > 0.15 else 0.0
+    print("TAMANHO", np.round(pts.max(0) - pts.min(0), 2), "AVANCO NO CICLO", round(AVANCO_CICLO, 3), flush=True)
+
+    def avanco(quadro):
+        """Quanto o arquivo leva a cachorra para a frente no quadro (fracionário) do ciclo."""
+        return AVANCO_CICLO * (quadro - ANDAR[0]) / (ANDAR[1] - ANDAR[0])
+
+    if not COMPRADO:  # pastora encorpada: o lobo do arquivo é estreito
+        raiz.scale.x *= 1.55
+    cena.frame_set(ANDAR[0])
     bpy.context.view_layer.update()
 
     def achar_ossos():
@@ -1491,7 +1561,7 @@ if MODO == "cao":
         cena.frame_set(f)
         bpy.context.view_layer.update()
         ys_pe.append((armacao.matrix_world @ pe.head).y)
-    passo = max(ys_pe) - min(ys_pe)
+    passo = abs(AVANCO_CICLO) or max(ys_pe) - min(ys_pe)  # andando sozinha, a passada é o avanço do ciclo
     tela = TELA
     (SAIDA / f"camada-{tela}.json").write_text(json.dumps({
         "mao": [round(mao_tela.x, 4), round(1 - mao_tela.y, 4)], "passo_m": round(passo, 3), "quadros_andar": ANDAR[1] - ANDAR[0],
@@ -1504,6 +1574,7 @@ if MODO == "cao":
     cantos = []
     for f in range(ANDAR[0], ANDAR[1], 4):
         cena.frame_set(f)
+        raiz.location.y = Y_RAIZ - avanco(f)
         bpy.context.view_layer.update()
         cantos += [world_to_camera_view(cena, camobj, Vector(v)) for v in vertices(corpo)[::40]]
     us = [c.x for c in cantos] + [mao_tela.x]
@@ -1521,6 +1592,7 @@ if MODO == "cao":
         lista = [int(q) for q in quadros.split(",")] if quadros else range(ANDAR[0], ANDAR[1])
         for f in lista:
             cena.frame_set(f)
+            raiz.location.y = Y_RAIZ - avanco(f)
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"andar-{f - ANDAR[0]:02d}.png")
             if pronto(cena.render.filepath):
@@ -1530,7 +1602,10 @@ if MODO == "cao":
             print("MEMORIA", memoria(), flush=True)
     elif trecho == "parada":
         # parada: a pose em pé e a respiração (peito sobe e desce, cabeça acompanha de leve), laço de 24 quadros
-        cena.frame_set(PARADA)
+        raiz.location.y = Y_RAIZ
+        usar_acao(ACAO_PARADA)
+        if PARADA is not None:
+            cena.frame_set(PARADA)
         base = {pb.name: pb.matrix_basis.copy() for pb in armacao.pose.bones}
         armacao.animation_data.action = None
         for k in range(24):
@@ -1551,15 +1626,15 @@ if MODO == "cao":
     elif trecho == "entrada":
         cena.render.use_border = False  # ela se afasta rumo à porta: sai da região medida com ela perto da câmera
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
-        y_base = raiz.location.y
+        y_base = Y_RAIZ
         n_ = TOTAL - 1 - Q_ENTRADA
         for q in QUADROS or range(Q_ENTRADA, TOTAL):
             t = (q - Q_ENTRADA) / n_
-            raiz.location.y = y_base + (cao_y(q) - camera_y(q)) - DIST_CAO
             cam.dof.focus_distance = foco(q)
             posicionar_camera(0.0, q)  # a camada da cachorra fica com a câmera parada; só o olhar sobe
             fase = ((cao_y(q) - DIST_CAO) / passo) % 1.0  # continua a passada do passeio (a distância andada)
             quadro = ANDAR[0] + fase * (ANDAR[1] - ANDAR[0])
+            raiz.location.y = y_base + (cao_y(q) - camera_y(q)) - DIST_CAO - avanco(quadro)
             cena.frame_set(int(quadro), subframe=quadro % 1)
             atualizar_guia()
             # nos primeiros quadros a ponta da guia sai da mão e cai no chão, atrás da cachorra

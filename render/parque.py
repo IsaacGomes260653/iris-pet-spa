@@ -1484,9 +1484,45 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    # pelo mais longo na cauda e no pescoço; a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
-    pesos_pelo = [(b.name, 1.6) for b in OSSO["cauda"]] + [(OSSO["pescoco"].name, 0.6), (OSSO["cabeca"].name, -0.7)]
-    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo(), pesos_pelo)
+    def escurecer(m):
+        """Pelagem toda preta: a cor do arquivo vira quase preto, e fica só a variação de claro e escuro."""
+        bsdf = next((n for n in m.node_tree.nodes if n.bl_idname == "ShaderNodeBsdfPrincipled"), None) if m and m.use_nodes else None
+        if bsdf is None:
+            return
+        cor = bsdf.inputs["Base Color"]
+        hsv = m.node_tree.nodes.new("ShaderNodeHueSaturation")
+        hsv.inputs["Saturation"].default_value = 0.0
+        hsv.inputs["Value"].default_value = 0.12
+        if cor.links:
+            m.node_tree.links.new(cor.links[0].from_socket, hsv.inputs["Color"])
+        else:
+            hsv.inputs["Color"].default_value = cor.default_value
+        m.node_tree.links.new(hsv.outputs[0], cor)
+
+    PELO = material_pelo()
+    sistemas = [(o, ps) for o in importados if o.type == "MESH" for ps in o.particle_systems if ps.settings.type == "HAIR"]
+    curvas = [o for o in importados if o.type == "CURVES"]
+    if COMPRADO and (sistemas or curvas):
+        # o pelo do próprio modelo, todo preto; a pele por baixo também (sem marrom aparecendo entre os fios)
+        for k in range(len(corpo.material_slots)):
+            corpo.material_slots[k].material = PELE
+        for o in curvas:
+            o.data.materials.clear()
+            o.data.materials.append(PELO)
+        for o, ps in sistemas:
+            o.data.materials.append(PELO)
+            ps.settings.material = len(o.data.materials)  # um slot só do pelo
+            # memória: menos fios filhos no render, se precisar (--fracao-pelo 0.5 = metade)
+            ps.settings.rendered_child_count = max(1, round(ps.settings.rendered_child_count * opcao("--fracao-pelo", 1.0)))
+        pelo = None
+        print("PELO DO MODELO", len(sistemas), "sistemas de partículas,", len(curvas), "curvas", flush=True)
+    else:
+        if COMPRADO:  # modelo sem pelo de verdade: as texturas escurecem e o pelo é gerado aqui
+            for s_ in corpo.material_slots:
+                escurecer(s_.material)
+        # pelo mais longo na cauda e no pescoço; a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
+        pesos_pelo = [(b.name, 1.6) for b in OSSO["cauda"]] + [(OSSO["pescoco"].name, 0.6), (OSSO["cabeca"].name, -0.7)]
+        pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), PELO, pesos_pelo)
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
     def nuca_e_coleira():
@@ -1588,7 +1624,8 @@ if MODO == "cao":
     trecho = args[2]
     if "--depurar" in args:  # guia vermelha e sem pelo: confere material e luz da camada
         FITA.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.0, 0.0, 1)
-        pelo.hide_render = True
+        if pelo:
+            pelo.hide_render = True
     quadros = opcao("--quadros", "")
     if trecho == "andar":
         lista = [int(q) for q in quadros.split(",")] if quadros else range(ANDAR[0], ANDAR[1])

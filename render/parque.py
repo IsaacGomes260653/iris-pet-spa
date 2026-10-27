@@ -10,9 +10,12 @@ Cada tela tem a sua câmera: desktop 1920 × 1080 e celular 1080 × 1920 (vertic
 Uso:
   blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> --tela desktop|celular [--amostras N]
   blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> --tela desktop|celular [--amostras N]
-  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros)
-Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
-media-src/render/misty_dawn_4k.hdr e media-src/fontes.
+  blender -b --factory-startup --python render/parque.py -- inspecionar -   (lista o que veio no modelo comprado)
+  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros; --regiao x0,x1,y0,y1 um recorte)
+A cachorra é o modelo comprado em render/assets-comprados (fora do Git) quando houver; se o arquivo não ajudar, há
+--modelo ARQUIVO, --acao NOME, --andar ini,fim, --altura M, --osso-<pescoco|cabeca|tronco|pe> NOME e --fracao-pelo F.
+Sem ele, entra o lobo de reserva (media-src/modelos/lobo-cinza.glb).
+Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/render/misty_dawn_4k.hdr e media-src/fontes.
 
 Memória (para caber num PC de 8 GB, até ~4 GB): texturas limitadas a 1024 px no render, céu reduzido a 2K, grama só
 perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling). Cada render imprime "MEMORIA ...".

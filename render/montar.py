@@ -1,8 +1,8 @@
 """Monta os quadros renderizados do passeio para o site: gradação de amanhecer, recortes e WebP.
 
 Uso: python render/montar.py   (requer Pillow e numpy; rode depois de render/parque.py)
-Lê media-src/passeio-render/{fundo,cao-desktop,cao-celular} e grava public/passeio/{desktop,celular} + manifesto.json.
-O quadro renderizado é quadrado: o desktop usa a faixa 16:9 do meio e o celular a faixa 9:16 do meio.
+Lê media-src/passeio-render/{fundo,cao}-{desktop,celular} e grava public/passeio/{desktop,celular} + manifesto.json.
+Cada tela tem a sua câmera (desktop 1920 × 1080, celular 1080 × 1920): os quadros entram inteiros, sem recorte.
 """
 import json
 from pathlib import Path
@@ -13,7 +13,6 @@ from PIL import Image
 RAIZ = Path(__file__).resolve().parent.parent
 ORIGEM = RAIZ / "media-src" / "passeio-render"
 DESTINO = RAIZ / "public" / "passeio"
-FAIXA = (1 - 9 / 16) / 2  # margem cortada de cada lado do quadrado (0,21875)
 
 # mapa de gradiente da marca: azul-acinzentado → lavanda → malva → pêssego → creme (o mesmo de scripts/gradear.py)
 MAPA_POS = np.array([0.0, 0.32, 0.58, 0.80, 1.0])
@@ -30,12 +29,6 @@ def gradear(rgb):
     return np.clip(PISO + (1 - PISO) * rgb, 0, 1)
 
 
-def recortar(im, tela):
-    lado = im.width
-    a, b = round(lado * FAIXA), round(lado * (1 - FAIXA))
-    return im.crop((0, a, lado, b)) if tela == "desktop" else im.crop((a, 0, b, lado))
-
-
 def carregar(arq, alfa=False):
     im = Image.open(arq).convert("RGBA")
     px = np.asarray(im, dtype=np.float32) / 255
@@ -45,16 +38,16 @@ def carregar(arq, alfa=False):
 
 def main():
     manifesto = {"telas": {}}
-    fundos = sorted((ORIGEM / "fundo").glob("fundo-*.png"))
     for tela in ("desktop", "celular"):
+        fundos = sorted((ORIGEM / f"fundo-{tela}").glob("fundo-*.png"))
         pasta = DESTINO / tela
         pasta.mkdir(parents=True, exist_ok=True)
         for k, arq in enumerate(fundos):
-            recortar(carregar(arq), tela).save(pasta / f"fundo-{k:03d}.webp", quality=74, method=6)
+            carregar(arq).save(pasta / f"fundo-{k:03d}.webp", quality=74, method=6)
         # a cachorra: todos os quadros de uma tela num só recorte (a menor caixa que contém todos)
         cao = ORIGEM / f"cao-{tela}"
         quadros = {t: sorted(cao.glob(f"{t}-*.png")) for t in ("andar", "parada", "entrada")}
-        imgs = {t: [recortar(carregar(a, alfa=True), tela) for a in lista] for t, lista in quadros.items()}
+        imgs = {t: [carregar(a, alfa=True) for a in lista] for t, lista in quadros.items()}
         caixa = None
         for lista in imgs.values():
             for im in lista:
@@ -64,20 +57,18 @@ def main():
         for t, lista in imgs.items():
             for k, im in enumerate(lista):
                 im.crop(caixa).save(pasta / f"cao-{t}-{k:02d}.webp", quality=82, method=6)
-        # imagens paradas (pôster e movimento reduzido): o fundo de cada frase com a cachorra em pé; a chegada com ela na porta
-        q_frases = [0, 32, 63, 95]
+        info = json.loads((cao / f"camada-{tela}.json").read_text())
+        # imagens paradas (pôster e movimento reduzido): o fundo de cada frase com a cachorra em pé (as frases dividem o
+        # passeio até a chegada em quatro trechos); a chegada com ela na porta
+        q_frases = [round(info["q_entrada"] * k / 4) for k in range(4)]
         for k, q in enumerate(q_frases):
-            base = recortar(carregar(fundos[q]), tela).convert("RGBA")
+            base = carregar(fundos[q]).convert("RGBA")
             base.alpha_composite(imgs["parada"][0])
             base.convert("RGB").save(pasta / f"chave-{k}.webp", quality=80, method=6)
-        base = recortar(carregar(fundos[-1]), tela).convert("RGBA")
+        base = carregar(fundos[-1]).convert("RGBA")
         base.alpha_composite(imgs["entrada"][-1])
         base.convert("RGB").save(pasta / "chave-chegada.webp", quality=80, method=6)
-        info = json.loads((cao / f"camada-{tela}.json").read_text())
-        mao_u, mao_v = info["mao"]
-        largura, altura = recortar(Image.new("RGB", (100, 100)), tela).size
-        # a mão em coordenadas do quadro da tela (0..1)
-        mao = [mao_u, (mao_v - FAIXA) / (1 - 2 * FAIXA)] if tela == "desktop" else [(mao_u - FAIXA) / (1 - 2 * FAIXA), mao_v]
+        mao = info["mao"]  # já em coordenadas do quadro da tela (0..1)
         w, h = imgs["andar"][0].size
         manifesto["telas"][tela] = {
             "largura": w, "altura": h, "cao": [caixa[0] / w, caixa[1] / h, (caixa[2] - caixa[0]) / w, (caixa[3] - caixa[1]) / h],
@@ -87,7 +78,8 @@ def main():
             "fundo": len(fundos), "andar": len(imgs["andar"]), "parada": len(imgs["parada"]), "entrada": len(imgs["entrada"]),
             "passo_m": info["passo_m"], "q_entrada": info["q_entrada"], "camera_y": info["camera_y"],
         })
-        print(tela, "ok", caixa)
+        peso = sum(a.stat().st_size for a in pasta.glob("*.webp"))
+        print(f"{tela}: {len(fundos)} fundos, cachorra em {caixa}, {peso / 2**20:.1f} MB")
     (DESTINO / "manifesto.json").write_text(json.dumps(manifesto, separators=(",", ":")))
 
 

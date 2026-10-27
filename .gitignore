@@ -56,3 +56,6 @@ capturas/
 
 # cache do Python (scripts que importam render/montar.py)
 __pycache__/
+
+# modelo comprado (a licença não permite redistribuir)
+render/assets-comprados/

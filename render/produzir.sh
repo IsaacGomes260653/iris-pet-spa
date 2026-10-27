@@ -11,8 +11,8 @@ SAIDA=media-src/passeio-render
 FUNDO=180
 LOTE=15 # quadros por abertura do Blender (a cena leva ~30 s para montar; depois fica carregada entre os quadros)
 TELAS=(desktop celular)
-CAO=(andar:32 parada:24 entrada:29)
-CAO_TOTAL=$(((32 + 24 + 29) * 2))
+CAO=(andar:32 parada:24 entrada:40)
+CAO_TOTAL=$(((32 + 24 + 40) * 2))
 TOTAL=$((FUNDO * 2 + CAO_TOTAL))
 
 contar() { ls "$@" 2>/dev/null | wc -l; }

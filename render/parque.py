@@ -10,9 +10,12 @@ Cada tela tem a sua câmera: desktop 1920 × 1080 e celular 1080 × 1920 (vertic
 Uso:
   blender -b --factory-startup --python render/parque.py -- fundo <pasta> <ini> <fim> --tela desktop|celular [--amostras N]
   blender -b --factory-startup --python render/parque.py -- cao <pasta> <andar|parada|entrada> --tela desktop|celular [--amostras N]
-  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros)
-Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/modelos/lobo-cinza.glb,
-media-src/render/misty_dawn_4k.hdr e media-src/fontes.
+  blender -b --factory-startup --python render/parque.py -- inspecionar -   (lista o que veio no modelo comprado)
+  (--escala P renderiza a P% da resolução, para testes; --quadros a,b,c escolhe quadros; --regiao x0,x1,y0,y1 um recorte)
+A cachorra é o modelo comprado em render/assets-comprados (fora do Git) quando houver; se o arquivo não ajudar, há
+--modelo ARQUIVO, --acao NOME, --andar ini,fim, --altura M, --osso-<pescoco|cabeca|tronco|pe> NOME e --fracao-pelo F.
+Sem ele, entra o lobo de reserva (media-src/modelos/lobo-cinza.glb).
+Precisa de media-src/parque (modelos e texturas do Poly Haven), media-src/render/misty_dawn_4k.hdr e media-src/fontes.
 
 Memória (para caber num PC de 8 GB, até ~4 GB): texturas limitadas a 1024 px no render, céu reduzido a 2K, grama só
 perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling). Cada render imprime "MEMORIA ...".
@@ -20,9 +23,11 @@ perto do caminho, pelo com menos fios e mais grossos, render em blocos (tiling).
 import ctypes
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
@@ -65,8 +70,9 @@ def memoria():
 
 # ---------------------------------------------------------------- medidas do passeio (metros; a câmera olha para +Y)
 ALTURA_OLHO = 1.1  # um pouco acima da cachorra
-Y_INICIO, Y_FIM = 0.0, 66.0  # a câmera anda de Y_INICIO a Y_FIM (para a 8 m da fachada; a cachorra segue até a porta)
-Q_ENTRADA = round(TOTAL * 0.84)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+Y_INICIO, Y_FIM = 0.0, 60.0  # a câmera anda de Y_INICIO a Y_FIM (para a 14 m da fachada, com as copas e o céu em volta)
+Q_ENTRADA = round(TOTAL * 0.78)  # a partir deste quadro a câmera desacelera e a cachorra se adianta até a porta
+# (com a câmera parando a 14 m, a chegada precisa de 22% dos quadros para ela ir só ~1,4× mais rápida que a câmera)
 DIST_CAO = 1.45  # a cachorra anda sempre à frente da câmera, a esta distância: grande no centro de baixo, como a proa
 Y_LOJA = 74.0  # fachada da loja (porta no centro do caminho)
 LARGURA_CAMINHO = 2.3
@@ -76,6 +82,62 @@ cena = bpy.context.scene
 for o in list(bpy.data.objects):
     bpy.data.objects.remove(o, do_unlink=True)
 rng = np.random.default_rng(7)
+
+
+# ---------------------------------------------------------------- o modelo da cachorra
+# o comprado (render/assets-comprados, fora do Git, porque a licença não deixa redistribuir) quando houver; senão, o
+# lobo de reserva
+FORMATOS = (".blend", ".fbx", ".glb", ".gltf", ".usd", ".usdc", ".usdz", ".abc")
+COMPRADO = Path(opcao("--modelo", "")) if "--modelo" in args else next(
+    (a for ext in FORMATOS for a in sorted((RAIZ / "render" / "assets-comprados").rglob(f"*{ext}"))), None)
+
+
+def importar_modelo(arq):
+    """Importa os formatos comuns de modelo; câmeras e luzes que vêm no arquivo ficam fora do render."""
+    antes = set(bpy.data.objects)
+    ext = arq.suffix.lower()
+    if ext == ".blend":
+        with bpy.data.libraries.load(str(arq), link=False) as (de, para):
+            para.objects, para.actions = de.objects, de.actions
+        for o in para.objects:
+            if o is not None:
+                cena.collection.objects.link(o)
+    elif ext == ".fbx":
+        bpy.ops.import_scene.fbx(filepath=str(arq), automatic_bone_orientation=True)
+    elif ext in (".glb", ".gltf"):
+        bpy.ops.import_scene.gltf(filepath=str(arq))
+    elif ext == ".abc":
+        bpy.ops.wm.alembic_import(filepath=str(arq))
+    else:
+        bpy.ops.wm.usd_import(filepath=str(arq))
+    novos = [o for o in bpy.data.objects if o not in antes]
+    for o in novos:
+        if o.type in {"CAMERA", "LIGHT"}:
+            o.hide_render = True
+    return novos
+
+
+if MODO == "inspecionar":
+    # só lista o que veio no modelo comprado, para adaptar a cena quando ele chegar:
+    #   blender -b --factory-startup --python render/parque.py -- inspecionar -   (ou --modelo ARQUIVO)
+    if not COMPRADO:
+        raise SystemExit("Nenhum modelo em render/assets-comprados.")
+    print("MODELO", COMPRADO, flush=True)
+    for o in importar_modelo(COMPRADO):
+        extra = ""
+        if o.type == "MESH":
+            extra = f"{len(o.data.vertices)} vértices, modificadores {[m.type for m in o.modifiers]}, materiais {[m.name for m in o.data.materials if m]}"
+            extra += "".join(f", pelo '{ps.name}' ({ps.settings.count} fios, {ps.settings.rendered_child_count} filhos)" for ps in o.particle_systems)
+        elif o.type == "ARMATURE":
+            extra = f"{len(o.data.bones)} ossos: " + ", ".join(b.name for b in o.data.bones)
+        elif o.type == "CURVES":
+            extra = f"{len(o.data.curves)} fios, superfície {o.data.surface.name if o.data.surface else '-'}"
+        print(f"OBJETO {o.name} [{o.type}] pai={o.parent.name if o.parent else '-'} {extra}", flush=True)
+    for a in bpy.data.actions:
+        print(f"ACAO {a.name} quadros {tuple(int(v) for v in a.frame_range)}", flush=True)
+    for im in bpy.data.images:
+        print(f"TEXTURA {im.name} {tuple(im.size)}", flush=True)
+    raise SystemExit
 
 
 # ---------------------------------------------------------------- materiais
@@ -209,30 +271,6 @@ def chao_misto():
 
     a = pbr("flower_scattered_gravel", 0.5, (1.35, 1.25, 1.2, 1))
     b = pbr("grass_ground", 0.35, (0.42, 0.62, 0.34, 1))
-    # o tapete de jacarandá: pétalas em manchas (ruído fino recortado por um ruído largo), por cima dos dois chãos
-    petala = nos.new("ShaderNodeTexNoise")
-    petala.inputs["Scale"].default_value = 70.0
-    petala.inputs["Detail"].default_value = 0.0
-    lig.new(coord.outputs["Object"], petala.inputs["Vector"])
-    mancha = nos.new("ShaderNodeTexNoise")
-    mancha.inputs["Scale"].default_value = 2.4
-    lig.new(coord.outputs["Object"], mancha.inputs["Vector"])
-    soma_p = nos.new("ShaderNodeMath")
-    soma_p.operation = "MULTIPLY_ADD"
-    soma_p.inputs[1].default_value = 0.7
-    lig.new(petala.outputs["Fac"], soma_p.inputs[0])
-    lig.new(mancha.outputs["Fac"], soma_p.inputs[2])
-    cobre = nos.new("ShaderNodeMapRange")
-    cobre.interpolation_type = "SMOOTHSTEP"
-    cobre.inputs["From Min"].default_value, cobre.inputs["From Max"].default_value = 0.985, 1.04  # só um pó de pétalas: as de verdade vêm em instâncias
-    lig.new(soma_p.outputs[0], cobre.inputs["Value"])
-    for d_ in (a, b):
-        ponte = nos.new("ShaderNodeMix")
-        ponte.data_type = "RGBA"
-        lig.new(cobre.outputs["Result"], ponte.inputs["Factor"])
-        lig.new(d_["diff"], ponte.inputs[6])
-        ponte.inputs[7].default_value = (0.3, 0.17, 0.52, 1)
-        d_["diff"] = ponte.outputs[2]
     sep = nos.new("ShaderNodeSeparateXYZ")
     lig.new(coord.outputs["Object"], sep.inputs[0])
     absx = nos.new("ShaderNodeMath")
@@ -325,10 +363,19 @@ def petalas():
     soma = n.new("ShaderNodeMath")
     l.new(ruido.outputs["Fac"], soma.inputs[0])
     l.new(sob_copa.outputs["Result"], soma.inputs[1])
+    # sem corte seco: a soma vira a chance de cada pétala ficar, então a densidade varia aos poucos (o corte fazia
+    # manchas azuladas de borda dura no caminho)
+    chance = n.new("ShaderNodeMapRange")
+    chance.inputs["From Min"].default_value, chance.inputs["From Max"].default_value = 0.3, 0.9
+    chance.inputs["To Min"].default_value, chance.inputs["To Max"].default_value = 0.12, 0.75
+    l.new(soma.outputs[0], chance.inputs["Value"])
+    sorteio = n.new("FunctionNodeRandomValue")
+    sorteio.data_type = "FLOAT"
+    sorteio.inputs["Seed"].default_value = 3
     pouco = n.new("ShaderNodeMath")
-    pouco.operation = "LESS_THAN"
-    pouco.inputs[1].default_value = 0.6
-    l.new(soma.outputs[0], pouco.inputs[0])
+    pouco.operation = "GREATER_THAN"
+    l.new(sorteio.outputs["Value"], pouco.inputs[0])
+    l.new(chance.outputs["Result"], pouco.inputs[1])
     apaga = n.new("GeometryNodeDeleteGeometry")
     apaga.domain = "POINT"
     l.new(pts.outputs["Points"], apaga.inputs["Geometry"])
@@ -540,47 +587,106 @@ for k, y in enumerate(np.arange(11, Y_LOJA - 8, 13.0)):
     bpy.context.active_object.data.materials.append(POSTE)
 
 # ---------------------------------------------------------------- a loja Íris no fim da alameda
+# Modelada de verdade (nada de foto): parede com espessura, vãos fundos com caixilhos, toldos listrados, arandelas,
+# salão aceso com prateleiras e produtos, mesa de camas, balcão e vitrines montadas. Semente fixa: igual em todo quadro.
 antes_da_loja = set(bpy.data.objects)
-REBOCO = material("Reboco creme", **{"Base Color": (0.72, 0.6, 0.44, 1), "Roughness": 0.85})  # creme de verdade (o claro saía branco)
-SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.55})
-VIDRO = material("Vidro", **{"Base Color": (0.9, 0.92, 0.92, 1), "Transmission Weight": 1.0, "Roughness": 0.02, "IOR": 1.45})  # reflete o céu e as copas
-INTERIOR = material("Interior aceso", **{"Base Color": (1, 0.85, 0.7, 1), "Emission Color": (1.0, 0.83, 0.62, 1), "Emission Strength": 9.0})
+L, FUNDO_LOJA, PE_DIREITO, PAREDE = 10.0, 7.5, 3.6, 0.3  # largura, profundidade, altura de dentro, espessura da parede
+TOPO_VAO = 2.75  # topo da porta e das vitrines
+VAOS = ((0.0, 1.3, 0.0), (-3.0, 2.6, 0.55), (3.0, 2.6, 0.55))  # (centro x, largura, peitoril): a porta e as vitrines
+DENTRO_X, Y_DENTRO0, Y_DENTRO1 = L / 2 - PAREDE, Y_LOJA + PAREDE, Y_LOJA + FUNDO_LOJA - PAREDE
+loja_rng = np.random.default_rng(11)
+# reboco: do barro do Poly Haven ficam só o relevo e a variação de claro e escuro; a cor é o creme da marca
+# (a textura tem luminância média 0,11; o tom leva o reboco ao creme ~(0,7; 0,58; 0,43))
+REBOCO = material_textura("Reboco creme", "clay_plaster", 0.5, (6.1, 5.1, 3.75, 1))
+_tingir = next(n for n in REBOCO.node_tree.nodes if n.bl_idname == "ShaderNodeMix")
+_pb = REBOCO.node_tree.nodes.new("ShaderNodeRGBToBW")
+REBOCO.node_tree.links.new(_tingir.inputs["A"].links[0].from_socket, _pb.inputs[0])
+REBOCO.node_tree.links.new(_pb.outputs[0], _tingir.inputs["A"])
+PEDRA = material("Pedra", **{"Base Color": (0.5, 0.46, 0.4, 1), "Roughness": 0.75})
+SALVIA = material("Verde-sálvia", **{"Base Color": (0.27, 0.36, 0.3, 1), "Roughness": 0.4})  # caixilho pintado, acetinado
+VIDRO = material("Vidro", **{"Base Color": (0.96, 0.98, 0.97, 1), "Transmission Weight": 1.0, "Roughness": 0.0, "IOR": 1.5})
 LETRA = material("Letreiro", **{"Base Color": (0.98, 0.95, 0.9, 1), "Roughness": 0.4, "Emission Color": (1, 0.96, 0.9, 1), "Emission Strength": 2.5})
-TOLDO = material("Toldo", **{"Base Color": (0.42, 0.53, 0.46, 1), "Roughness": 0.8, "Sheen Weight": 0.4})
+FORRO = material("Forro", **{"Base Color": (0.86, 0.8, 0.72, 1), "Roughness": 0.9})
+FUNDO_ESTANTE = material("Fundo da estante", **{"Base Color": (0.36, 0.45, 0.4, 1), "Roughness": 0.85})
+METAL_ESCURO = material("Metal escuro", **{"Base Color": (0.05, 0.06, 0.06, 1), "Metallic": 1.0, "Roughness": 0.35})
+LUZ_MORNA = material("Luz morna", **{"Base Color": (1, 0.85, 0.65, 1), "Emission Color": (1.0, 0.76, 0.5, 1), "Emission Strength": 12.0})
+COR_MORNA = (1.0, 0.78, 0.56)
 
 
-def interior(x, y, base, larg, alt):
-    """O lado de dentro: foto de uma parede de produtos de petshop, acesa e morna, em cada vão."""
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(x, y, base + alt / 2), rotation=(math.radians(90), 0, 0))
-    o = bpy.context.active_object
-    o.scale = (larg, alt, 1)
-    m = bpy.data.materials.new(f"Interior {x}")
-    m.use_nodes = True
-    nos, lig = m.node_tree.nodes, m.node_tree.links
-    saida = nos["Material Output"]
-    nos.remove(nos["Principled BSDF"])
-    tex = nos.new("ShaderNodeTexImage")
-    tex.image = bpy.data.images.load(str(MIDIA / "interior-loja.jpg"), check_existing=True)
-    mapa = nos.new("ShaderNodeMapping")
-    # cada vão mostra um pedaço diferente da foto, na proporção dele
-    foto_ar = tex.image.size[0] / tex.image.size[1]
-    mapa.inputs["Scale"].default_value = (larg / alt / foto_ar * 0.9, 0.9, 1)
-    mapa.inputs["Location"].default_value = (0.05 + (x + 4) / 12 * 0.5, 0.05, 0)
-    coord = nos.new("ShaderNodeTexCoord")
-    lig.new(coord.outputs["UV"], mapa.inputs["Vector"])
-    lig.new(mapa.outputs[0], tex.inputs["Vector"])
-    morno = nos.new("ShaderNodeMix")
-    morno.data_type = "RGBA"
-    morno.blend_type = "MULTIPLY"
-    morno.inputs["Factor"].default_value = 1.0
-    morno.inputs[7].default_value = (1.0, 0.82, 0.62, 1)
-    lig.new(tex.outputs["Color"], morno.inputs[6])
-    em = nos.new("ShaderNodeEmission")
-    em.inputs["Strength"].default_value = 1.5  # loja acesa vista pelo vidro, sem estourar
-    lig.new(morno.outputs[2], em.inputs["Color"])
-    lig.new(em.outputs[0], saida.inputs["Surface"])
-    o.data.materials.append(m)
-    return o
+def madeira(nome, cor, escala=5.0):
+    """Madeira procedural: veios (ondas distorcidas) em dois tons."""
+    m = material(nome, Roughness=0.5)
+    arvore, liga = m.node_tree.nodes, m.node_tree.links
+    veio = arvore.new("ShaderNodeTexWave")
+    veio.bands_direction = "X"
+    veio.inputs["Scale"].default_value = escala
+    veio.inputs["Distortion"].default_value = 8.0
+    veio.inputs["Detail"].default_value = 4.0
+    tom = arvore.new("ShaderNodeMix")
+    tom.data_type = "RGBA"
+    tom.inputs[6].default_value = cor
+    tom.inputs[7].default_value = tuple(c * 0.68 for c in cor[:3]) + (1,)
+    liga.new(veio.outputs["Fac"], tom.inputs["Factor"])
+    liga.new(tom.outputs[2], arvore["Principled BSDF"].inputs["Base Color"])
+    return m
+
+
+CARVALHO = madeira("Carvalho", (0.42, 0.27, 0.15, 1))
+PISO = madeira("Piso de tábuas", (0.36, 0.23, 0.13, 1), 3.0)
+# embalagens nas cores da marca e de petshop: sálvia, creme, terracota, lilás, mostarda, marinho, branco, rosa, preto
+PALETA = [material(f"Produto {k}", **{"Base Color": (*c, 1), "Roughness": r}) for k, (c, r) in enumerate((
+    ((0.27, 0.36, 0.3), 0.5), ((0.86, 0.79, 0.66), 0.55), ((0.6, 0.27, 0.16), 0.5), ((0.5, 0.4, 0.66), 0.45),
+    ((0.82, 0.6, 0.18), 0.5), ((0.16, 0.24, 0.38), 0.4), ((0.92, 0.91, 0.88), 0.35), ((0.72, 0.42, 0.4), 0.5),
+    ((0.12, 0.12, 0.12), 0.3)))]
+CREME = PALETA[1]
+ROTULOS = [material(f"Rótulo {k}", **{"Base Color": (*c, 1), "Roughness": 0.35}) for k, c in enumerate(
+    ((0.95, 0.94, 0.9), (0.9, 0.84, 0.7), (0.1, 0.1, 0.1)))]
+
+
+class Pecas:
+    """Muitas peças (caixas, cilindros, cones e esferas) numa malha só, cada uma com o seu material."""
+
+    def __init__(self):
+        self.bm, self.mats = bmesh.new(), []
+
+    def _pintar(self, verts, m):
+        if m not in self.mats:
+            self.mats.append(m)
+        k = self.mats.index(m)
+        for f in {f for v in verts for f in v.link_faces}:
+            f.material_index = k
+
+    def caixa(self, centro, tam, m):
+        r = bmesh.ops.create_cube(self.bm, size=1.0, matrix=Matrix.Translation(centro) @ Matrix.Diagonal((*tam, 1.0)))
+        self._pintar(r["verts"], m)
+
+    def cone(self, centro, raio1, raio2, altura, m, lados=20, tampa=True):
+        r = bmesh.ops.create_cone(self.bm, cap_ends=tampa, segments=lados, radius1=raio1, radius2=raio2, depth=altura,
+                                  matrix=Matrix.Translation(centro))
+        self._pintar(r["verts"], m)
+
+    def cilindro(self, centro, raio, altura, m, lados=20):
+        self.cone(centro, raio, raio, altura, m, lados)
+
+    def esfera(self, centro, raio, m, achatar=1.0, escala=(1, 1)):
+        r = bmesh.ops.create_uvsphere(self.bm, u_segments=16, v_segments=10, radius=raio,
+                                      matrix=Matrix.Translation(centro) @ Matrix.Diagonal((*escala, achatar, 1)))
+        self._pintar(r["verts"], m)
+
+    def objeto(self, nome, bisel=0.0, suave=False):
+        malha = bpy.data.meshes.new(nome)
+        self.bm.to_mesh(malha)
+        self.bm.free()
+        for m in self.mats:
+            malha.materials.append(m)
+        if suave:
+            malha.shade_smooth()
+        o = bpy.data.objects.new(nome, malha)
+        cena.collection.objects.link(o)
+        if bisel:  # nenhuma aresta perfeitamente viva
+            b = o.modifiers.new("Bisel", "BEVEL")
+            b.width, b.segments, b.limit_method = bisel, 2, "ANGLE"
+        return o
 
 
 def caixa(nome, centro, tam, mat):
@@ -597,32 +703,93 @@ def caixa(nome, centro, tam, mat):
     return o
 
 
-L = 12.0  # largura da fachada
-predio = caixa("Prédio", (0, Y_LOJA + 4, 2.1), (L, 8, 4.2), REBOCO)
-caixa("Platibanda", (0, Y_LOJA - 0.05, 4.0), (L + 0.3, 0.3, 0.5), REBOCO)
-# porta e vitrines: molduras verde-sálvia, vidro e o interior aceso logo atrás
-for x, larg, alt, base in ((0, 1.5, 2.6, 0.0), (-3.6, 3.2, 2.3, 0.5), (3.6, 3.2, 2.3, 0.5)):
-    moldura = caixa("Moldura", (x, Y_LOJA + 0.02, base + alt / 2), (larg + 0.24, 0.12, alt + 0.24), SALVIA)
-    if x != 0:  # a porta fica aberta: a cachorra entra por ela
-        caixa("Vidro", (x, Y_LOJA - 0.05, base + alt / 2), (larg, 0.02, alt), VIDRO)
-    interior(x, Y_LOJA + 2.6, base, larg, alt)  # fundo da loja a 2,6 m do vidro: desfocado, com profundidade
-    corte = caixa("Corte", (x, Y_LOJA + 1.35, base + alt / 2), (larg, 2.9, alt), REBOCO)
+# casca: fachada com espessura, laterais, fundo e laje; cornija e friso no alto, rodapé de pedra embaixo
+fachada = caixa("Fachada", (0, Y_LOJA + PAREDE / 2, 2.0), (L, PAREDE, 4.0), REBOCO)
+for lado in (-1, 1):
+    caixa("Parede lateral", (lado * (L / 2 - PAREDE / 2), Y_LOJA + FUNDO_LOJA / 2, 2.0), (PAREDE, FUNDO_LOJA, 4.0), REBOCO)
+caixa("Parede do fundo", (0, Y_LOJA + FUNDO_LOJA - PAREDE / 2, 2.0), (L, PAREDE, 4.0), REBOCO)
+caixa("Laje", (0, Y_LOJA + FUNDO_LOJA / 2, (PE_DIREITO + 4.0) / 2), (L - 0.01, FUNDO_LOJA - 0.01, 4.0 - PE_DIREITO), FORRO)
+caixa("Cornija", (0, Y_LOJA + (PAREDE - 0.14) / 2, 4.12), (L + 0.28, PAREDE + 0.14, 0.24), REBOCO)
+caixa("Friso", (0, Y_LOJA, 3.88), (L + 0.12, 0.12, 0.08), REBOCO)
+for lado in (-1, 1):
+    comp = L / 2 + 0.03 - 0.65
+    caixa("Rodapé", (lado * (0.65 + comp / 2), Y_LOJA, 0.21), (comp, 0.06, 0.42), PEDRA)
+# vãos atravessando a parede: a profundidade do reboco aparece em volta de cada caixilho
+for x, larg, peit in VAOS:
+    base = peit if peit else -0.1
+    corte = caixa("Vão", (x, Y_LOJA + PAREDE / 2, (base + TOPO_VAO) / 2), (larg, PAREDE + 0.3, TOPO_VAO - base), REBOCO)
     corte.hide_render = corte.hide_viewport = True
-    for alvo_ in (predio, moldura):  # o vão atravessa a parede e a moldura (sobra só o caixilho)
-        bo = alvo_.modifiers.new("Vão", "BOOLEAN")
-        bo.operation = "DIFFERENCE"
-        bo.object = corte
-    if x != 0:
-        instancia(jardineira, (x, Y_LOJA - 0.45, 0.0), 0.0, 1.6)
-# toldo inclinado sobre porta e vitrines
-bpy.ops.mesh.primitive_plane_add(size=1, location=(0, Y_LOJA - 0.42, 2.98))
-toldo = bpy.context.active_object
-toldo.scale = (L - 1.2, 0.9, 1)
-toldo.rotation_euler = (math.radians(-22), 0, 0)
-toldo.data.materials.append(TOLDO)
-toldo.modifiers.new("Espessura", "SOLIDIFY").thickness = 0.03
-# letreiro: "Íris" em Literata e "PET SPA" em Martian Mono, sobre faixa verde-sálvia
-caixa("Faixa do letreiro", (0, Y_LOJA - 0.12, 3.48), (5.2, 0.08, 0.78), SALVIA)
+    bo = fachada.modifiers.new("Vão", "BOOLEAN")
+    bo.operation, bo.object = "DIFFERENCE", corte
+    if peit:
+        caixa("Peitoril", (x, Y_LOJA + PAREDE / 2 - 0.05, peit - 0.03), (larg + 0.12, PAREDE + 0.1, 0.06), PEDRA)
+
+# caixilhos verde-sálvia recuados 12 cm, com bandeira em cima; vitrines com montante no meio; vidro de verdade
+cx = Pecas()
+for x, larg, peit in VAOS:
+    yq, alt, e = Y_LOJA + 0.12, TOPO_VAO - peit, 0.06
+    zc, travessa = (peit + TOPO_VAO) / 2, peit + (TOPO_VAO - peit) * 0.78
+    cx.caixa((x - larg / 2 + e / 2, yq, zc), (e, 0.07, alt), SALVIA)
+    cx.caixa((x + larg / 2 - e / 2, yq, zc), (e, 0.07, alt), SALVIA)
+    cx.caixa((x, yq, TOPO_VAO - e / 2), (larg, 0.07, e), SALVIA)
+    cx.caixa((x, yq, travessa), (larg, 0.07, 0.05), SALVIA)
+    if peit:
+        cx.caixa((x, yq, peit + e / 2), (larg, 0.07, e), SALVIA)
+        cx.caixa((x, yq, (peit + travessa) / 2), (0.05, 0.07, travessa - peit), SALVIA)
+        cx.caixa((x, yq + 0.01, zc), (larg - 0.02, 0.008, alt - 0.02), VIDRO)
+    else:  # a porta: só a bandeira de vidro (a folha está aberta)
+        cx.caixa((x, yq + 0.01, (travessa + TOPO_VAO) / 2), (larg - 0.02, 0.008, TOPO_VAO - travessa - 0.02), VIDRO)
+cx.objeto("Caixilhos", bisel=0.004)
+# a folha da porta, aberta para dentro: a cachorra entra por ela
+folha = Pecas()
+fw, fh, e = 1.18, 2.1, 0.09
+for cx_, w_ in ((e / 2, e), (fw - e / 2, e)):
+    folha.caixa((cx_, 0, fh / 2), (w_, 0.05, fh), SALVIA)
+folha.caixa((fw / 2, 0, fh - e / 2), (fw, 0.05, e), SALVIA)
+folha.caixa((fw / 2, 0, 0.13), (fw, 0.05, 0.26), SALVIA)
+folha.caixa((fw / 2, 0, (0.26 + fh - e) / 2), (fw - 2 * e, 0.01, fh - e - 0.26), VIDRO)
+folha.caixa((fw - 0.16, -0.05, 1.0), (0.03, 0.04, 0.3), METAL_ESCURO)  # puxador
+porta = folha.objeto("Porta", bisel=0.004)
+porta.location = (-0.62, Y_LOJA + 0.16, 0.0)
+porta.rotation_euler = (0, 0, math.radians(78))
+
+# toldos listrados (sálvia e creme) sobre as vitrines, com a franja caindo na frente
+TOLDO = material("Toldo listrado", **{"Roughness": 0.85, "Sheen Weight": 0.3})
+_n, _l = TOLDO.node_tree.nodes, TOLDO.node_tree.links
+_geo = _n.new("ShaderNodeNewGeometry")
+_sx = _n.new("ShaderNodeSeparateXYZ")
+_l.new(_geo.outputs["Position"], _sx.inputs[0])
+_fr = _n.new("ShaderNodeMath")
+_fr.operation = "PINGPONG"
+_fr.inputs[1].default_value = 0.18  # listras de 18 cm
+_l.new(_sx.outputs["X"], _fr.inputs[0])
+_lst = _n.new("ShaderNodeMath")
+_lst.operation = "GREATER_THAN"
+_lst.inputs[1].default_value = 0.09
+_l.new(_fr.outputs[0], _lst.inputs[0])
+_cor = _n.new("ShaderNodeMix")
+_cor.data_type = "RGBA"
+_cor.inputs[6].default_value = (0.3, 0.4, 0.33, 1)
+_cor.inputs[7].default_value = (0.86, 0.8, 0.68, 1)
+_l.new(_lst.outputs[0], _cor.inputs["Factor"])
+_l.new(_cor.outputs[2], _n["Principled BSDF"].inputs["Base Color"])
+for x, larg, peit in VAOS[1:]:
+    bm = bmesh.new()
+    w = larg / 2 + 0.15
+    vs = [bm.verts.new(p) for p in ((x - w, Y_LOJA - 0.02, 3.02), (x + w, Y_LOJA - 0.02, 3.02), (x + w, Y_LOJA - 0.8, 2.66),
+                                    (x - w, Y_LOJA - 0.8, 2.66), (x + w, Y_LOJA - 0.8, 2.44), (x - w, Y_LOJA - 0.8, 2.44))]
+    bm.faces.new((vs[0], vs[1], vs[2], vs[3]))
+    bm.faces.new((vs[3], vs[2], vs[4], vs[5]))
+    malha = bpy.data.meshes.new("Toldo")
+    bm.to_mesh(malha)
+    bm.free()
+    malha.materials.append(TOLDO)
+    toldo = bpy.data.objects.new("Toldo", malha)
+    cena.collection.objects.link(toldo)
+    toldo.modifiers.new("Espessura", "SOLIDIFY").thickness = 0.012
+
+# letreiro: "Íris" em Literata e "PET SPA" em Martian Mono, sobre faixa verde-sálvia acima da porta
+caixa("Faixa do letreiro", (0, Y_LOJA - 0.03, 3.42), (4.6, 0.06, 0.6), SALVIA)
 
 
 def texto(conteudo, fonte, tamanho, local, extrude=0.02):
@@ -641,15 +808,178 @@ def texto(conteudo, fonte, tamanho, local, extrude=0.02):
     return o
 
 
-texto("Íris", "Literata.ttf", 0.66, (-0.55, Y_LOJA - 0.2, 3.52))
-texto("PET SPA", "MartianMono.ttf", 0.17, (1.1, Y_LOJA - 0.2, 3.45), 0.012)
-for x in (-1.25, 1.25):
+texto("Íris", "Literata.ttf", 0.5, (-0.55, Y_LOJA - 0.08, 3.44))
+texto("PET SPA", "MartianMono.ttf", 0.14, (1.05, Y_LOJA - 0.08, 3.4), 0.01)
+# arandelas dos dois lados da porta: poças de luz morna no reboco
+for lado in (-1, 1):
+    ar = Pecas()
+    ar.caixa((lado * 1.0, Y_LOJA - 0.05, 2.3), (0.08, 0.1, 0.08), METAL_ESCURO)
+    ar.cilindro((lado * 1.0, Y_LOJA - 0.13, 2.14), 0.05, 0.2, LUZ_MORNA)
+    ar.cone((lado * 1.0, Y_LOJA - 0.13, 2.27), 0.08, 0.03, 0.06, METAL_ESCURO)
+    ar.objeto("Arandela")
+    luz_ = bpy.data.lights.new("Arandela", "POINT")
+    luz_.energy, luz_.color, luz_.shadow_soft_size = 25.0, COR_MORNA, 0.05
+    o_ = bpy.data.objects.new("Arandela", luz_)
+    o_.location = (lado * 1.0, Y_LOJA - 0.22, 2.12)
+    cena.collection.objects.link(o_)
+
+# ---- o salão: piso de tábuas, estantes cheias, mesa de camas, balcão, pendentes e luz morna
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, (Y_DENTRO0 + Y_DENTRO1) / 2, 0.015))
+piso = bpy.context.active_object
+piso.scale = (2 * DENTRO_X, Y_DENTRO1 - Y_DENTRO0, 1)
+piso.data.materials.append(PISO)
+
+
+def estante(nome, comp, prof=0.38, alturas=(0.12, 0.55, 0.98, 1.41, 1.84, 2.27)):
+    """Estante de carvalho com fundo sálvia, de frente para -Y (local): produtos em grupos de 2 a 5 iguais."""
+    p = Pecas()
+    topo = alturas[-1] + 0.33
+    p.caixa((comp / 2, prof - 0.01, topo / 2), (comp, 0.02, topo), FUNDO_ESTANTE)
+    n_mod = max(1, round(comp / 1.1))
+    for k in range(n_mod + 1):
+        p.caixa((min(max(k * comp / n_mod, 0.02), comp - 0.02), prof / 2, topo / 2), (0.035, prof, topo), CARVALHO)
+    for k, z in enumerate(alturas):
+        p.caixa((comp / 2, prof / 2, z), (comp, prof, 0.03), CARVALHO)
+        vao = (alturas[k + 1] if k + 1 < len(alturas) else topo) - z - 0.06
+        x = 0.06
+        while x < comp - 0.15:
+            tipo = loja_rng.choice(3, p=(0.55, 0.2, 0.25)) if vao > 0.36 else loja_rng.choice((0, 2))
+            m = PALETA[loja_rng.integers(len(PALETA))]
+            rotulo = ROTULOS[loja_rng.integers(len(ROTULOS))]
+            if tipo == 1:  # saco de ração
+                w, h, d = loja_rng.uniform(0.26, 0.34), loja_rng.uniform(0.3, min(0.38, vao)), 0.15
+            elif tipo == 2:  # lata ou pote
+                w = loja_rng.uniform(0.08, 0.12)
+                h, d = loja_rng.uniform(0.08, min(0.16, vao)), w
+            else:  # caixa: mais larga que alta (embalagem, não livro)
+                w, h, d = loja_rng.uniform(0.14, 0.28), loja_rng.uniform(0.1, min(0.24, vao)), loja_rng.uniform(0.1, prof - 0.08)
+            for _ in range(loja_rng.integers(2, 6)):
+                if x + w > comp - 0.06:
+                    break
+                centro = (x + w / 2, 0.04 + d / 2, z + 0.015 + h / 2)
+                if tipo == 2:
+                    p.cilindro(centro, w / 2, h, m, 14)
+                    p.cilindro(centro, w / 2 + 0.002, h * 0.45, rotulo, 14)  # cinta do rótulo
+                else:
+                    p.caixa(centro, (w, d, h), m)
+                    p.caixa((centro[0], 0.038, centro[2] + h * 0.08), (w * 0.72, 0.004, h * 0.42), rotulo)  # rótulo na frente
+                x += w + 0.01
+            x += loja_rng.uniform(0.03, 0.12)
+    return p.objeto(nome, bisel=0.005)
+
+
+fundo_estante = estante("Estante do fundo", 2 * DENTRO_X - 0.1)
+fundo_estante.location = (-DENTRO_X + 0.05, Y_DENTRO1 - 0.38, 0.015)
+e_esq = estante("Estante da esquerda", 4.6)
+e_esq.location, e_esq.rotation_euler = (-DENTRO_X + 0.38, Y_DENTRO0 + 1.4, 0.015), (0, 0, math.radians(90))
+e_dir = estante("Estante da direita", 4.6)
+e_dir.location, e_dir.rotation_euler = (DENTRO_X - 0.38, Y_DENTRO0 + 6.0, 0.015), (0, 0, math.radians(-90))
+
+
+def cama(p, centro, raio, m):
+    """Cama redonda: borda fofa (rosca achatada) e almofada."""
+    for k in range(14):
+        a = 2 * math.pi * k / 14
+        p.esfera((centro[0] + raio * math.cos(a), centro[1] + raio * math.sin(a), centro[2] + raio * 0.22), raio * 0.32, m, 0.8)
+    p.cilindro((centro[0], centro[1], centro[2] + 0.04), raio * 0.85, 0.08, m, 24)
+
+
+# no alto da parede do fundo, a pata da marca em luz e "BANHO · TOSA · SPA"
+pata = Pecas()
+py_ = Y_DENTRO1 - 0.03
+pata.esfera((-0.9, py_, 2.98), 0.2, LETRA, 0.85, (1, 0.12))
+for k, (dx, dz) in enumerate(((-0.24, 0.2), (-0.09, 0.3), (0.09, 0.3), (0.24, 0.2))):
+    pata.esfera((-0.9 + dx, py_, 2.98 + dz), 0.075, LETRA, 1.25, (1, 0.12))
+pata.objeto("Pata em luz", suave=True)
+texto("BANHO · TOSA · SPA", "MartianMono.ttf", 0.11, (0.55, Y_DENTRO1 - 0.04, 3.0), 0.006)
+# pilhas de sacos de ração de 15 kg no chão, à direita do fundo (do outro lado do balcão)
+racao = Pecas()
+for k in range(5):
+    m = PALETA[(0, 2, 5, 0, 4)[k]]
+    for lado_ in (0, 1):
+        cz = 0.09 + 0.15 * k
+        centro = (2.25 + lado_ * 0.7 + loja_rng.uniform(-0.03, 0.03), Y_LOJA + 5.3 + loja_rng.uniform(-0.03, 0.03), cz)
+        racao.caixa(centro, (0.62, 0.44, 0.14), m)
+        racao.caixa((centro[0], centro[1] - 0.222, cz), (0.4, 0.004, 0.08), ROTULOS[k % 2])
+racao.objeto("Sacos de ração", bisel=0.03)
+# guias e coleiras penduradas num painel, na parede da esquerda perto da vitrine
+guias = Pecas()
+gx = -DENTRO_X + 0.03
+guias.caixa((gx, Y_DENTRO0 + 0.75, 1.7), (0.02, 1.1, 1.2), FUNDO_ESTANTE)
+for k in range(9):
+    gy = Y_DENTRO0 + 0.3 + k * 0.11
+    m = PALETA[(2, 4, 3, 0, 7, 5, 2, 4, 3)[k]]
+    guias.cilindro((gx + 0.04, gy, 2.2), 0.008, 0.06, METAL_ESCURO, 6)  # gancho
+    guias.caixa((gx + 0.05, gy, 1.85), (0.008, 0.022, 0.65), m)  # guia
+    guias.caixa((gx + 0.05, gy, 1.48), (0.03, 0.06, 0.06), m)  # alça
+guias.objeto("Guias", bisel=0.003)
+
+# mesa de camas e brinquedos no meio do salão
+mesa = Pecas()
+mx, my = 0.0, Y_LOJA + 3.6
+mesa.caixa((mx, my, 0.72), (1.8, 0.9, 0.05), CARVALHO)
+for dx in (-0.82, 0.82):
+    for dy in (-0.38, 0.38):
+        mesa.caixa((mx + dx, my + dy, 0.36), (0.05, 0.05, 0.7), CARVALHO)
+for k, dx in enumerate((-0.5, 0.0, 0.5)):
+    cama(mesa, (mx + dx, my + (0.1 if k == 1 else -0.12), 0.745), 0.22, PALETA[(3, 0, 7)[k]])
+for _ in range(9):  # bolinhas e brinquedos no tampo
+    mesa.esfera((mx + loja_rng.uniform(-0.8, 0.8), my + loja_rng.uniform(0.25, 0.4), 0.79), 0.04, PALETA[loja_rng.choice((2, 4, 3, 7))])
+mesa.objeto("Mesa de camas", bisel=0.004, suave=False)
+# balcão à esquerda, perto do fundo, com o caixa
+balcao = Pecas()
+bx, by = -2.6, Y_LOJA + 5.4
+balcao.caixa((bx, by, 0.5), (2.0, 0.6, 1.0), CARVALHO)
+balcao.caixa((bx, by, 1.02), (2.06, 0.66, 0.04), CREME)
+balcao.caixa((bx + 0.5, by + 0.05, 1.12), (0.3, 0.22, 0.16), METAL_ESCURO)
+balcao.objeto("Balcão", bisel=0.005)
+instancia(vaso, (bx - 0.7, by, 1.04), 0.5, 0.6)
+# pendentes sobre a mesa: fio, cúpula sálvia e lâmpada acesa (cada um com uma luz pontual dentro)
+pend = Pecas()
+for dx in (-0.6, 0.0, 0.6):
+    pend.cilindro((mx + dx, my, (PE_DIREITO + 1.9) / 2 + 0.1), 0.004, PE_DIREITO - 2.1, METAL_ESCURO, 6)
+    pend.cone((mx + dx, my, 1.98), 0.2, 0.05, 0.2, SALVIA, 24, tampa=False)
+    pend.esfera((mx + dx, my, 1.9), 0.05, LUZ_MORNA)
+    luz_ = bpy.data.lights.new("Pendente", "POINT")
+    luz_.energy, luz_.color, luz_.shadow_soft_size = 30.0, COR_MORNA, 0.04
+    o_ = bpy.data.objects.new("Pendente", luz_)
+    o_.location = (mx + dx, my, 1.86)
+    cena.collection.objects.link(o_)
+pend.objeto("Pendentes", suave=True)
+# luz do teto: dois painéis mornos, e um foco em cada vitrine
+for y_ in (Y_LOJA + 2.4, Y_LOJA + 5.2):
+    painel = bpy.data.lights.new("Teto", "AREA")
+    painel.shape, painel.size, painel.size_y = "RECTANGLE", 3.2, 1.0
+    painel.energy, painel.color = 170.0, COR_MORNA  # aceso sem desbotar as embalagens
+    o_ = bpy.data.objects.new("Teto", painel)
+    o_.location = (0, y_, PE_DIREITO - 0.05)
+    cena.collection.objects.link(o_)
+# vitrines: tablado creme com cama, pilha de caixas, brinquedo e planta, e um foco de cima
+for x, larg, peit in VAOS[1:]:
+    vit = Pecas()
+    vy = Y_DENTRO0 + 0.5
+    vit.caixa((x, vy, 0.25), (larg - 0.2, 0.9, 0.5), CREME)
+    cama(vit, (x - 0.55 * math.copysign(1, x), vy, 0.5), 0.3, PALETA[0 if x < 0 else 3])
+    for k in range(3):  # pilha de caixas
+        vit.caixa((x + 0.45 * math.copysign(1, x), vy + 0.05, 0.5 + 0.11 + 0.22 * k), (0.34 - 0.04 * k, 0.26, 0.22), PALETA[(2, 1, 5)[k]])
+    vit.esfera((x - 0.1 * math.copysign(1, x), vy - 0.2, 0.56), 0.06, PALETA[4])  # bolinha
+    vit.objeto("Vitrine", bisel=0.004)
+    instancia(vaso, (x + 0.95 * math.copysign(1, x), vy + 0.15, 0.5), loja_rng.uniform(0, 6.28), 0.8)
+    foco_ = bpy.data.lights.new("Foco da vitrine", "SPOT")
+    foco_.energy, foco_.color, foco_.spot_size, foco_.spot_blend = 110.0, COR_MORNA, math.radians(70), 0.6
+    o_ = bpy.data.objects.new("Foco da vitrine", foco_)
+    o_.location = (x, vy - 0.1, PE_DIREITO - 0.1)
+    cena.collection.objects.link(o_)
+
+# fora: jardineiras sob as vitrines, vasos na porta, jacarandás emoldurando a fachada e cerca viva dos lados
+for x, larg, peit in VAOS[1:]:
+    instancia(jardineira, (x, Y_LOJA - 0.45, 0.0), 0.0, 1.6)
+for x in (-1.3, 1.3):
     instancia(vaso, (x, Y_LOJA - 0.5, 0.0), rng.uniform(0, 6.28), 1.25)
-for x, y in ((-10.5, Y_LOJA - 1), (10.5, Y_LOJA + 1.5), (-6, Y_LOJA + 11), (7, Y_LOJA + 12)):
+for x, y in ((-7.6, Y_LOJA - 2.5), (7.9, Y_LOJA - 1.0), (-3.5, Y_LOJA + 10.5), (4.5, Y_LOJA + 11.5)):
     instancia(jacaranda, (x, y, 0), rng.uniform(0, 6.28), 0.6)
-# cerca viva dos lados da loja
-for x in (-8.5, 8.5):
-    for y in (Y_LOJA - 1.5, Y_LOJA + 2.0):
+for x in (-6.4, 6.4):
+    for y in (Y_LOJA - 1.0, Y_LOJA + 1.8):
         instancia(arbusto, (x, y, 0.6), rng.uniform(0, 6.28), 0.9)
 
 LOJA = [o for o in bpy.data.objects if o not in antes_da_loja]
@@ -728,7 +1058,33 @@ _alt.interpolation_type = "SMOOTHSTEP"
 _alt.inputs["From Min"].default_value, _alt.inputs["From Max"].default_value = 0.0, 6.0
 _alt.inputs["To Min"].default_value, _alt.inputs["To Max"].default_value = 0.016, 0.003
 mv.node_tree.links.new(_z.outputs[0], _alt.inputs["Value"])
-mv.node_tree.links.new(_alt.outputs["Result"], vol.inputs["Density"])
+# dentro da loja não há névoa (o salão aceso fica limpo atrás do vidro)
+_geo_n = mv.node_tree.nodes.new("ShaderNodeNewGeometry")
+_sp_n = mv.node_tree.nodes.new("ShaderNodeSeparateXYZ")
+mv.node_tree.links.new(_geo_n.outputs["Position"], _sp_n.inputs[0])
+_fora = mv.node_tree.nodes.new("ShaderNodeMath")
+_fora.operation = "MULTIPLY"
+mv.node_tree.links.new(_alt.outputs["Result"], _fora.inputs[0])
+_dentro = None
+for _eixo, _a, _b in (("X", -L / 2, L / 2), ("Y", Y_LOJA, Y_LOJA + FUNDO_LOJA), ("Z", -1.0, 4.3)):
+    _c = mv.node_tree.nodes.new("ShaderNodeMath")
+    _c.operation = "COMPARE"  # 1 quando |v - meio| <= meia largura
+    _c.inputs[1].default_value, _c.inputs[2].default_value = (_a + _b) / 2, (_b - _a) / 2
+    mv.node_tree.links.new(_sp_n.outputs[_eixo], _c.inputs[0])
+    if _dentro is None:
+        _dentro = _c
+    else:
+        _m = mv.node_tree.nodes.new("ShaderNodeMath")
+        _m.operation = "MULTIPLY"
+        mv.node_tree.links.new(_dentro.outputs[0], _m.inputs[0])
+        mv.node_tree.links.new(_c.outputs[0], _m.inputs[1])
+        _dentro = _m
+_inv = mv.node_tree.nodes.new("ShaderNodeMath")
+_inv.operation = "SUBTRACT"
+_inv.inputs[0].default_value = 1.0
+mv.node_tree.links.new(_dentro.outputs[0], _inv.inputs[1])
+mv.node_tree.links.new(_inv.outputs[0], _fora.inputs[1])
+mv.node_tree.links.new(_fora.outputs[0], vol.inputs["Density"])
 mv.node_tree.links.new(vol.outputs[0], mv.node_tree.nodes["Material Output"].inputs["Volume"])
 nevoa.data.materials.append(mv)
 nevoa.visible_shadow = False
@@ -745,7 +1101,6 @@ else:
     INCLINA = math.radians(7)
 cam.dof.use_dof = True
 cam.dof.aperture_fstop = 4.0
-cam.dof.focus_distance = math.hypot(DIST_CAO, ALTURA_OLHO - 0.5)
 camobj = bpy.data.objects.new("Olhar", cam)
 cena.collection.objects.link(camobj)
 cena.camera = camobj
@@ -760,9 +1115,38 @@ def camera_y(q):
     return Y_INICIO + v * Q_ENTRADA + v * (TOTAL - 1 - Q_ENTRADA) * (t - t * t / 2)
 
 
-def posicionar_camera(y):
+PORTA = Y_LOJA + 0.9  # onde a cachorra termina, já do lado de dentro
+
+
+def cao_y(q):
+    """Onde a cachorra está no quadro q: sempre à frente da câmera e, na chegada, adiantando-se até a porta."""
+    if q <= Q_ENTRADA:
+        return camera_y(q) + DIST_CAO
+    ini = camera_y(Q_ENTRADA) + DIST_CAO
+    return ini + (PORTA - ini) * (q - Q_ENTRADA) / (TOTAL - 1 - Q_ENTRADA)
+
+
+def foco(q):
+    """O foco acompanha a cachorra: perto no passeio e, na chegada, vai com ela até a porta (a fachada fica nítida)."""
+    return math.hypot(cao_y(q) - camera_y(q), ALTURA_OLHO - 0.5)
+
+
+OLHAR_LOJA = math.radians(5)  # na chegada o olhar sobe para a fachada, como quem chega e olha a loja
+
+
+def inclinacao(q):
+    if q <= Q_ENTRADA:
+        return INCLINA
+    t = (q - Q_ENTRADA) / (TOTAL - 1 - Q_ENTRADA)
+    return INCLINA - OLHAR_LOJA * t * t * (3 - 2 * t)
+
+
+def posicionar_camera(y, q=0):
     camobj.location = (0.0, y, ALTURA_OLHO)
-    camobj.rotation_euler = (math.pi / 2 - INCLINA, 0.0, 0.0)  # +Y, um pouco para baixo
+    camobj.rotation_euler = (math.pi / 2 - inclinacao(q), 0.0, 0.0)  # +Y, um pouco para baixo
+
+
+cam.dof.focus_distance = foco(0)
 
 
 # ---------------------------------------------------------------- render
@@ -782,6 +1166,10 @@ cena.cycles.max_bounces = 4
 cena.cycles.volume_bounces = 0
 cena.cycles.transparent_max_bounces = 24
 cena.cycles.sample_clamp_indirect = 6.0
+# a luz do sol espalhada na névoa (anisotropia alta) dá amostras raras e muito fortes, que o denoiser deixa como
+# granulado; limitar a luz direta a 5 tira o granulado e mantém o brilho do véu. A camada da cachorra não tem névoa
+# e fica sem limite (o brilho do sol nas pontas do pelo continua)
+cena.cycles.sample_clamp_direct = opcao("--clamp-direto", 5.0 if MODO == "fundo" else 0.0)
 cena.render.resolution_x, cena.render.resolution_y = RES
 cena.render.resolution_percentage = opcao("--escala", 100)
 # memória: as texturas da vegetação e dos objetos caem para 1024 px (o chão, visto de perto e de lado, fica em 2K).
@@ -822,10 +1210,15 @@ def pronto(caminho):
         return f.read(12)[4:8] == b"IEND"
 
 QUADROS = [int(q) for q in opcao("--quadros", "").split(",") if q]
+REGIAO = [float(v) for v in opcao("--regiao", "").split(",") if v]  # testes: só um recorte (x0,x1,y0,y1 em 0..1)
+if REGIAO:
+    cena.render.use_border = True
+    cena.render.border_min_x, cena.render.border_max_x, cena.render.border_min_y, cena.render.border_max_y = REGIAO
 if MODO == "fundo":
     ini, fim = int(args[2]), int(args[3])
     for q in QUADROS or range(ini, fim + 1):
-        posicionar_camera(camera_y(q))
+        posicionar_camera(camera_y(q), q)
+        cam.dof.focus_distance = foco(q)
         cena.render.filepath = str(SAIDA / f"fundo-{q:03d}.png")
         if pronto(cena.render.filepath):
             continue
@@ -846,63 +1239,136 @@ if MODO == "cao":
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
-    FITA = material("Guia de corda", **{"Base Color": (0.13, 0.19, 0.15, 1), "Roughness": 0.9, "Specular IOR Level": 0.2})  # verde-sálvia escuro
+    # guia de couro conhaque escuro, do jeito da coleira, sem brilho: o reflexo do sol do céu (rasante, de frente)
+    # deixava a guia branca, de qualquer cor
+    FITA = material("Guia de couro", **{"Base Color": (0.11, 0.04, 0.018, 1), "Roughness": 0.85, "Specular IOR Level": 0.0})
 
-    importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
-    raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
-    armacao = next(o for o in importados if o.type == "ARMATURE")
-    corpo = olhos = None
-    for o in importados:
-        if o.type != "MESH":
-            continue
-        nomes = [s.material.name for s in o.material_slots if s.material]
-        if o.parent is None:
-            o.hide_render = True  # esfera solta do arquivo original
-            continue
-        if any(n.startswith("Wolf_Main") for n in nomes):
-            corpo = o
-        elif any(n.startswith("Wolf_Eye") for n in nomes):
-            olhos = o
-        o.hide_render = not any(n.startswith(("Wolf_Main", "Claw")) for n in nomes)  # de costas: sem olhos, língua, dentes
-        o.data.materials.clear()
-        o.data.materials.append(PELE)
-    acao = bpy.data.actions[0]
-    armacao.animation_data_create()
-    armacao.animation_data.action = acao
-    if hasattr(armacao.animation_data, "action_slot") and acao.slots:
-        armacao.animation_data.action_slot = acao.slots[0]
-    ANDAR = (58, 90)  # laço perfeito da caminhada (32 quadros)
-    PARADA = 11  # pose em pé para a respiração
+    def usar_acao(a):
+        armacao.animation_data_create()
+        armacao.animation_data.action = a
+        if a is not None and hasattr(armacao.animation_data, "action_slot") and a.slots:
+            armacao.animation_data.action_slot = a.slots[0]
+
+    if COMPRADO:
+        print("MODELO", COMPRADO.name, flush=True)
+        importados = importar_modelo(COMPRADO)
+        armacao = max((o for o in importados if o.type == "ARMATURE"), key=lambda o: len(o.data.bones))
+
+        def deformado(o):
+            return o.type == "MESH" and (o.parent == armacao or any(m.type == "ARMATURE" and m.object == armacao for m in o.modifiers))
+
+        corpo = max((o for o in importados if deformado(o)), key=lambda o: len(o.data.vertices))
+        for o in importados:
+            if o.type == "MESH" and not deformado(o) and not len(o.particle_systems):
+                o.hide_render = True  # chão, fundo de estúdio e afins que vêm no arquivo
+        raiz = bpy.data.objects.new("Cachorra", None)  # uma raiz nova gira, escala e põe no caminho sem mexer no arquivo
+        cena.collection.objects.link(raiz)
+        for o in importados:
+            if o.parent is None:
+                o.parent = raiz
+
+        def acao_por(padrao):
+            fora = r"back|tr[aá]s|turn|vira|left|right|esq|dir|start|stop|begin|jump|run|corr"
+            return next((a for a in bpy.data.actions if re.search(padrao, a.name, re.I) and not re.search(fora, a.name, re.I)), None)
+
+        acao = bpy.data.actions[opcao("--acao", "")] if "--acao" in args else acao_por(r"walk|caminh|andar") or acao_por(r"trot")
+        if acao is None:
+            raise SystemExit("CAMINHADA NÃO ACHADA. Use --acao NOME. Ações: " + ", ".join(a.name for a in bpy.data.actions))
+        # o laço da caminhada: o intervalo da ação (ou --andar ini,fim, com fim = início do ciclo seguinte)
+        ANDAR = tuple(int(v) for v in (opcao("--andar", "").split(",") if "--andar" in args else acao.frame_range))
+        ACAO_PARADA = acao_por(r"idle|stand|parad|breath|respir")  # sem pose parada no arquivo: a pose de descanso
+        PARADA = int(ACAO_PARADA.frame_range[0]) if ACAO_PARADA else None
+    else:
+        importados = importar(MIDIA / "modelos" / "lobo-cinza.glb")
+        raiz = next(o for o in importados if o.parent is None and o.type == "EMPTY")
+        armacao = next(o for o in importados if o.type == "ARMATURE")
+        corpo = None
+        for o in importados:
+            if o.type != "MESH":
+                continue
+            nomes = [s.material.name for s in o.material_slots if s.material]
+            if o.parent is None:
+                o.hide_render = True  # esfera solta do arquivo original
+                continue
+            if any(n.startswith("Wolf_Main") for n in nomes):
+                corpo = o
+            o.hide_render = not any(n.startswith(("Wolf_Main", "Claw")) for n in nomes)  # de costas: sem olhos, língua, dentes
+            o.data.materials.clear()
+            o.data.materials.append(PELE)
+        acao = ACAO_PARADA = bpy.data.actions[0]
+        ANDAR = (58, 90)  # laço perfeito da caminhada (32 quadros)
+        PARADA = 11  # pose em pé para a respiração
+    usar_acao(acao)
     cena.frame_set(ANDAR[0])
 
     def vertices(obj):
+        """Vértices deformados, no mundo, lidos de uma vez (um modelo profissional tem centenas de milhares)."""
         bpy.context.view_layer.update()
         ev = obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
-        return np.array([obj.matrix_world @ v.co for v in ev.data.vertices])
+        co = np.empty(len(ev.data.vertices) * 3, dtype=np.float32)
+        ev.data.vertices.foreach_get("co", co)
+        m = np.array(obj.matrix_world)
+        return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
 
-    # focinho para +Y (de costas para a câmera)
-    pts, oc = vertices(corpo), vertices(olhos).mean(0)
-    frente = oc[:2] - pts.mean(0)[:2]
+    # focinho para +Y (de costas para a câmera): do meio do corpo para a cabeça
+    cab = next(b for b in armacao.pose.bones if re.search(r"head|cabe", b.name, re.I))
+    pts = vertices(corpo)
+    frente = np.array(armacao.matrix_world @ cab.head)[:2] - pts.mean(0)[:2]
     raiz.matrix_world = Matrix.Rotation(math.atan2(1.0, 0.0) - math.atan2(frente[1], frente[0]), 4, "Z") @ raiz.matrix_world
-    # porte de pastora-alemã encorpada: ~1,05 m do peito à garupa (sem a cauda), ~0,62 m na cernelha
+    # porte de pastora-alemã: o lobo vai a 0,63 m de altura (e é alargado depois); o comprado, a --altura (até as orelhas)
     pts = vertices(corpo)
     tam = pts.max(0) - pts.min(0)
-    raiz.scale = tuple(s * 0.63 / tam[2] for s in raiz.scale)
+    alvo = opcao("--altura", 0.8) if COMPRADO else 0.63
+    raiz.scale = tuple(s * alvo / tam[2] for s in raiz.scale)
     pts = vertices(corpo)
     raiz.location.z -= pts[:, 2].min()
     raiz.location.x -= (pts[:, 0].min() + pts[:, 0].max()) / 2
     centro_y = (pts[:, 1].min() + pts[:, 1].max()) / 2
     raiz.location.y += DIST_CAO - centro_y
-    bpy.context.view_layer.update()
-    # a caminhada do arquivo é no lugar? (se andar, desconta depois)
-    ys = []
-    for f in range(ANDAR[0], ANDAR[1] + 1, 8):
+    Y_RAIZ = raiz.location.y
+    # a caminhada do arquivo anda sozinha (root motion)? mede o avanço do corpo no ciclo, e a raiz desconta
+    centros = []
+    for f in (ANDAR[0], ANDAR[1]):
         cena.frame_set(f)
-        ys.append(round(float(vertices(corpo)[:, 1].mean()), 3))
-    print("CENTRO Y NA CAMINHADA", ys, "tamanho", np.round(vertices(corpo).max(0) - vertices(corpo).min(0), 2), flush=True)
-    # pastora encorpada: o lobo do arquivo é estreito
-    raiz.scale.x *= 1.55
+        centros.append(float(vertices(corpo)[:, 1].mean()))
+    AVANCO_CICLO = centros[1] - centros[0] if abs(centros[1] - centros[0]) > 0.15 else 0.0
+    print("TAMANHO", np.round(pts.max(0) - pts.min(0), 2), "AVANCO NO CICLO", round(AVANCO_CICLO, 3), flush=True)
+
+    def avanco(quadro):
+        """Quanto o arquivo leva a cachorra para a frente no quadro (fracionário) do ciclo."""
+        return AVANCO_CICLO * (quadro - ANDAR[0]) / (ANDAR[1] - ANDAR[0])
+
+    if not COMPRADO:  # pastora encorpada: o lobo do arquivo é estreito
+        raiz.scale.x *= 1.55
+    cena.frame_set(ANDAR[0])
     bpy.context.view_layer.update()
+
+    def achar_ossos():
+        """Os ossos que a cena usa, achados pelo nome (serve para qualquer esqueleto de cachorro); --osso-<chave> NOME
+        força um osso quando o nome não ajuda."""
+        evitar = r"end$|_end|nub|tip|ponta|(^|[_.\-\s])(ear|eye|jaw|tongue)|orelha|olho|mand[ií]bula|l[ií]ngua|_ik|ik_|pole|target"
+
+        def todos(padrao):
+            return [b for b in armacao.pose.bones if re.search(padrao, b.name, re.I) and not re.search(evitar, b.name, re.I)]
+
+        def um(chave, padrao):
+            nome = opcao(f"--osso-{chave}", "")
+            achados = [armacao.pose.bones[nome]] if nome else todos(padrao)
+            if not achados:
+                raise SystemExit(f"OSSO NÃO ACHADO: {chave}. Use --osso-{chave} NOME. Ossos: " + ", ".join(b.name for b in armacao.pose.bones))
+            return achados[0]
+
+        pes = todos(r"foot|paw|pata|toe") or [um("pe", r"foot")]
+        return {
+            "pescoco": um("pescoco", r"neck|pesco"),
+            "cabeca": um("cabeca", r"head|cabe"),
+            "tronco": todos(r"spine|chest|trunk|torso|ribcage|coluna")[-2:] or [um("tronco", r"spine")],  # os dois perto do peito
+            "pe": min(pes, key=lambda b: (armacao.matrix_world @ b.head).y),  # o mais de trás (ela olha para +Y)
+            "cauda": todos(r"tail|cauda|rabo"),
+        }
+
+    OSSO = achar_ossos()
+    print("OSSOS", {k: [b.name for b in v] if isinstance(v, list) else v.name for k, v in OSSO.items()}, flush=True)
 
     # ------------------------------------------------------------ pelo: fios curtos e densos, mais longos na cauda e no pescoço
     def material_pelo():
@@ -920,31 +1386,11 @@ if MODO == "cao":
         pelo.inputs["Coat"].default_value = 0.0
         pelo.inputs["Random Color"].default_value = 0.1
         pelo.inputs["Random Roughness"].default_value = 0.15
-        # preto no corpo; nas patas e nas pontas, o marrom-escuro da Ellie
-        info = nos.new("ShaderNodeHairInfo")
-        ponta = nos.new("ShaderNodeMapRange")
-        ponta.inputs["From Min"].default_value, ponta.inputs["From Max"].default_value = 0.55, 1.0
-        ponta.inputs["To Min"].default_value, ponta.inputs["To Max"].default_value = 0.0, 0.015  # pontas quase pretas: contra o sol, clareavam
-        lig.new(info.outputs["Intercept"], ponta.inputs["Value"])
-        alt = nos.new("ShaderNodeAttribute")
-        alt.attribute_name = "altura"
-        pata = nos.new("ShaderNodeMapRange")
-        pata.inputs["From Min"].default_value, pata.inputs["From Max"].default_value = 0.12, 0.32
-        pata.inputs["To Min"].default_value, pata.inputs["To Max"].default_value = 0.04, 0.0
-        lig.new(alt.outputs["Fac"], pata.inputs["Value"])
-        tira = nos.new("ShaderNodeMath")
-        tira.operation = "ADD"
-        lig.new(ponta.outputs["Result"], tira.inputs[0])
-        lig.new(pata.outputs["Result"], tira.inputs[1])
-        melanina = nos.new("ShaderNodeMath")
-        melanina.operation = "SUBTRACT"
-        melanina.inputs[0].default_value = 1.0
-        lig.new(tira.outputs[0], melanina.inputs[1])
-        lig.new(melanina.outputs[0], pelo.inputs["Melanin"])
+        pelo.inputs["Melanin"].default_value = 1.0  # toda preta, das patas às pontas (o brilho vem da contraluz)
         lig.new(pelo.outputs[0], saida.inputs["Surface"])
         return m
 
-    def arvore_pelo(alvo, densidade, comp, raio, mat):
+    def arvore_pelo(alvo, densidade, comp, raio, mat, pesos):
         g = bpy.data.node_groups.new("Pelo", "GeometryNodeTree")
         g.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
         n, l = g.nodes, g.links
@@ -954,9 +1400,7 @@ if MODO == "cao":
         info.transform_space = "RELATIVE"
         # comprimento extra: cauda (pesos dos ossos da cauda) e pescoço mais peludos
         soma = None
-        for nome_, peso_ in (("Tail_Bone_1_Wolf_Armature", 1.2), ("Tail_Bone_2_Wolf_Armature", 1.8), ("Tail_Bone_3_Wolf_Armature", 2.0),
-                             ("Tail_Bone_4_Wolf_Armature", 1.6), ("Neck_Bone_Wolf_Armature", 0.6),
-                             ("Head_Wolf_Armature", -0.7)):  # a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
+        for nome_, peso_ in pesos:
             at = n.new("GeometryNodeInputNamedAttribute")
             at.data_type = "FLOAT"
             at.inputs["Name"].default_value = nome_
@@ -1002,17 +1446,8 @@ if MODO == "cao":
         amostra = n.new("GeometryNodeResampleCurve")
         amostra.inputs["Count"].default_value = 6
         l.new(linha.outputs[0], amostra.inputs["Curve"])
-        # a altura da raiz de cada fio (para o marrom das patas), guardada nos pontos
-        pos0 = n.new("GeometryNodeInputPosition")
-        sep0 = n.new("ShaderNodeSeparateXYZ")
-        l.new(pos0.outputs[0], sep0.inputs[0])
-        guarda_alt = n.new("GeometryNodeCaptureAttribute")
-        guarda_alt.domain = "POINT"
-        guarda_alt.capture_items.new("FLOAT", "alt")
-        l.new(pontos.outputs["Points"], guarda_alt.inputs[0])
-        l.new(sep0.outputs["Z"], guarda_alt.inputs[1])
         inst = n.new("GeometryNodeInstanceOnPoints")
-        l.new(guarda_alt.outputs[0], inst.inputs["Points"])
+        l.new(pontos.outputs["Points"], inst.inputs["Points"])
         l.new(amostra.outputs[0], inst.inputs["Instance"])
         l.new(gira.outputs[0], inst.inputs["Rotation"])
         # escala do fio: aleatória × (1 + peso da cauda/pescoço)
@@ -1033,12 +1468,6 @@ if MODO == "cao":
         l.new(comb.outputs[0], inst.inputs["Scale"])
         real = n.new("GeometryNodeRealizeInstances")
         l.new(inst.outputs[0], real.inputs[0])
-        grava = n.new("GeometryNodeStoreNamedAttribute")
-        grava.data_type = "FLOAT"
-        grava.domain = "CURVE"
-        grava.inputs["Name"].default_value = "altura"
-        l.new(real.outputs[0], grava.inputs["Geometry"])
-        l.new(guarda_alt.outputs[1], grava.inputs["Value"])
         # ondulação leve e caimento
         param = n.new("GeometryNodeSplineParameter")
         ruido = n.new("ShaderNodeTexNoise")
@@ -1066,7 +1495,7 @@ if MODO == "cao":
         l.new(cai.outputs[0], desloc.inputs[0])
         l.new(peso.outputs[0], desloc.inputs["Scale"])
         setpos = n.new("GeometryNodeSetPosition")
-        l.new(grava.outputs[0], setpos.inputs["Geometry"])
+        l.new(real.outputs[0], setpos.inputs["Geometry"])
         l.new(desloc.outputs[0], setpos.inputs["Offset"])
         afina = n.new("ShaderNodeMapRange")
         afina.inputs["To Min"].default_value, afina.inputs["To Max"].default_value = raio, raio * 0.15
@@ -1084,15 +1513,51 @@ if MODO == "cao":
         obj.modifiers.new("Pelo", "NODES").node_group = g
         return obj
 
-    pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), material_pelo())
+    def escurecer(m):
+        """Pelagem toda preta: a cor do arquivo vira quase preto, e fica só a variação de claro e escuro."""
+        bsdf = next((n for n in m.node_tree.nodes if n.bl_idname == "ShaderNodeBsdfPrincipled"), None) if m and m.use_nodes else None
+        if bsdf is None:
+            return
+        cor = bsdf.inputs["Base Color"]
+        hsv = m.node_tree.nodes.new("ShaderNodeHueSaturation")
+        hsv.inputs["Saturation"].default_value = 0.0
+        hsv.inputs["Value"].default_value = 0.12
+        if cor.links:
+            m.node_tree.links.new(cor.links[0].from_socket, hsv.inputs["Color"])
+        else:
+            hsv.inputs["Color"].default_value = cor.default_value
+        m.node_tree.links.new(hsv.outputs[0], cor)
+
+    PELO = material_pelo()
+    sistemas = [(o, ps) for o in importados if o.type == "MESH" for ps in o.particle_systems if ps.settings.type == "HAIR"]
+    curvas = [o for o in importados if o.type == "CURVES"]
+    if COMPRADO and (sistemas or curvas):
+        # o pelo do próprio modelo, todo preto; a pele por baixo também (sem marrom aparecendo entre os fios)
+        for k in range(len(corpo.material_slots)):
+            corpo.material_slots[k].material = PELE
+        for o in curvas:
+            o.data.materials.clear()
+            o.data.materials.append(PELO)
+        for o, ps in sistemas:
+            o.data.materials.append(PELO)
+            ps.settings.material = len(o.data.materials)  # um slot só do pelo
+            # memória: menos fios filhos no render, se precisar (--fracao-pelo 0.5 = metade)
+            ps.settings.rendered_child_count = max(1, round(ps.settings.rendered_child_count * opcao("--fracao-pelo", 1.0)))
+        pelo = None
+        print("PELO DO MODELO", len(sistemas), "sistemas de partículas,", len(curvas), "curvas", flush=True)
+    else:
+        if COMPRADO:  # modelo sem pelo de verdade: as texturas escurecem e o pelo é gerado aqui
+            for s_ in corpo.material_slots:
+                escurecer(s_.material)
+        # pelo mais longo na cauda e no pescoço; a cabeça de pelo curto (o pelo longo fazia um gorro claro ao sol)
+        pesos_pelo = [(b.name, 1.6) for b in OSSO["cauda"]] + [(OSSO["pescoco"].name, 0.6), (OSSO["cabeca"].name, -0.7)]
+        pelo = arvore_pelo(corpo, opcao("--densidade", 300000.0), 0.035, opcao("--raio-pelo", 0.00018), PELO, pesos_pelo)
 
     # ------------------------------------------------------------ coleira, guia (fita preta, como a da foto da mão) e sombra
-    ossos = {b.name: b for b in armacao.pose.bones}
-
     def nuca_e_coleira():
         bpy.context.view_layer.update()
-        a = armacao.matrix_world @ ossos["Neck_Bone_Wolf_Armature"].head
-        b = armacao.matrix_world @ ossos["Head_Wolf_Armature"].head
+        a = armacao.matrix_world @ OSSO["pescoco"].head
+        b = armacao.matrix_world @ OSSO["cabeca"].head
         eixo = (b - a).normalized()
         meio_ = a.lerp(b, 0.45)
         cima = Vector((0, 0, 1))
@@ -1157,13 +1622,13 @@ if MODO == "cao":
     bpy.context.view_layer.update()
     mao_tela = world_to_camera_view(cena, camobj, MAO)
     # passada: quanto o chão "anda" num ciclo (a pata de apoio desliza para trás na caminhada no lugar)
-    pe = ossos["Rear_Left_Foot_Bone_Wolf_Armature"]
+    pe = OSSO["pe"]
     ys_pe = []
     for f in range(ANDAR[0], ANDAR[1]):
         cena.frame_set(f)
         bpy.context.view_layer.update()
         ys_pe.append((armacao.matrix_world @ pe.head).y)
-    passo = max(ys_pe) - min(ys_pe)
+    passo = abs(AVANCO_CICLO) or max(ys_pe) - min(ys_pe)  # andando sozinha, a passada é o avanço do ciclo
     tela = TELA
     (SAIDA / f"camada-{tela}.json").write_text(json.dumps({
         "mao": [round(mao_tela.x, 4), round(1 - mao_tela.y, 4)], "passo_m": round(passo, 3), "quadros_andar": ANDAR[1] - ANDAR[0],
@@ -1176,6 +1641,7 @@ if MODO == "cao":
     cantos = []
     for f in range(ANDAR[0], ANDAR[1], 4):
         cena.frame_set(f)
+        raiz.location.y = Y_RAIZ - avanco(f)
         bpy.context.view_layer.update()
         cantos += [world_to_camera_view(cena, camobj, Vector(v)) for v in vertices(corpo)[::40]]
     us = [c.x for c in cantos] + [mao_tela.x]
@@ -1187,12 +1653,14 @@ if MODO == "cao":
     trecho = args[2]
     if "--depurar" in args:  # guia vermelha e sem pelo: confere material e luz da camada
         FITA.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.0, 0.0, 1)
-        pelo.hide_render = True
+        if pelo:
+            pelo.hide_render = True
     quadros = opcao("--quadros", "")
     if trecho == "andar":
         lista = [int(q) for q in quadros.split(",")] if quadros else range(ANDAR[0], ANDAR[1])
         for f in lista:
             cena.frame_set(f)
+            raiz.location.y = Y_RAIZ - avanco(f)
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"andar-{f - ANDAR[0]:02d}.png")
             if pronto(cena.render.filepath):
@@ -1202,16 +1670,19 @@ if MODO == "cao":
             print("MEMORIA", memoria(), flush=True)
     elif trecho == "parada":
         # parada: a pose em pé e a respiração (peito sobe e desce, cabeça acompanha de leve), laço de 24 quadros
-        cena.frame_set(PARADA)
+        raiz.location.y = Y_RAIZ
+        usar_acao(ACAO_PARADA)
+        if PARADA is not None:
+            cena.frame_set(PARADA)
         base = {pb.name: pb.matrix_basis.copy() for pb in armacao.pose.bones}
         armacao.animation_data.action = None
         for k in range(24):
             fase = math.sin(2 * math.pi * k / 24)
             for pb in armacao.pose.bones:
                 pb.matrix_basis = base[pb.name]
-            for nome_, amp in (("Trunk_Bone_2_Wolf_Armature", 0.016), ("Trunk_Bone_3_Wolf_Armature", 0.01)):
-                ossos[nome_].matrix_basis = base[nome_] @ Matrix.Diagonal((1 + amp * fase, 1, 1 + amp * fase, 1))
-            cab_ = ossos["Head_Wolf_Armature"]
+            for osso_, amp in zip(OSSO["tronco"], (0.016, 0.01)):
+                osso_.matrix_basis = base[osso_.name] @ Matrix.Diagonal((1 + amp * fase, 1, 1 + amp * fase, 1))
+            cab_ = OSSO["cabeca"]
             cab_.matrix_basis = base[cab_.name] @ Matrix.Rotation(math.radians(0.8) * fase, 4, "X")
             atualizar_guia()
             cena.render.filepath = str(SAIDA / f"parada-{k:02d}.png")
@@ -1223,16 +1694,15 @@ if MODO == "cao":
     elif trecho == "entrada":
         cena.render.use_border = False  # ela se afasta rumo à porta: sai da região medida com ela perto da câmera
         # chegada: a câmera desacelera e a cachorra se adianta até a porta aberta; a guia escapa da mão e arrasta no chão
-        y_base = raiz.location.y
-        ini = camera_y(Q_ENTRADA) + DIST_CAO
-        porta = Y_LOJA + 0.9
+        y_base = Y_RAIZ
         n_ = TOTAL - 1 - Q_ENTRADA
         for q in QUADROS or range(Q_ENTRADA, TOTAL):
             t = (q - Q_ENTRADA) / n_
-            cao_y = ini + (porta - ini) * t
-            raiz.location.y = y_base + (cao_y - camera_y(q)) - DIST_CAO
-            fase = ((camera_y(Q_ENTRADA) + cao_y - ini) / passo) % 1.0
+            cam.dof.focus_distance = foco(q)
+            posicionar_camera(0.0, q)  # a camada da cachorra fica com a câmera parada; só o olhar sobe
+            fase = ((cao_y(q) - DIST_CAO) / passo) % 1.0  # continua a passada do passeio (a distância andada)
             quadro = ANDAR[0] + fase * (ANDAR[1] - ANDAR[0])
+            raiz.location.y = y_base + (cao_y(q) - camera_y(q)) - DIST_CAO - avanco(quadro)
             cena.frame_set(int(quadro), subframe=quadro % 1)
             atualizar_guia()
             # nos primeiros quadros a ponta da guia sai da mão e cai no chão, atrás da cachorra

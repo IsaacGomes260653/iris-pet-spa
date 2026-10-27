@@ -1180,7 +1180,9 @@ if MODO == "cao":
     PELE = material("Pele", **{"Base Color": (0.008, 0.007, 0.007, 1), "Roughness": 1.0, "Specular IOR Level": 0.0})  # sem brilho entre os fios
     COURO = material("Couro conhaque", **{"Base Color": (0.3, 0.1, 0.035, 1), "Roughness": 0.45})
     METAL = material("Argola", **{"Base Color": (0.78, 0.66, 0.45, 1), "Metallic": 1.0, "Roughness": 0.28})
-    FITA = material("Guia de corda", **{"Base Color": (0.13, 0.19, 0.15, 1), "Roughness": 0.9, "Specular IOR Level": 0.2})  # verde-sálvia escuro
+    # guia de couro conhaque escuro, do jeito da coleira, sem brilho: o reflexo do sol do céu (rasante, de frente)
+    # deixava a guia branca, de qualquer cor
+    FITA = material("Guia de couro", **{"Base Color": (0.11, 0.04, 0.018, 1), "Roughness": 0.85, "Specular IOR Level": 0.0})
 
     # ------------------------------------------------------------ o modelo: o comprado (render/assets-comprados, fora do
     # Git, porque a licença não deixa redistribuir) quando houver; senão, o lobo de reserva

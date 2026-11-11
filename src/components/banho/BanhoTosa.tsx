@@ -22,6 +22,7 @@ import { useAnimacaoPerto } from "@/components/useAnimacaoPerto";
 import { useMidia } from "@/components/useMidia";
 import { Etiqueta } from "@/components/ui";
 import { passos, type Passo } from "@/content/servicos";
+import { publico } from "@/publico";
 
 const ICONES: Record<Passo["detalhes"][number]["icone"], Icon> = {
   gota: Drop,
@@ -65,10 +66,10 @@ function Video({ passo, refVideo, className = "" }: { passo: Passo; refVideo?: (
       aria-hidden
       className={`size-full object-cover ${FOCO[passo.id]} ${className}`}
     >
-      <source media="(max-width: 768px)" src={`/videos/${passo.id}-celular.webm`} type="video/webm" />
-      <source media="(max-width: 768px)" src={`/videos/${passo.id}-celular.mp4`} type="video/mp4" />
-      <source src={`/videos/${passo.id}.webm`} type="video/webm" />
-      <source src={`/videos/${passo.id}.mp4`} type="video/mp4" />
+      <source media="(max-width: 768px)" src={publico(`/videos/${passo.id}-celular.webm`)} type="video/webm" />
+      <source media="(max-width: 768px)" src={publico(`/videos/${passo.id}-celular.mp4`)} type="video/mp4" />
+      <source src={publico(`/videos/${passo.id}.webm`)} type="video/webm" />
+      <source src={publico(`/videos/${passo.id}.mp4`)} type="video/mp4" />
     </video>
   );
 }

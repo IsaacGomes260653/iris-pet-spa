@@ -2,6 +2,7 @@
 
 import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { publico } from "@/publico";
 
 /** Som ambiente de parque (passarinhos de manhã). Desligado por padrão: só toca depois do clique. */
 export function Som() {
@@ -62,8 +63,8 @@ export function Som() {
         Som
       </button>
       <audio ref={audio} loop preload="none">
-        <source src="/audio/parque.ogg" type="audio/ogg; codecs=opus" />
-        <source src="/audio/parque.mp3" type="audio/mpeg" />
+        <source src={publico("/audio/parque.ogg")} type="audio/ogg; codecs=opus" />
+        <source src={publico("/audio/parque.mp3")} type="audio/mpeg" />
       </audio>
     </>
   );

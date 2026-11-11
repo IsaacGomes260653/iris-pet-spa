@@ -89,8 +89,11 @@ export function Brincadeira({ className = "", compacta = false, ativa = false }:
         const noCorpo = gira(66 + naCabeca.x + 40, -100 + naCabeca.y + 52, inclinacao());
         return { x: e.caoX + e.lado * (noCorpo.x - 40), y: CHAO + noCorpo.y - 52 + sobe };
       };
-      // o arremesso: sai da mão (guardada no momento em que solta) e cai longe, num arco
+      // o arremesso: sai da mão (guardada no momento em que solta) e cai longe, num arco. No desktop o arco passa
+      // acima da caixa do SVG (que deixa o desenho sair); no celular a faixa é baixa e tem os links logo acima, então
+      // a bola sai de fora do quadro, à esquerda (onde a pessoa está), num arco mais baixo que cabe dentro da faixa
       const saida = { x: 0, y: 0 };
+      const altura = compacta ? 75 : 230;
       const queda = { x: fim - 200, y: CHAO - BOLA_R };
       const parada = { x: fim - 115, y: CHAO - BOLA_R };
 
@@ -128,7 +131,7 @@ export function Brincadeira({ className = "", compacta = false, ativa = false }:
         let b = mao();
         if (e.bola === "voo") {
           const t = e.voo;
-          b = { x: saida.x + (queda.x - saida.x) * t, y: saida.y + (queda.y - saida.y) * t - 230 * 4 * t * (1 - t) };
+          b = { x: saida.x + (queda.x - saida.x) * t, y: saida.y + (queda.y - saida.y) * t - altura * 4 * t * (1 - t) };
         } else if (e.bola === "chao") {
           const t = e.quique;
           b = { x: queda.x + (parada.x - queda.x) * t, y: queda.y - 40 * Math.max(0, Math.sin(Math.min(1, t * 2.2) * Math.PI)) };
@@ -139,7 +142,8 @@ export function Brincadeira({ className = "", compacta = false, ativa = false }:
       gsap.ticker.add(quadro);
 
       const soltar = () => {
-        const m = mao();
+        // no celular, da altura da mão mas à esquerda da faixa (fora do quadro): a troca de lugar não aparece
+        const m = compacta ? { x: PESSOA_X + 30, y: CHAO - 100 } : mao();
         saida.x = m.x;
         saida.y = m.y;
         e.bola = "voo";
@@ -205,7 +209,7 @@ export function Brincadeira({ className = "", compacta = false, ativa = false }:
       preserveAspectRatio={compacta ? "xMidYMax meet" : "xMinYMax meet"}
       aria-hidden
       // aparece depois que as letras sobem; no celular, a borda esquerda (para onde ela leva a bola) se apaga
-      className={`${className} transition-[opacity,translate] delay-900 duration-700 motion-reduce:transition-none`}
+      className={`${className} ${compacta ? "" : "overflow-visible"} transition-[opacity,translate] delay-900 duration-700 motion-reduce:transition-none`}
       style={{
         opacity: ativa ? 1 : 0,
         translate: ativa ? "0 0" : "0 12px",

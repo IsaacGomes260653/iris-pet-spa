@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Loja } from "@/content/lojas";
+import { publico } from "@/publico";
 
 /** Latitude e longitude → ponto na esfera, no mesmo mapeamento da textura equirretangular da SphereGeometry. */
 export function noGlobo(lat: number, lng: number, raio = 1) {
@@ -124,7 +125,7 @@ function Cena({ grupos, ativos, rotas, rotasFortes, selecionada, aoEscolher, aoE
   const viajantes = useRef<(THREE.Sprite | null)[]>([]);
   // a textura chega depois do primeiro quadro; até lá o globo fica no verde-escuro do material
   const terra = useMemo(() => {
-    const t = new THREE.TextureLoader().load(celular ? "/globo/terra-2048.webp" : "/globo/terra-4096.webp");
+    const t = new THREE.TextureLoader().load(publico(celular ? "/globo/terra-2048.webp" : "/globo/terra-4096.webp"));
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 8;
     return t;

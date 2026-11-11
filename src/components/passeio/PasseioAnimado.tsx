@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMidia } from "@/components/useMidia";
 import { Botao, Etiqueta } from "@/components/ui";
 import { altPasseio, cards, mao } from "@/content/midia";
+import { publico } from "@/publico";
 import { Quadros, type Manifesto } from "./quadros";
 
 // uma frase por trecho da alameda; a última leva até a porta da loja
@@ -41,8 +42,8 @@ const suave = (a: number, b: number, x: number) => {
 /** Imagem parada de um ponto do passeio, com recorte próprio para celular (retrato) e desktop. */
 function Parada({ nome, className, prioridade = false }: { nome: string; className?: string; prioridade?: boolean }) {
   const comum = { alt: altPasseio, sizes: "100vw", quality: 70 };
-  const { props: celular } = getImageProps({ ...comum, src: `/passeio/celular/${nome}.webp`, width: 720, height: 1280 });
-  const { props: desktop } = getImageProps({ ...comum, src: `/passeio/desktop/${nome}.webp`, width: 1280, height: 720, preload: prioridade });
+  const { props: celular } = getImageProps({ ...comum, src: publico(`/passeio/celular/${nome}.webp`), width: 720, height: 1280 });
+  const { props: desktop } = getImageProps({ ...comum, src: publico(`/passeio/desktop/${nome}.webp`), width: 1280, height: 720, preload: prioridade });
   return (
     <picture>
       <source media="(orientation: portrait)" srcSet={celular.srcSet} sizes="100vw" />
@@ -169,7 +170,7 @@ export function PasseioAnimado() {
     let desenhou = false;
     let antes = performance.now();
 
-    const url = (n: string) => `/passeio/${nomeTela}/${n}.webp`;
+    const url = (n: string) => publico(`/passeio/${nomeTela}/${n}.webp`);
     const serie = (prefixo: string, n: number, digitos: number) => Array.from({ length: n }, (_, i) => url(`${prefixo}-${String(i).padStart(digitos, "0")}`));
 
     const ajustar = () => {
@@ -262,7 +263,7 @@ export function PasseioAnimado() {
     };
 
     (async () => {
-      const r = await fetch("/passeio/manifesto.json");
+      const r = await fetch(publico("/passeio/manifesto.json"));
       man = (await r.json()) as Manifesto;
       if (!vivo) return;
       fundo = new Quadros(serie("fundo", man.fundo, 3), 24);

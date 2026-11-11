@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Botao } from "@/components/ui";
 import { fotoGuia, indice } from "@/content/secoes";
+import { publico } from "@/publico";
 import { Rotulo } from "./Rotulo";
 
 export function Guia() {
@@ -19,7 +20,7 @@ export function Guia() {
             páginas, sem enrolação.
           </p>
           <div className="mt-8">
-            <Botao href="/guia-de-cuidados.pdf" escuro baixar>
+            <Botao href={publico("/guia-de-cuidados.pdf")} escuro baixar>
               Baixar guia (PDF)
             </Botao>
           </div>
@@ -30,7 +31,7 @@ export function Guia() {
           </div>
           {/* a capa do PDF, como um impresso apoiado na foto */}
           <a
-            href="/guia-de-cuidados.pdf"
+            href={publico("/guia-de-cuidados.pdf")}
             download
             aria-hidden
             tabIndex={-1}

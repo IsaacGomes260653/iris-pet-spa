@@ -4,7 +4,9 @@
 
 Site de uma rede de petshop (banho, tosa, spa, loja e Táxi Dog) contado como um passeio ao amanhecer em primeira pessoa, com rolagem cinematográfica. A experiência de rolagem foi inspirada no site da Seasats; todo o código, os textos e a mídia são próprios ou de fontes com licença livre.
 
-![Seção das lojas do Íris Pet Spa: o título "Patinha após patinha" ao lado de um globo 3D com as unidades no Brasil, rotas do Táxi Dog e filtros em pílula](.github/screenshot.png)
+**[Abrir o site no ar →](https://isaacgomes260653.github.io/iris-pet-spa/)** (GitHub Pages)
+
+[![Seção das lojas do Íris Pet Spa: o título "Patinha após patinha" ao lado de um globo 3D com as unidades no Brasil, rotas do Táxi Dog e filtros em pílula](.github/screenshot.png)](https://isaacgomes260653.github.io/iris-pet-spa/)
 
 ## O que tem
 

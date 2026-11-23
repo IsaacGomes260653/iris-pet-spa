@@ -14,7 +14,7 @@ const martian = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], a
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const titulo = "Íris Pet Spa — banho, tosa e spa em todo o Brasil";
 const compartilhamento =
-  "Projeto de portfólio de Isaac Gomes de Moraes: uma rede de petshop fictícia contada como um passeio em primeira pessoa, com rolagem cinematográfica e globo 3D.";
+  "Projeto de portfólio de Isaac Gomes de Moraes: uma rede de petshop fictícia contada num passeio em primeira pessoa, com rolagem cinematográfica e globo 3D.";
 const imagem = {
   url: `${base}/og.jpg`,
   width: 1200,
